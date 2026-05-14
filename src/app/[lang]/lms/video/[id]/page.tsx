@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2 } from "lucide-react";
-import { getVideoById, getChapterByVideoId } from "@/lib/lmsData";
+import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy } from "lucide-react";
+import { getVideoById, getChapterByVideoId, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
 function ActionCheckbox({ text, onCheck }: { text: string, onCheck: () => void }) {
@@ -291,6 +291,65 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
       </div>
+
+      {/* 最終動画の場合：修了CTA */}
+      {(() => {
+        const lastChapter = curriculumData[curriculumData.length - 1];
+        const lastVideoId = lastChapter?.videos[lastChapter.videos.length - 1]?.id;
+        if (videoId !== lastVideoId) return null;
+        
+        return (
+          <div className="mt-10 bg-gradient-to-br from-amber-50 via-white to-orange-50 rounded-2xl p-8 lg:p-10 border border-amber-200 shadow-lg relative overflow-hidden">
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-200/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-orange-200/20 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 text-center">
+              <Trophy className="w-14 h-14 mx-auto text-amber-500 mb-4" />
+              <h2 className="text-2xl lg:text-3xl font-bold text-stone-800 mb-3">
+                🎉 おめでとうございます！
+              </h2>
+              <p className="text-stone-600 mb-2 text-lg">
+                お豆奏法基礎講座、すべての動画を修了しました。
+              </p>
+              <p className="text-stone-500 mb-8 max-w-lg mx-auto leading-relaxed">
+                ここまで学んだ「身体の使い方」と「音の鳴る原理」を、
+                あなた自身の演奏曲で実践してみませんか？
+              </p>
+              
+              <div className="bg-white rounded-xl p-6 mb-8 border border-stone-200 shadow-sm max-w-md mx-auto text-left">
+                <h3 className="font-bold text-stone-800 mb-4 text-center">基礎実践講座で学べること</h3>
+                <div className="space-y-3">
+                  {[
+                    "実際の楽曲でのお豆奏法の応用方法",
+                    "えりな先生による実践的なフィードバック",
+                    "受講生同士で学び合えるコミュニティ",
+                    "より深い身体感覚のワーク"
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle2 size={18} className="text-amber-600 shrink-0" />
+                      <span className="text-stone-700 text-sm font-medium">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <Link
+                href="/ja/lms/practice-course"
+                className="inline-flex items-center gap-3 bg-stone-800 text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-stone-700 transition-all shadow-lg group"
+              >
+                <Sparkles size={20} className="text-amber-400" />
+                基礎実践講座の詳細を見る
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              
+              <p className="mt-4 text-xs text-stone-400">
+                ※ まずは詳細をご覧ください。無理な勧誘はいたしません。
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }

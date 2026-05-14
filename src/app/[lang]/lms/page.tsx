@@ -165,6 +165,42 @@ export default function LMSDashboard() {
         </Link>
       </section>
 
+      {/* アップセル：進捗50%以上で表示 */}
+      {progressPercent >= 50 && (
+        <section>
+          <Link
+            href="/ja/lms/practice-course"
+            className="block bg-gradient-to-r from-stone-800 to-stone-900 text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden group hover:shadow-xl transition-all"
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-400/5 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎉</span>
+                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                    {progressPercent}% 達成おめでとうございます！
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">
+                  学んだ原理を、あなたの曲で実践しませんか？
+                </h3>
+                <p className="text-stone-400 max-w-lg leading-relaxed text-sm">
+                  基礎講座で身につけた「お豆奏法の原理」を、実際の楽曲で応用する実践講座をご用意しています。
+                </p>
+              </div>
+              <div className="shrink-0">
+                <div className="bg-amber-500 text-stone-900 font-bold py-3 px-6 rounded-full inline-flex items-center gap-2 group-hover:bg-amber-400 group-hover:scale-105 transition-all shadow-lg">
+                  🚀 実践講座を見る
+                  <ChevronRight size={18} />
+                </div>
+              </div>
+            </div>
+          </Link>
+        </section>
+      )}
+
     </div>
   );
 }

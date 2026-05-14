@@ -99,6 +99,28 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           </div>
+
+          {/* アップセル：基礎実践講座バナー（常設） */}
+          <div className="border-t border-amber-200/50 pt-5">
+            <Link
+              href="/ja/lms/practice-course"
+              className="block p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200/60 hover:border-amber-300 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-base">🚀</span>
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Next Step</span>
+              </div>
+              <p className="text-sm font-bold text-stone-800 leading-snug mb-1">
+                基礎実践講座のご案内
+              </p>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                学んだ原理を、あなたの曲で実践してみませんか？
+              </p>
+              <div className="mt-2 text-xs font-bold text-amber-600 group-hover:text-amber-700 flex items-center gap-1">
+                詳しく見る →
+              </div>
+            </Link>
+          </div>
         </nav>
         
         {/* ユーザープロファイル・ログアウト */}
