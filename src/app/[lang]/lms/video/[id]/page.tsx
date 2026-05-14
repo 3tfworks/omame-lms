@@ -116,9 +116,10 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         continue;
       }
 
-      // 箇条書きの判定
-      if (line.startsWith('*') || line.startsWith('・') || line.startsWith('-') || line.startsWith('●')) {
-        const text = line.replace(/^[\*\-・●]\s*/, '');
+      // 箇条書きの判定（行頭の空白や不可視文字を許容）
+      const listMatch = line.match(/^[\s\u200B\u00A0]*[*\-・●＊]\s*(.+)/);
+      if (listMatch) {
+        const text = listMatch[1].trim();
         
         // 行動リスト以降の箇条書きはすべてチェックボックスにする
         if (hasActionListStarted || text.includes('みる') || text.includes('する')) {
