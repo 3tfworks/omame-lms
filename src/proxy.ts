@@ -1,6 +1,7 @@
-// プロキシ: ブラウザの言語設定を自動判定して適切な言語にリダイレクト
+// プロキシ: 言語リダイレクト + 認証セッション管理
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 const locales = ["ja", "en", "fr"];
 const defaultLocale = "ja";
@@ -28,7 +29,7 @@ function getLocale(request: NextRequest): string {
   return defaultLocale;
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 静的ファイルやAPIリクエストはスキップ
@@ -46,14 +47,62 @@ export function proxy(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  if (pathnameHasLocale) return;
-
   // 言語コードがない場合、自動判定してリダイレクト
-  const locale = getLocale(request);
-  request.nextUrl.pathname = `/${locale}${pathname}`;
-  return NextResponse.redirect(request.nextUrl);
+  if (!pathnameHasLocale) {
+    const locale = getLocale(request);
+    request.nextUrl.pathname = `/${locale}${pathname}`;
+    return NextResponse.redirect(request.nextUrl);
+  }
+
+  // --- 認証セッション管理 ---
+  // Supabaseクライアントを作成してセッションをリフレッシュ
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // セッションをリフレッシュ
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // 保護されたルート（/lms, /admin）へ未ログインでアクセスした場合 → ログイン画面へ
+  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
+  if (isProtectedRoute && !user) {
+    const lang = pathname.split('/')[1] || 'ja';
+    return NextResponse.redirect(new URL(`/${lang}/login`, request.url));
+  }
+
+  // ログイン済みユーザーがログイン画面にアクセスした場合 → LMSへ
+  if (pathname.includes("/login") && user) {
+    const lang = pathname.split('/')[1] || 'ja';
+    return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+  }
+
+  // ログイン済みユーザーがトップページ（LP）にアクセスした場合 → LMSへ（フェイルセーフ）
+  const isRootOrLangRoot = /^\/[a-z]{2}$/.test(pathname);
+  if (isRootOrLangRoot && user) {
+    const lang = pathname.split('/')[1] || 'ja';
+    return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|images|.*\\..*).*)"],
+  matcher: ["/((?!_next|api|images|.*\\..*).*)" ],
 };

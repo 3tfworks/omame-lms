@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2 } from "lucide-react";
