@@ -81,11 +81,12 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // 保護されたルート（/lms, /admin）へ未ログインでアクセスした場合 → ログイン画面へ
-  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
-  if (isProtectedRoute && !user) {
-    const lang = pathname.split('/')[1] || 'ja';
-    return NextResponse.redirect(new URL(`/${lang}/login`, request.url));
-  }
+  // ⚠️ 一時的に認証チェックを無効化中（確認後に戻すこと）
+  // const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
+  // if (isProtectedRoute && !user) {
+  //   const lang = pathname.split('/')[1] || 'ja';
+  //   return NextResponse.redirect(new URL(`/${lang}/login`, request.url));
+  // }
 
   // ログイン済みユーザーがログイン画面にアクセスした場合 → LMSへ
   if (pathname.includes("/login") && user) {
