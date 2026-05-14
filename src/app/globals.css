@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-omame-bg: #fcfbf9;
+  --color-omame-primary: #c1a49c;
+  --color-omame-accent: #f2ebe9;
+  --color-omame-text: #4a4036;
+  --color-omame-deep: #8a6d65;
+  --color-omame-gold: #cba365;
+  --font-serif: "Shippori Mincho", serif;
+  --font-sans: "Outfit", sans-serif;
+}
+
+@utility container-omame {
+  max-width: 800px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+body {
+  background-color: var(--color-omame-bg);
+  color: var(--color-omame-text);
+  font-family: var(--font-serif);
+  line-height: 2;
+  -webkit-font-smoothing: antialiased;
+}

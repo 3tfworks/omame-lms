@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お豆奏法 実践動画コンテンツ - たったひとつのことですべてが調う</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;500;700&family=Outfit:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fcfaf7;
+            --primary-color: #8c735a;
+            --accent-color: #d4b499;
+            --text-color: #4a4238;
+            --white: #ffffff;
+            --soft-gold: #e6d5c3;
+            --deep-brown: #5d4e41;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 2;
+            overflow-x: hidden;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hero Section */
+        header {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('C:/Users/kai63/.gemini/antigravity/brain/b4f69bc7-5f1f-4e67-a437-8f9a7e5cee0f/omame_souhou_hero_1776329021138.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.7;
+            filter: blur(2px);
+            transform: scale(1.1);
+            animation: zoomOut 20s infinite alternate;
+        }
+
+        @keyframes zoomOut {
+            from { transform: scale(1.1); }
+            to { transform: scale(1.0); }
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(252,250,247,0.1) 0%, rgba(252,250,247,0.8) 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 800px;
+            padding: 40px;
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 500;
+            letter-spacing: 0.3em;
+            margin-bottom: 30px;
+            color: var(--deep-brown);
+            line-height: 1.5;
+            animation: fadeIn 2s forwards;
+        }
+
+        .hero-content p {
+            font-size: 1.1rem;
+            letter-spacing: 0.4em;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            animation: fadeIn 2s 0.5s forwards;
+        }
+
+        /* Section Commons */
+        section {
+            padding: 120px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.8rem;
+            letter-spacing: 0.3em;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 500;
+            margin-bottom: 60px;
+            color: var(--deep-brown);
+        }
+
+        /* P: Problem & A: Agitation */
+        .intro-section {
+            background-color: var(--white);
+            border-radius: 4px;
+            padding: 80px 60px;
+            box-shadow: 0 20px 60px rgba(140, 115, 90, 0.05);
+            margin-top: -80px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .empathy-block {
+            text-align: left;
+            margin-bottom: 40px;
+        }
+
+        .empathy-block p {
+            margin-bottom: 25px;
+        }
+
+        .img-with-text {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin-top: 80px;
+        }
+
+        .img-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 2px;
+            box-shadow: 20px 20px 0 var(--soft-gold);
+        }
+
+        /* S: Solution */
+        .solution-section {
+            text-align: center;
+            background-color: var(--deep-brown);
+            color: var(--white);
+            max-width: 100%;
+            padding: 100px 20px;
+        }
+
+        .solution-section .section-title {
+            color: var(--white);
+        }
+
+        .solution-box {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 60px;
+        }
+
+        /* O: Offer */
+        .offer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .offer-card {
+            background: var(--white);
+            padding: 50px;
+            border: 1px solid transparent;
+            transition: all 0.4s;
+            text-align: left;
+        }
+
+        .offer-card:hover {
+            border-color: var(--accent-color);
+            background: var(--bg-color);
+        }
+
+        .offer-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--soft-gold);
+            padding-bottom: 10px;
+        }
+
+        .offer-card .tag {
+            background: var(--soft-gold);
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        /* N: Narrowing & A: Action */
+        .cta-section {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .price-tag {
+            margin: 50px 0;
+            background: var(--white);
+            display: inline-block;
+            padding: 60px 100px;
+            border: 1px solid var(--soft-gold);
+            position: relative;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 1.2rem;
+        }
+
+        .sale-price {
+            font-size: 3rem;
+            color: #b08d5c;
+            font-weight: 700;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 25px 80px;
+            text-decoration: none;
+            letter-spacing: 0.3em;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-btn:hover {
+            background-color: var(--deep-brown);
+            transform: scale(1.05);
+        }
+
+        footer {
+            padding: 80px 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            opacity: 0.6;
+            letter-spacing: 0.2em;
+        }
+
+        @media (max-width: 768px) {
+            .img-with-text, .offer-grid {
+                grid-template-columns: 1fr;
+            }
+            .intro-section {
+                padding: 40px 25px;
+            }
+            .price-tag {
+                padding: 40px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p>Eriina Piano Studio</p>
+            <h1>たったひとつのことで<br>すべてが調う</h1>
+        </div>
+    </header>
+
+    <section id="problem">
+        <div class="intro-section reveal">
+            <span class="section-label">INVITATION</span>
+            <h2 class="section-title">ピアノを愛するあなたへ</h2>
+            <div class="empathy-block">
+                <p>「もっと楽に、心地よく弾けたらいいのに…」</p>
+                <p>あんなに練習しているのに、思うような音が出ない。<br>すぐに指や腕が痛くなってしまう。<br>
+                いつの間にか、ピアノに向かうのが少しだけ「苦しい」と感じてはいませんか？</p>
+            </div>
+            <div class="empathy-block" style="border-top: 1px solid #f6f0ea; padding-top: 40px;">
+                <p>あなたはこれまで、本当によく頑張ってこられましたね。<br>
+                もっと指を独立させなきゃ、もっと筋力をつけなきゃ…と、一生懸命に自分を律してこられたはずです。</p>
+                <p>でもね、違うんです。あなたが悪いわけでも、才能がないわけでもないんですよ。</p>
+            </div>
+
+            <div class="img-with-text reveal">
+                <div class="img-box">
+                    <img src="C:/Users/kai63/.gemini/antigravity/brain/b4f69bc7-5f1f-4e67-a437-8f9a7e5cee0f/omame_hands_detail_1776329878845.png" alt="美しいタッチのイメージ">
+                </div>
+                <div class="text-box">
+                    <p>ただ少しだけ、身体の使い方や「意識の置きどころ」がすれ違ってしまっていただけなんです。</p>
+                    <p>頑張るのを、ちょっとだけお休みしてみませんか？</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="solution-section reveal">
+        <section>
+            <h2 class="section-title">たったひとつの解決策</h2>
+            <div class="solution-box">
+                <p style="font-size: 1.2rem; margin-bottom: 30px; letter-spacing: 0.1em;">指先のお豆さんに、<br>優しく意識を向けるだけ。</p>
+                <p>何か新しい技術を足すのではなく、いらない力をふっとほどいてあげる。<br>
+                それだけで魔法のように身体が緩み、温かな響きが溢れ出します。</p>
+                <p style="margin-top: 30px; font-size: 0.9rem; opacity: 0.8;">これまで言葉では伝えきれなかったその「感覚」を、<br>あなたの目と耳で体験していただくために、この動画セットを用意しました。</p>
+            </div>
+        </section>
+    </div>
+
+    <section id="offer">
+        <span class="section-label">CONTENTS</span>
+        <h2 class="section-title">お届けする価値</h2>
+        
+        <div class="offer-grid">
+            <div class="offer-card reveal">
+                <span class="tag">VIDEO LESSON</span>
+                <h3>お豆奏法レッスン動画セット</h3>
+                <p style="font-size: 0.9rem;">見るたびに「そうだったのか」が増えていく、タッチと響きの核心に触れるレッスン集です。考え方から実践までを噛み砕いてお伝えします。</p>
+            </div>
+            <div class="offer-card reveal">
+                <span class="tag">LEVERAGE MEMO</span>
+                <h3>お豆レッスンノート</h3>
+                <p style="font-size: 0.9rem;">要点と伝え方がひと目で分かるまとめノート。レッスン前にサッと眺めるだけで、指導の軸が整う「先生と生徒さんのカンニングペーパー」です。</p>
+            </div>
+            <div class="offer-card reveal">
+                <span class="tag">CHECK LIST</span>
+                <h3>タッチチェックリスト</h3>
+                <p style="font-size: 0.9rem;">「何となく」弾くのを卒業し、毎回の練習で見るべきポイントを言語化。譜面台に置いて、今日の練習を宝物にしてください。</p>
+            </div>
+            <div class="offer-card reveal">
+                <span class="tag">NAVIGATION</span>
+                <h3>お豆ナビ検索</h3>
+                <img src="C:/Users/kai63/.gemini/antigravity/brain/b4f69bc7-5f1f-4e67-a437-8f9a7e5cee0f/omame_stationery_set_1776329917540.png" alt="学習イメージ" style="width: 100%; margin: 20px 0; border-radius: 4px;">
+                <p style="font-size: 0.9rem;">「あの説明、どこだっけ？」をなくす検索機能。忙しい毎日の中で、探す時間を最小限にし、弾く時間を最大化します。</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="action">
+        <div class="cta-section reveal">
+            <h2 class="section-title">新しい響きの世界へ</h2>
+            <p>焦らなくて大丈夫ですよ。<br>あなたの心が「見てみたいな」と静かに動いたときが、ベストなタイミングです。</p>
+            
+            <div class="price-tag">
+                <p class="original-price">通常価格 29,800円</p>
+                <p class="sale-price">19,800 <span style="font-size: 1rem;">円（税込）</span></p>
+                <a href="#" class="cta-btn">動画コンテンツを受け取る</a>
+            </div>
+            
+            <p style="margin-top: 40px; font-size: 0.9rem; opacity: 0.7;">あなたがこれからも、ピアノと一緒に<br>もっと自由で心地よい時間を過ごしていけますように。</p>
+        </div>
+    </section>
+
+    <footer>
+        &copy; Eriina Piano Studio. All Rights Reserved.
+    </footer>
+
+    <script>
+        // Reveal animation on scroll
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            revealElements.forEach(el => {
+                const elementTop = el.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    el.classList.add('active');
+                }
+            });
+        };
+        window.addEventListener('scroll', revealOnScroll);
+        window.addEventListener('load', revealOnScroll);
+    </script>
+</body>
+</html>
