@@ -4,29 +4,41 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock } from "lucide-react";
 
-// ダミーデータ（カリキュラム）
+// カリキュラム構造（動画は後日追加予定）
 const curriculum = [
   {
     id: "chapter-1",
-    title: "第1章：お豆奏法の原点と核心",
-    videos: [
-      { id: "v1", title: "努力しても弾けなかった理由", completed: true },
-      { id: "v2-1", title: "ハンマーが当たる“一点”を感じるタッチ", completed: true },
-      { id: "v2-2", title: "特別な奏法ではない ― 原理に従うだけ", completed: false },
-    ],
+    title: "第1章：「ピアノの常識を、根底から覆します」 ― お豆奏法の原点と核心 ―",
+    videos: [],
   },
   {
     id: "chapter-2",
-    title: "第2章：音の鳴る仕組みと鍵盤の扱い",
-    videos: [
-      { id: "v3-1", title: "ピアノの音は「打った一瞬」で決まる", completed: false },
-      { id: "v3-2", title: "ピアノの音を決めるのは「打鍵スピード」だけ", completed: false },
-    ],
+    title: "第2章：音の鳴る仕組みと、鍵盤の「本当の扱い方」",
+    videos: [],
+  },
+  {
+    id: "chapter-3",
+    title: "第3章：身体の本当の使い方 〜“自然体”とは",
+    videos: [],
+  },
+  {
+    id: "chapter-4",
+    title: "第4章：「たて読み」で譜読みが超楽になる",
+    videos: [],
   },
   {
     id: "chapter-5",
-    title: "基礎講座・実践編",
-    locked: true,
+    title: "第5章：「ズレ」の最終調整",
+    videos: [],
+  },
+  {
+    id: "chapter-6",
+    title: "第6章：お豆奏法・実践テクニック集",
+    videos: [],
+  },
+  {
+    id: "chapter-final",
+    title: "総まとめ：「“頑張るピアノ”に戻らないために」 ーお豆奏法の総仕上げ ―",
     videos: [],
   },
 ];
