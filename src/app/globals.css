@@ -24,28 +24,3 @@ body {
   line-height: 2;
   -webkit-font-smoothing: antialiased;
 }
-
-@keyframes highlight {
-  0% { width: 0; }
-  100% { width: 100%; }
-}
-
-.animate-marker {
-  position: relative;
-  display: inline-block;
-  z-index: 1;
-}
-
-.animate-marker::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 4px;
-  height: 40%;
-  background-color: rgba(252, 211, 77, 0.4); /* amber-300 with opacity */
-  z-index: -1;
-  animation: highlight 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.3s;
-  width: 0;
-  border-radius: 2px;
-}
