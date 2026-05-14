@@ -2,8 +2,48 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock } from "lucide-react";
+import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
+
+// アコーディオン用のコンポーネント
+function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: any, defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="space-y-1">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2.5 font-bold text-sm flex items-start gap-2 text-neutral-800 hover:bg-neutral-100/80 rounded-lg transition-colors text-left"
+      >
+        <div className="mt-0.5 shrink-0 text-neutral-400">
+          {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </div>
+        <span className="leading-snug">{chapter.title}</span>
+      </button>
+      
+      {isOpen && (
+        <div className="pt-1 pb-3 space-y-1">
+          {chapter.videos.map((video: any) => (
+            <Link
+              key={video.id}
+              href={`/ja/lms/video/${video.id}`}
+              className="group flex items-start gap-3 pl-8 pr-3 py-2.5 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-900 rounded-lg transition-colors"
+            >
+              <div className="mt-0.5 shrink-0">
+                {video.completed ? (
+                  <CheckCircle2 size={16} className="text-amber-600" />
+                ) : (
+                  <PlayCircle size={16} className="text-stone-300 group-hover:text-amber-500" />
+                )}
+              </div>
+              <span className="leading-snug">{video.title}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,30 +89,9 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
           <div className="border-t border-neutral-200 pt-6">
             <h2 className="px-3 text-sm font-bold text-neutral-400 uppercase tracking-wider mb-3">カリキュラム一覧</h2>
             
-            <div className="space-y-4">
-              {curriculumData.map((chapter) => (
-                <div key={chapter.id} className="space-y-1">
-                  <div className={`px-3 py-2 font-bold text-sm flex items-center justify-between ${/* chapter.locked */ false ? 'text-neutral-400' : 'text-neutral-800'}`}>
-                    {chapter.title}
-                    {/* chapter.locked && <Lock size={14} /> */}
-                  </div>
-                  {/* !chapter.locked */ true && chapter.videos.map((video) => (
-                    <Link
-                      key={video.id}
-                      href={`/ja/lms/video/${video.id}`}
-                      className="group flex items-start gap-3 pl-4 pr-3 py-2 text-sm text-stone-600 hover:bg-amber-50 hover:text-amber-900 rounded-lg transition-colors"
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {video.completed ? (
-                          <CheckCircle2 size={16} className="text-amber-600" />
-                        ) : (
-                          <PlayCircle size={16} className="text-stone-300 group-hover:text-amber-500" />
-                        )}
-                      </div>
-                      <span className="leading-snug">{video.title}</span>
-                    </Link>
-                  ))}
-                </div>
+            <div className="space-y-2">
+              {curriculumData.map((chapter, index) => (
+                <ChapterAccordion key={chapter.id} chapter={chapter} defaultOpen={index === 0} />
               ))}
             </div>
           </div>
