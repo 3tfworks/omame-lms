@@ -5,10 +5,11 @@ import Link from "next/link";
 import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2 } from "lucide-react";
 import { getVideoById, getChapterByVideoId } from "@/lib/lmsData";
 
-export default function VideoPlayerPage({ params }: { params: { id: string } }) {
-  // paramsは非同期かもしれないのでReact.use()を使うのが今風だが、
-  // とりあえず一旦そのまま使うか、型エラー無視の設定が入っているのでそのまま進む
-  const videoId = params.id;
+export default function VideoPlayerPage({ params }: { params: Promise<{ id: string }> }) {
+  // Next.js 15では params がPromiseになるため React.use() でアンラップします
+  const resolvedParams = React.use(params);
+  const videoId = resolvedParams.id;
+  
   const videoData = getVideoById(videoId);
   const chapterData = getChapterByVideoId(videoId);
 
