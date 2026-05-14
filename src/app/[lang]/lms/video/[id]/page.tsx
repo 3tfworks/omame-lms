@@ -110,24 +110,64 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           {/* タブの中身：レバレッジメモ */}
           {activeTab === "memo" && (
             <div className="prose prose-stone max-w-none">
-              <h3 className="font-bold text-stone-800 mb-6">えりな先生のレバレッジメモ</h3>
-              <div className="bg-white p-6 rounded-xl border border-stone-200 space-y-4 text-stone-700">
-                {videoData.memoUrl ? (
-                  <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                    <p className="text-stone-600">この動画の学習ポイントや補足資料がまとめられています。</p>
+              <h3 className="font-bold text-stone-800 mb-6 flex items-center gap-2">
+                <FileText className="text-amber-700" size={24} />
+                えりな先生のレバレッジメモ
+              </h3>
+              
+              <div className="bg-white p-6 lg:p-10 rounded-xl border border-stone-200 shadow-sm">
+                {videoData.memoContent ? (
+                  <div className="space-y-6 text-stone-700 leading-relaxed mb-12">
+                    {videoData.memoContent.split('\n').map((line, idx) => {
+                      const text = line.trim();
+                      if (!text) return <div key={idx} className="h-4"></div>; // 空行
+                      
+                      // 見出し（全体要約、タイムライン、など短い強調行）
+                      if ((text.length < 30 && !text.includes('。') && !text.includes('・')) || text.startsWith('【') || text.endsWith('】')) {
+                        return <h4 key={idx} className="text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 mt-8 mb-4">{text}</h4>;
+                      }
+                      
+                      // タイムライン表記（例: 00:00〜00:40 | イントロ）
+                      if (text.match(/^[0-9]{2}:[0-9]{2}/)) {
+                        const parts = text.split('|');
+                        return (
+                          <div key={idx} className="bg-[#faf9f6] p-4 rounded-lg border border-stone-200 my-4">
+                            <div className="font-bold text-amber-800 mb-1">{parts[0]}</div>
+                            <div className="font-bold text-stone-800">{parts.slice(1).join('|')}</div>
+                          </div>
+                        );
+                      }
+                      
+                      // 箇条書き
+                      if (text.startsWith('・') || text.startsWith('-') || text.startsWith('●')) {
+                        return <li key={idx} className="ml-4 list-disc marker:text-amber-600">{text.replace(/^[・\-●]\s*/, '')}</li>;
+                      }
+                      
+                      // 通常テキスト
+                      return <p key={idx} className="mb-2">{text}</p>;
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-stone-400 mb-8">
+                    この動画にはレバレッジメモのテキストはありません。
+                  </div>
+                )}
+
+                {/* 元のドキュメントへのリンク（ボタン） */}
+                {videoData.memoUrl && (
+                  <div className="mt-8 pt-8 border-t border-stone-200 flex flex-col items-center justify-center space-y-4">
+                    <p className="text-sm text-stone-500">
+                      印刷用や、より詳細なフォーマットで確認したい場合は以下の原本をご覧ください。
+                    </p>
                     <a 
                       href={videoData.memoUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 px-8 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-8 rounded-full transition-all border border-stone-300"
                     >
                       <FileText size={20} />
-                      レバレッジメモを開く（Googleドキュメント）
+                      元のGoogleドキュメントを開く
                     </a>
-                  </div>
-                ) : (
-                  <div className="text-center p-8 text-stone-400">
-                    この動画にはレバレッジメモはありません。
                   </div>
                 )}
               </div>
