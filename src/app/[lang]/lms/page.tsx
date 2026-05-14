@@ -39,10 +39,10 @@ export default function LMSDashboard() {
             <span className="font-bold tracking-widest text-sm">TODAY&apos;S MESSAGE</span>
           </div>
           <h2 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight text-omame-text">
-            甲斐さん、第2章まで<br className="lg:hidden" />達成おめでとう～～！！
+            ようこそ！<br className="lg:hidden" />お豆奏法基礎講座へ
           </h2>
           <p className="text-omame-text/80 max-w-2xl leading-relaxed">
-            「重力に従う」感覚が少しずつ掴めてきた頃だね！焦らず、自分の指先が鍵盤の底とどう対話しているか、その感覚だけを一緒に大切にしていこうね！
+            ここでは、ピアノを弾くための「本当の身体の使い方」と「音の鳴る仕組み」を基礎から順を追って学んでいきます。焦らず、ご自身のペースで一つ一つの感覚を大切にしながら進めていきましょう！
           </p>
           <div className="mt-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
