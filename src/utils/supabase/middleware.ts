@@ -45,5 +45,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
   }
 
+  // ログイン済みユーザーがトップページ(LP)にアクセスした場合もLMSにリダイレクト（フェイルセーフ）
+  const isRootOrLangRoot = request.nextUrl.pathname === "/" || /^\/[a-z]{2}$/.test(request.nextUrl.pathname);
+  if (isRootOrLangRoot && user) {
+    const lang = request.nextUrl.pathname.split('/')[1] || 'ja';
+    return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+  }
+
   return supabaseResponse;
 }
