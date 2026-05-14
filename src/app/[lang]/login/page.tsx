@@ -21,10 +21,15 @@ export default function LoginPage() {
     
     // 現在のホストURLを取得（Vercel等の本番環境も考慮）
     const getUrl = () => {
+      // 本番ドメインが確定している場合は、明示的に指定することでSupabaseのRedirectエラーを防ぐ
+      if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_VERCEL_URL?.includes('vercel.app')) {
+        return "https://omamepiano.com/api/auth/callback?next=/ja/lms";
+      }
+      
       let url =
         process?.env?.NEXT_PUBLIC_SITE_URL ??
         process?.env?.NEXT_PUBLIC_VERCEL_URL ??
-        "http://localhost:3001";
+        "http://localhost:3000"; // 念のため3000に変更
       url = url.includes("http") ? url : `https://${url}`;
       return `${url}/api/auth/callback?next=/ja/lms`;
     };
