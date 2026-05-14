@@ -89,7 +89,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     if (!videoData.memoContent) return null;
 
     const parsedElements = [];
-    let isActionList = false;
+    let hasActionListStarted = false;
     const lines = videoData.memoContent.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
@@ -100,7 +100,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       }
       
       if (line.includes('行動リスト')) {
-        isActionList = true;
+        hasActionListStarted = true;
         parsedElements.push(
           <div key={i} className="flex items-center gap-2 mt-8 mb-4 border-b border-stone-200 pb-2">
             <span className="text-xl">🎯</span>
@@ -110,16 +110,23 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         continue;
       }
       
-      if ((line.length < 30 && !line.includes('。') && !line.includes('・') && !line.startsWith('*')) || line.startsWith('【') || line.endsWith('】')) {
-        isActionList = false; // 見出しが来たら行動リスト終了
-        parsedElements.push(<h4 key={i} className="text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 mt-8 mb-4">{line.replace(/^[【]/, '').replace(/[】]$/, '')}</h4>);
+      // 区切り線（---など）は無視
+      if (line.match(/^[-_]{3,}$/)) {
+        parsedElements.push(<hr key={i} className="my-6 border-stone-200 border-dashed" />);
         continue;
       }
-      
-      // 行動リスト内の箇条書き -> インタラクティブチェックボックス
-      if (isActionList && (line.startsWith('*') || line.startsWith('・') || line.startsWith('-') || line.startsWith('●'))) {
+
+      // 箇条書きの判定
+      if (line.startsWith('*') || line.startsWith('・') || line.startsWith('-') || line.startsWith('●')) {
         const text = line.replace(/^[\*\-・●]\s*/, '');
-        parsedElements.push(<ActionCheckbox key={i} text={text} onCheck={() => handleTaskCheck(text)} />);
+        
+        // 行動リスト以降の箇条書きはすべてチェックボックスにする
+        if (hasActionListStarted || text.includes('みる') || text.includes('する')) {
+          parsedElements.push(<ActionCheckbox key={i} text={text} onCheck={() => handleTaskCheck(text)} />);
+        } else {
+          // それ以前のものは普通のリスト
+          parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600 my-2">{text}</li>);
+        }
         continue;
       }
 
@@ -134,10 +141,10 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         );
         continue;
       }
-      
-      // 通常の箇条書き
-      if (!isActionList && (line.startsWith('*') || line.startsWith('・') || line.startsWith('-') || line.startsWith('●'))) {
-        parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600">{line.replace(/^[\*\-・●]\s*/, '')}</li>);
+
+      // 見出し（全体要約、まとめポイントなど短い強調行）
+      if ((line.length < 30 && !line.includes('。')) || line.startsWith('【') || line.endsWith('】')) {
+        parsedElements.push(<h4 key={i} className="text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 mt-8 mb-4">{line.replace(/^[【]/, '').replace(/[】]$/, '')}</h4>);
         continue;
       }
       
