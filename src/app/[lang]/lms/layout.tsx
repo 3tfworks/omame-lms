@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight } from "lucide-react";
+import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
 
 // アコーディオン用のコンポーネント
@@ -75,6 +75,10 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <Link href="/ja/lms" className="flex items-center gap-3 px-3 py-2.5 bg-amber-100/50 text-amber-900 rounded-lg font-medium transition-colors">
               <Home size={20} />
               ホーム画面
+            </Link>
+            <Link href="/ja/lms/guide" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
+              <Sparkles size={20} />
+              はじめての方へ
             </Link>
             <Link href="/ja/lms/search" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <Search size={20} />
