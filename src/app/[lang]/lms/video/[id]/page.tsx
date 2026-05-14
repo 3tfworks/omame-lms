@@ -124,23 +124,39 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                       
                       // 見出し（全体要約、タイムライン、など短い強調行）
                       if ((text.length < 30 && !text.includes('。') && !text.includes('・')) || text.startsWith('【') || text.endsWith('】')) {
-                        return <h4 key={idx} className="text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 mt-8 mb-4">{text}</h4>;
+                        const cleanText = text.replace(/^[【]/, '').replace(/[】]$/, '');
+                        return (
+                          <h4 key={idx} className="text-xl font-bold text-stone-800 pb-2 mt-10 mb-6">
+                            <span className="animate-marker">{cleanText}</span>
+                          </h4>
+                        );
                       }
                       
                       // タイムライン表記（例: 00:00〜00:40 | イントロ）
                       if (text.match(/^[0-9]{2}:[0-9]{2}/)) {
                         const parts = text.split('|');
                         return (
-                          <div key={idx} className="bg-[#faf9f6] p-4 rounded-lg border border-stone-200 my-4">
-                            <div className="font-bold text-amber-800 mb-1">{parts[0]}</div>
-                            <div className="font-bold text-stone-800">{parts.slice(1).join('|')}</div>
+                          <div key={idx} className="relative pl-6 py-3 my-2 group">
+                            {/* タイムラインの縦線とドット */}
+                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-200 group-hover:bg-amber-400 transition-colors"></div>
+                            <div className="absolute left-[-4.5px] top-5 w-3 h-3 rounded-full bg-white border-2 border-amber-500 shadow-sm group-hover:scale-125 transition-transform"></div>
+                            
+                            <div className="bg-gradient-to-r from-amber-50/50 to-transparent p-4 rounded-r-xl border-y border-r border-amber-100/50">
+                              <div className="font-mono font-bold text-amber-700 tracking-wider mb-1 text-sm bg-amber-100/50 inline-block px-2 py-0.5 rounded">{parts[0].trim()}</div>
+                              <div className="font-bold text-stone-800 text-lg">{parts.slice(1).join('|').trim()}</div>
+                            </div>
                           </div>
                         );
                       }
                       
                       // 箇条書き
                       if (text.startsWith('・') || text.startsWith('-') || text.startsWith('●')) {
-                        return <li key={idx} className="ml-4 list-disc marker:text-amber-600">{text.replace(/^[・\-●]\s*/, '')}</li>;
+                        return (
+                          <div key={idx} className="flex items-start gap-3 my-3 ml-2">
+                            <CheckCircle2 className="text-amber-600 mt-1 shrink-0" size={18} />
+                            <span className="leading-relaxed">{text.replace(/^[・\-●]\s*/, '')}</span>
+                          </div>
+                        );
                       }
                       
                       // 通常テキスト
