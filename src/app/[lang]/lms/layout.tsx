@@ -3,45 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock } from "lucide-react";
-
-// カリキュラム構造（動画は後日追加予定）
-const curriculum = [
-  {
-    id: "chapter-1",
-    title: "第1章：「ピアノの常識を、根底から覆します」 ― お豆奏法の原点と核心 ―",
-    videos: [],
-  },
-  {
-    id: "chapter-2",
-    title: "第2章：音の鳴る仕組みと、鍵盤の「本当の扱い方」",
-    videos: [],
-  },
-  {
-    id: "chapter-3",
-    title: "第3章：身体の本当の使い方 〜“自然体”とは",
-    videos: [],
-  },
-  {
-    id: "chapter-4",
-    title: "第4章：「たて読み」で譜読みが超楽になる",
-    videos: [],
-  },
-  {
-    id: "chapter-5",
-    title: "第5章：「ズレ」の最終調整",
-    videos: [],
-  },
-  {
-    id: "chapter-6",
-    title: "第6章：お豆奏法・実践テクニック集",
-    videos: [],
-  },
-  {
-    id: "chapter-final",
-    title: "総まとめ：「“頑張るピアノ”に戻らないために」 ーお豆奏法の総仕上げ ―",
-    videos: [],
-  },
-];
+import { curriculumData } from "@/lib/lmsData";
 
 export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -88,13 +50,13 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <h2 className="px-3 text-sm font-bold text-neutral-400 uppercase tracking-wider mb-3">カリキュラム一覧</h2>
             
             <div className="space-y-4">
-              {curriculum.map((chapter) => (
+              {curriculumData.map((chapter) => (
                 <div key={chapter.id} className="space-y-1">
-                  <div className={`px-3 py-2 font-bold text-sm flex items-center justify-between ${chapter.locked ? 'text-neutral-400' : 'text-neutral-800'}`}>
+                  <div className={`px-3 py-2 font-bold text-sm flex items-center justify-between ${/* chapter.locked */ false ? 'text-neutral-400' : 'text-neutral-800'}`}>
                     {chapter.title}
-                    {chapter.locked && <Lock size={14} />}
+                    {/* chapter.locked && <Lock size={14} /> */}
                   </div>
-                  {!chapter.locked && chapter.videos.map((video) => (
+                  {/* !chapter.locked */ true && chapter.videos.map((video) => (
                     <Link
                       key={video.id}
                       href={`/ja/lms/video/${video.id}`}
@@ -110,11 +72,6 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
                       <span className="leading-snug">{video.title}</span>
                     </Link>
                   ))}
-                  {chapter.locked && (
-                    <div className="pl-4 pr-3 py-2 text-xs text-neutral-400 bg-neutral-50 rounded-lg mx-2 border border-dashed border-neutral-200">
-                      この先は基礎講座（実践編）にてえりな先生の直接指導とともに公開されます。
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

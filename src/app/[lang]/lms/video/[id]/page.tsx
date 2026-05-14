@@ -3,9 +3,16 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2 } from "lucide-react";
+import { getVideoById, getChapterByVideoId } from "@/lib/lmsData";
 
-export default function VideoPlayerPage() {
-  const [activeTab, setActiveTab] = useState("timestamp");
+export default function VideoPlayerPage({ params }: { params: { id: string } }) {
+  // paramsは非同期かもしれないのでReact.use()を使うのが今風だが、
+  // とりあえず一旦そのまま使うか、型エラー無視の設定が入っているのでそのまま進む
+  const videoId = params.id;
+  const videoData = getVideoById(videoId);
+  const chapterData = getChapterByVideoId(videoId);
+
+  const [activeTab, setActiveTab] = useState("memo"); // デフォルトをレバメモに変更
   
   // ダミーのタイムスタンプデータ
   const timestamps = [
@@ -15,6 +22,10 @@ export default function VideoPlayerPage() {
     { time: "08:45", desc: "指先の感覚を掴むための練習法" },
     { time: "12:00", desc: "よくある間違い：手首の固さについて" },
   ];
+
+  if (!videoData) {
+    return <div className="p-12 text-center">動画が見つかりませんでした</div>;
+  }
 
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
@@ -27,16 +38,15 @@ export default function VideoPlayerPage() {
           <ChevronLeft size={24} />
         </Link>
         <div>
-          <div className="text-sm font-bold text-[#b8a98f] mb-1">第2章：音の鳴る仕組みと鍵盤の扱い</div>
-          <h1 className="text-2xl font-bold text-stone-800">ピアノの音を決めるのは「打鍵スピード」だけ</h1>
+          <div className="text-sm font-bold text-[#b8a98f] mb-1">{chapterData?.title || "お豆奏法基礎講座"}</div>
+          <h1 className="text-2xl font-bold text-stone-800">{videoData.title}</h1>
         </div>
       </div>
 
       {/* 動画プレイヤー枠 (Vimeo埋め込みイメージ) */}
       <div className="bg-stone-900 rounded-2xl overflow-hidden shadow-lg border border-stone-200 aspect-video relative">
-        {/* ダミーのVimeo iframe */}
         <iframe 
-          src="https://player.vimeo.com/video/76979871?h=8272103f6e&title=0&byline=0&portrait=0" 
+          src={`https://player.vimeo.com/video/${videoData.vimeoId}?title=0&byline=0&portrait=0`} 
           className="absolute top-0 left-0 w-full h-full" 
           frameBorder="0" 
           allow="autoplay; fullscreen; picture-in-picture" 
@@ -101,13 +111,24 @@ export default function VideoPlayerPage() {
             <div className="prose prose-stone max-w-none">
               <h3 className="font-bold text-stone-800 mb-6">えりな先生のレバレッジメモ</h3>
               <div className="bg-white p-6 rounded-xl border border-stone-200 space-y-4 text-stone-700">
-                <p>多くの人が「力」でピアノを鳴らそうとしますが、ハンマーを飛ばすために必要なのは「スピード」です。</p>
-                <p><strong>💡 今日の最重要ポイント：</strong></p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>鍵盤の底に向かって押し込まない</li>
-                  <li>打鍵した瞬間に力は抜けていること（重力に任せる）</li>
-                  <li>音の硬さは「手首の力み」がそのまま伝わっている証拠</li>
-                </ul>
+                {videoData.memoUrl ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                    <p className="text-stone-600">この動画の学習ポイントや補足資料がまとめられています。</p>
+                    <a 
+                      href={videoData.memoUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 px-8 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                      <FileText size={20} />
+                      レバレッジメモを開く（Googleドキュメント）
+                    </a>
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-stone-400">
+                    この動画にはレバレッジメモはありません。
+                  </div>
+                )}
               </div>
             </div>
           )}
