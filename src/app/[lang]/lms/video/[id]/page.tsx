@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star } from "lucide-react";
-import { getVideoById, getChapterByVideoId, curriculumData } from "@/lib/lmsData";
+import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star } from "lucide-react";
+import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
 import Player from '@vimeo/player';
@@ -102,6 +102,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   
   const videoData = getVideoById(videoId);
   const chapterData = getChapterByVideoId(videoId);
+  const { prev, next, currentIndexInChapter, totalInChapter } = getAdjacentVideos(videoId);
 
   const [activeTab, setActiveTab] = useState("memo");
   const [noteText, setNoteText] = useState("");
@@ -255,6 +256,35 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           <CheckCircle2 size={20} />
           この動画を「完了」にする
         </button>
+      </div>
+
+      {/* ① コンパクト版：前後ナビゲーション（プレイヤー直下） */}
+      <div className="flex justify-between items-center mt-2">
+        {prev ? (
+          <Link
+            href={`/ja/lms/video/${prev.video.id}`}
+            className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-800 transition-colors group py-2 pr-4"
+          >
+            <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            <span className="truncate max-w-[200px]">前の動画</span>
+          </Link>
+        ) : (
+          <div />
+        )}
+        <span className="text-xs text-stone-400 font-medium">
+          {currentIndexInChapter + 1} / {totalInChapter} 本目
+        </span>
+        {next ? (
+          <Link
+            href={`/ja/lms/video/${next.video.id}`}
+            className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-800 transition-colors group py-2 pl-4"
+          >
+            <span className="truncate max-w-[200px]">次の動画</span>
+            <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        ) : (
+          <div />
+        )}
       </div>
 
       {/* 付箋追加フォーム（インライン展開） */}
@@ -474,6 +504,78 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                 </button>
               </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* ② リッチ版：前後ナビゲーション（ページ最下部） */}
+      <div className="mt-10">
+        {/* 章クリア表示（次の動画が別の章の場合） */}
+        {next?.isNewChapter && (
+          <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-2xl p-6 lg:p-8 border border-amber-200 text-center relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-orange-200/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10">
+              <div className="text-4xl mb-3">🎉</div>
+              <h3 className="text-xl font-bold text-stone-800 mb-2">
+                {chapterData?.title?.split('：')[0] || '章'} クリア！
+              </h3>
+              <p className="text-stone-500 text-sm mb-4">
+                おつかれさまでした！次は新しい章に進みます。
+              </p>
+              <div className="bg-white/80 rounded-xl p-4 border border-amber-200/50 inline-block">
+                <div className="text-xs font-bold text-amber-700 mb-1">📖 次の章</div>
+                <div className="font-bold text-stone-800">{next.chapter.title}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* 前の動画カード */}
+          {prev ? (
+            <Link
+              href={`/ja/lms/video/${prev.video.id}`}
+              className="group bg-white rounded-xl p-5 border border-stone-200 hover:border-[#b8a98f] hover:shadow-md transition-all flex items-start gap-4"
+            >
+              <div className="w-10 h-10 rounded-full bg-stone-100 group-hover:bg-amber-100 flex items-center justify-center shrink-0 transition-colors">
+                <ChevronLeft size={20} className="text-stone-400 group-hover:text-amber-700 transition-colors" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-stone-400 mb-1">前の動画</div>
+                {prev.isNewChapter && (
+                  <div className="text-xs text-amber-700 font-bold mb-1">{prev.chapter.title.split('：')[0]}</div>
+                )}
+                <div className="font-bold text-stone-700 group-hover:text-stone-900 truncate transition-colors">
+                  {prev.video.title}
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <div />
+          )}
+
+          {/* 次の動画カード */}
+          {next ? (
+            <Link
+              href={`/ja/lms/video/${next.video.id}`}
+              className="group bg-white rounded-xl p-5 border border-stone-200 hover:border-[#b8a98f] hover:shadow-md transition-all flex items-start gap-4 sm:flex-row-reverse sm:text-right"
+            >
+              <div className="w-10 h-10 rounded-full bg-stone-100 group-hover:bg-amber-100 flex items-center justify-center shrink-0 transition-colors">
+                <ChevronRight size={20} className="text-stone-400 group-hover:text-amber-700 transition-colors" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-stone-400 mb-1">次の動画</div>
+                {next.isNewChapter && (
+                  <div className="text-xs text-amber-700 font-bold mb-1">{next.chapter.title.split('：')[0]}</div>
+                )}
+                <div className="font-bold text-stone-700 group-hover:text-stone-900 truncate transition-colors">
+                  {next.video.title}
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <div />
           )}
         </div>
       </div>

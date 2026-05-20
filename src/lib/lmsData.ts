@@ -498,3 +498,63 @@ export function getChapterByVideoId(videoId: string): ChapterData | undefined {
   }
   return undefined;
 }
+
+// 前後の動画の情報を取得するヘルパー（章をまたぐ判定つき）
+export interface AdjacentVideoInfo {
+  video: VideoData;
+  chapter: ChapterData;
+  isNewChapter: boolean; // 章が変わるかどうか
+}
+
+export function getAdjacentVideos(videoId: string): {
+  prev: AdjacentVideoInfo | null;
+  next: AdjacentVideoInfo | null;
+  currentChapter: ChapterData | null;
+  currentIndexInChapter: number;
+  totalInChapter: number;
+} {
+  // 全動画をフラットリスト化（章情報も保持）
+  const flatList: { video: VideoData; chapter: ChapterData }[] = [];
+  for (const chapter of curriculumData) {
+    for (const video of chapter.videos) {
+      flatList.push({ video, chapter });
+    }
+  }
+
+  const currentIndex = flatList.findIndex(item => item.video.id === videoId);
+  if (currentIndex === -1) {
+    return { prev: null, next: null, currentChapter: null, currentIndexInChapter: 0, totalInChapter: 0 };
+  }
+
+  const current = flatList[currentIndex];
+  const currentChapter = current.chapter;
+  const currentIndexInChapter = currentChapter.videos.findIndex(v => v.id === videoId);
+
+  let prev: AdjacentVideoInfo | null = null;
+  if (currentIndex > 0) {
+    const p = flatList[currentIndex - 1];
+    prev = {
+      video: p.video,
+      chapter: p.chapter,
+      isNewChapter: p.chapter.id !== currentChapter.id,
+    };
+  }
+
+  let next: AdjacentVideoInfo | null = null;
+  if (currentIndex < flatList.length - 1) {
+    const n = flatList[currentIndex + 1];
+    next = {
+      video: n.video,
+      chapter: n.chapter,
+      isNewChapter: n.chapter.id !== currentChapter.id,
+    };
+  }
+
+  return {
+    prev,
+    next,
+    currentChapter,
+    currentIndexInChapter,
+    totalInChapter: currentChapter.videos.length,
+  };
+}
