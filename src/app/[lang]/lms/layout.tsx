@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles, Handshake } from "lucide-react";
+import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles, Handshake, Star } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
 
 // アコーディオン用のコンポーネント
@@ -100,6 +100,10 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <Link href="/ja/lms/search" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <Search size={20} />
               お悩みから探す（ナビ検索）
+            </Link>
+            <Link href="/ja/lms/bookmarks-guide" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
+              <Star size={20} className="text-amber-500" />
+              みんなの付箋とは？
             </Link>
             <Link href="/ja/lms/notes" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <BookOpen size={20} />
