@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お豆奏法 実践動画コンテンツ - たったひとつのことですべてが調う</title>
+    <meta name="description" content="お豆奏法の考え方から実践までを映像でお届けする動画コンテンツ。頑張らない、力まない、本来の響きを取り戻すためのレッスン集。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;300;400;500;700&family=Outfit:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           デザインシステム
+        ======================================== */
+        :root {
+            --bg-cream: #faf8f5;
+            --bg-warm: #f5f0ea;
+            --primary: #8c735a;
+            --primary-light: #a89279;
+            --accent-gold: #c9a96e;
+            --accent-rose: #d4a5a0;
+            --text-main: #3d3630;
+            --text-sub: #6b5e52;
+            --text-light: #9a8d80;
+            --white: #ffffff;
+            --soft-gold: #e8dcc8;
+            --deep-brown: #4a3f36;
+            --border-light: rgba(140, 115, 90, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Serif JP', 'Georgia', serif;
+            background-color: var(--bg-cream);
+            color: var(--text-main);
+            line-height: 2.2;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ========================================
+           アニメーション
+        ======================================== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInSlow {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes expandLine {
+            from { width: 0; }
+            to { width: 60px; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        transform 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.2s; }
+        .reveal-delay-2 { transition-delay: 0.4s; }
+        .reveal-delay-3 { transition-delay: 0.6s; }
+        .reveal-delay-4 { transition-delay: 0.8s; }
+
+        /* ========================================
+           ヒーローセクション
+        ======================================== */
+        .hero {
+            height: 100vh;
+            min-height: 700px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url('images/hero.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.55;
+            transform: scale(1.05);
+            animation: heroZoom 25s ease-in-out infinite alternate;
+        }
+
+        @keyframes heroZoom {
+            from { transform: scale(1.05); }
+            to { transform: scale(1.0); }
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(
+                180deg,
+                rgba(250, 248, 245, 0.3) 0%,
+                rgba(250, 248, 245, 0.6) 40%,
+                rgba(250, 248, 245, 0.95) 100%
+            );
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 800px;
+            padding: 40px 20px;
+        }
+
+        .hero-studio {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            letter-spacing: 0.5em;
+            color: var(--text-light);
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInSlow 2s 0.3s forwards;
+        }
+
+        .hero-title {
+            font-size: clamp(1.8rem, 5vw, 3.2rem);
+            font-weight: 300;
+            letter-spacing: 0.25em;
+            color: var(--deep-brown);
+            line-height: 1.8;
+            margin-bottom: 50px;
+            opacity: 0;
+            animation: fadeInUp 2s 0.8s forwards;
+        }
+
+        .hero-sub {
+            font-size: 0.95rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            color: var(--text-sub);
+            opacity: 0;
+            animation: fadeInSlow 2s 1.5s forwards;
+        }
+
+        .hero-line {
+            display: inline-block;
+            width: 0;
+            height: 1px;
+            background: var(--accent-gold);
+            margin: 30px auto;
+            animation: expandLine 2s 1.8s forwards;
+        }
+
+        .hero-scroll {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 0;
+            animation: fadeInSlow 2s 2.5s forwards, gentleFloat 3s 3s ease-in-out infinite;
+        }
+
+        .hero-scroll span {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .hero-scroll::after {
+            content: '';
+            display: block;
+            width: 1px;
+            height: 30px;
+            background: var(--accent-gold);
+            margin: 0 auto;
+        }
+
+        /* ========================================
+           セクション共通
+        ======================================== */
+        .section {
+            padding: 120px 20px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 300;
+            letter-spacing: 0.4em;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            margin-bottom: 50px;
+            color: var(--deep-brown);
+            line-height: 1.6;
+        }
+
+        .section-divider {
+            width: 40px;
+            height: 1px;
+            background: var(--accent-gold);
+            margin: 0 auto 60px;
+        }
+
+        /* ========================================
+           P: Problem（共感セクション）
+        ======================================== */
+        .problem-card {
+            background: var(--white);
+            border-radius: 2px;
+            padding: 80px 70px;
+            box-shadow: 0 30px 80px rgba(74, 63, 54, 0.04);
+            margin-top: -100px;
+            position: relative;
+            z-index: 20;
+            border: 1px solid var(--border-light);
+        }
+
+        .problem-text {
+            text-align: left;
+            font-size: 1.05rem;
+            font-weight: 300;
+            color: var(--text-sub);
+        }
+
+        .problem-text p {
+            margin-bottom: 28px;
+        }
+
+        .problem-quote {
+            font-size: 1.15rem;
+            color: var(--text-main);
+            padding-left: 20px;
+            border-left: 2px solid var(--accent-gold);
+            margin: 35px 0;
+            font-style: italic;
+        }
+
+        .problem-separator {
+            border: none;
+            border-top: 1px solid var(--border-light);
+            margin: 50px 0;
+        }
+
+        /* 画像とテキストの横並び */
+        .split-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin-top: 70px;
+        }
+
+        .split-image {
+            position: relative;
+        }
+
+        .split-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 2px;
+            display: block;
+        }
+
+        .split-image::after {
+            content: '';
+            position: absolute;
+            top: 15px; left: 15px;
+            width: 100%; height: 100%;
+            border: 1px solid var(--accent-gold);
+            border-radius: 2px;
+            z-index: -1;
+        }
+
+        .split-text {
+            font-size: 1.05rem;
+            font-weight: 300;
+            color: var(--text-sub);
+        }
+
+        .split-text p {
+            margin-bottom: 25px;
+        }
+
+        /* ========================================
+           S: Solution（解決策セクション）
+        ======================================== */
+        .solution-wrapper {
+            background: var(--deep-brown);
+            color: var(--white);
+            padding: 120px 20px;
+        }
+
+        .solution-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .solution-wrapper .section-title {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .solution-box {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 70px 60px;
+            position: relative;
+        }
+
+        .solution-box::before,
+        .solution-box::after {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            border-color: var(--accent-gold);
+        }
+
+        .solution-box::before {
+            top: -1px; left: -1px;
+            border-top: 2px solid var(--accent-gold);
+            border-left: 2px solid var(--accent-gold);
+        }
+
+        .solution-box::after {
+            bottom: -1px; right: -1px;
+            border-bottom: 2px solid var(--accent-gold);
+            border-right: 2px solid var(--accent-gold);
+        }
+
+        .solution-highlight {
+            font-size: 1.3rem;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .solution-body {
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 2.2;
+        }
+
+        .solution-note {
+            margin-top: 35px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ========================================
+           O: Offer（提供内容セクション）
+        ======================================== */
+        .offer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .offer-card {
+            background: var(--white);
+            padding: 50px 40px;
+            border: 1px solid var(--border-light);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .offer-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 0;
+            background: var(--accent-gold);
+            transition: height 0.5s ease;
+        }
+
+        .offer-card:hover::before {
+            height: 100%;
+        }
+
+        .offer-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(74, 63, 54, 0.06);
+        }
+
+        .offer-tag {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 300;
+            letter-spacing: 0.25em;
+            color: var(--accent-gold);
+            padding: 5px 14px;
+            border: 1px solid var(--soft-gold);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .offer-card h3 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--deep-brown);
+            margin-bottom: 18px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .offer-card p {
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: var(--text-sub);
+            line-height: 2;
+        }
+
+        .offer-card img {
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 2px;
+        }
+
+        /* 「お届けする価値」の特別なカード（4番目） */
+        .offer-card.wide {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* ========================================
+           N: Narrowing（絞り込みセクション）
+        ======================================== */
+        .narrowing-wrapper {
+            background: var(--bg-warm);
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .narrowing-inner {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .narrowing-inner p {
+            font-weight: 300;
+            color: var(--text-sub);
+            margin-bottom: 25px;
+        }
+
+        .narrowing-inner .emphasis {
+            font-weight: 400;
+            color: var(--text-main);
+        }
+
+        /* ========================================
+           A: Action（価格・CTAセクション）
+        ======================================== */
+        .cta-wrapper {
+            text-align: center;
+            padding: 120px 20px;
+        }
+
+        .price-card {
+            display: inline-block;
+            background: var(--white);
+            padding: 70px 100px;
+            border: 1px solid var(--soft-gold);
+            position: relative;
+            margin: 50px 0 30px;
+        }
+
+        .price-card::before {
+            content: 'SPECIAL PRICE';
+            position: absolute;
+            top: -12px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.4em;
+            color: var(--accent-gold);
+            background: var(--bg-cream);
+            padding: 0 20px;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            font-weight: 300;
+            margin-bottom: 5px;
+        }
+
+        .sale-price {
+            font-size: clamp(2.2rem, 5vw, 3rem);
+            color: var(--accent-gold);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .sale-price .yen {
+            font-size: 1rem;
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: var(--deep-brown);
+            color: var(--white);
+            padding: 22px 70px;
+            text-decoration: none;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.25em;
+            margin-top: 40px;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(201, 169, 110, 0.15),
+                transparent
+            );
+            transition: left 0.6s;
+        }
+
+        .cta-btn:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 63, 54, 0.15);
+        }
+
+        .cta-btn:hover::after {
+            left: 100%;
+        }
+
+        .cta-closing {
+            margin-top: 50px;
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: var(--text-light);
+            line-height: 2.5;
+        }
+
+        /* ========================================
+           フッター
+        ======================================== */
+        footer {
+            padding: 60px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border-light);
+        }
+
+        footer p {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: var(--text-light);
+        }
+
+        /* ========================================
+           レスポンシブ対応
+        ======================================== */
+        @media (max-width: 768px) {
+            .problem-card {
+                padding: 50px 30px;
+                margin-top: -60px;
+            }
+
+            .split-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .solution-box {
+                padding: 40px 25px;
+            }
+
+            .offer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .offer-card.wide {
+                grid-template-columns: 1fr;
+            }
+
+            .price-card {
+                padding: 50px 30px;
+            }
+
+            .cta-btn {
+                padding: 20px 40px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+         ヒーローセクション
+    ========================================== -->
+    <header class="hero" id="top">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-studio">Eriina Piano Studio</p>
+            <h1 class="hero-title">たったひとつのことで<br>すべてが調う</h1>
+            <div class="hero-line"></div>
+            <p class="hero-sub">お豆奏法 実践動画コンテンツのご案内</p>
+        </div>
+        <div class="hero-scroll">
+            <span>SCROLL</span>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         P: Problem（問題提起）& A: Agitation（共感）
+    ========================================== -->
+    <section class="section" id="problem">
+        <div class="problem-card reveal">
+            <span class="section-label">INVITATION</span>
+            <h2 class="section-title">ピアノを愛するあなたへ</h2>
+
+            <div class="problem-text">
+                <p class="problem-quote">「もっと楽に、心地よく弾けたらいいのに…」</p>
+                <p>あんなに練習しているのに、思うような音が出ない。<br>
+                すぐに指や腕が痛くなってしまう。<br>
+                いつの間にか、ピアノに向かうのが少しだけ「苦しい」と感じてはいませんか？</p>
+            </div>
+
+            <hr class="problem-separator">
+
+            <div class="problem-text">
+                <p>あなたはこれまで、本当によく頑張ってこられましたね。<br>
+                もっと指を独立させなきゃ、もっと筋力をつけなきゃ…と、<br>
+                一生懸命に自分を律してこられたはずです。</p>
+                <p>でもね、違うんです。<br>
+                あなたが悪いわけでも、才能がないわけでもないんですよ。</p>
+            </div>
+
+            <div class="split-content reveal">
+                <div class="split-image">
+                    <img src="images/hands.png" alt="お豆奏法の優しいタッチ">
+                </div>
+                <div class="split-text">
+                    <p>ただ少しだけ、身体の使い方や<br>「意識の置きどころ」がすれ違ってしまっていただけなんです。</p>
+                    <p>頑張るのを、ちょっとだけ<br>お休みしてみませんか？</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         S: Solution（解決策の提示）
+    ========================================== -->
+    <div class="solution-wrapper">
+        <div class="solution-inner reveal">
+            <span class="section-label" style="color: rgba(201, 169, 110, 0.8);">SOLUTION</span>
+            <h2 class="section-title">たったひとつの解決策</h2>
+            <div class="solution-box">
+                <p class="solution-highlight">指先のお豆さんに、<br>優しく意識を向けるだけ。</p>
+                <p class="solution-body">何か新しい技術を足すのではなく、<br>いらない力をふっとほどいてあげる。<br>
+                それだけで魔法のように身体が緩み、<br>温かな響きが溢れ出します。</p>
+                <p class="solution-note">これまで言葉では伝えきれなかったその「感覚」を、<br>あなたの目と耳で体験していただくために、この動画セットを用意しました。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         O: Offer（提供内容の詳細）
+    ========================================== -->
+    <section class="section" id="offer">
+        <span class="section-label reveal">CONTENTS</span>
+        <h2 class="section-title reveal">お届けする価値</h2>
+        <div class="section-divider reveal"></div>
+
+        <div class="offer-grid">
+            <div class="offer-card reveal reveal-delay-1">
+                <span class="offer-tag">VIDEO LESSON</span>
+                <h3>お豆奏法レッスン動画セット</h3>
+                <p>見るたびに「そうだったのか」が増えていく、タッチと響きの核心に触れるレッスン集です。お豆奏法の考え方から、鍵盤の深さ・打ち方・響かせ方までを噛み砕いてお伝えします。ご自身の練習にも、生徒さんへの指導にもそのままお使いいただけます。</p>
+            </div>
+
+            <div class="offer-card reveal reveal-delay-2">
+                <span class="offer-tag">LEVERAGE MEMO</span>
+                <h3>お豆レッスンノート</h3>
+                <p>要点と伝え方がひと目で分かるまとめノート。「何が大事で、どう伝えればいいか」をA4 1〜2枚にギュッと凝縮しました。レッスン前にサッと眺めるだけで、指導の軸が整う「先生と生徒さんのカンニングペーパー」です。</p>
+            </div>
+
+            <div class="offer-card reveal reveal-delay-3">
+                <span class="offer-tag">CHECK LIST</span>
+                <h3>今日から変わるタッチチェックリスト</h3>
+                <p>「何となく」弾く時間をやめて、毎回の練習で見るべきポイントを言語化。鍵盤のどの深さまで下げる？ どこで音を止める？ そのまま譜面台に置いて使えるチェック項目で、今日の練習を宝物にしてください。</p>
+            </div>
+
+            <div class="offer-card reveal reveal-delay-4">
+                <span class="offer-tag">NAVIGATION</span>
+                <h3>知りたいところにすぐ戻れる「お豆ナビ検索」</h3>
+                <img src="images/stationery.png" alt="充実した教材イメージ">
+                <p>キーワードや悩み（音が固い、本番で崩れる等）から、見たいシーンをすぐに探せます。「探す時間」を「弾く・教える時間」に変える、先生想いの仕組みです。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         N: Narrowing down（絞り込み）
+    ========================================== -->
+    <div class="narrowing-wrapper">
+        <div class="narrowing-inner reveal">
+            <span class="section-label">FOR YOU</span>
+            <h2 class="section-title">ご自身の感覚を、<br>そっと大切にしたい方へ</h2>
+            <p>「すぐに超絶技巧をマスターしたい！」という方には、<br>もしかしたら物足りないかもしれません。</p>
+            <p class="emphasis">でも、「もっと自然に、ピアノと仲良くなりたい」<br>「できない自分を責めるのを終わりにしたい」</p>
+            <p>そう願う方には、きっと一生もののヒントを<br>見つけていただけるはずです。</p>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         A: Action（行動喚起・価格提示）
+    ========================================== -->
+    <section class="section" id="action">
+        <div class="cta-wrapper reveal">
+            <span class="section-label">INVITATION</span>
+            <h2 class="section-title">新しい響きの世界へ</h2>
+
+            <p style="font-weight: 300; color: var(--text-sub);">
+                焦らなくて大丈夫ですよ。<br>
+                あなたの心が「見てみたいな」と静かに動いたときが、<br>ベストなタイミングです。
+            </p>
+
+            <div class="price-card">
+                <p class="original-price">通常価格 29,800円</p>
+                <p class="sale-price">19,800<span class="yen">円（税込）</span></p>
+            </div>
+
+            <br>
+            <a href="#" class="cta-btn" id="cta-main">動画コンテンツを受け取る</a>
+
+            <p class="cta-closing">
+                あなたがこれからも、ピアノと一緒に<br>
+                もっと自由で心地よい時間を過ごしていけますように。<br>
+                動画のなかで、お会いできるのを楽しみにしています。
+            </p>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         フッター
+    ========================================== -->
+    <footer>
+        <p>&copy; Eriina Piano Studio. All Rights Reserved.</p>
+    </footer>
+
+    <!-- ==========================================
+         スクロール連動アニメーション
+    ========================================== -->
+    <script>
+        // スクロールで要素がふわっと出現するアニメーション
+        const revealElements = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
