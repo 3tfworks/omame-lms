@@ -6,6 +6,8 @@ import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRig
 import { getVideoById, getChapterByVideoId, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
+import Player from '@vimeo/player';
+
 function ActionCheckbox({ text, onCheck }: { text: string, onCheck: () => void }) {
   const [checked, setChecked] = useState(false);
   const [showBeans, setShowBeans] = useState(false);
@@ -57,28 +59,41 @@ function ActionCheckbox({ text, onCheck }: { text: string, onCheck: () => void }
   );
 }
 
-function VideoPlayer({ iframeSrc }: { iframeSrc: string }) {
-  const [srcWithTime, setSrcWithTime] = useState(iframeSrc);
+// Vimeo Player API を使ったカスタムプレイヤー
+function CustomVideoPlayer({ vimeoId, onReady }: { vimeoId: string, onReady: (player: Player) => void }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // クライアントサイドでのみURLパラメータを取得
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get('t');
-    if (t) {
-      // #t=1m30s のような形式でVimeoに渡す
-      setSrcWithTime(`${iframeSrc}#t=${t}`);
-    }
-  }, [iframeSrc]);
+    if (!containerRef.current) return;
 
-  return (
-    <iframe 
-      src={srcWithTime} 
-      className="absolute top-0 left-0 w-full h-full" 
-      frameBorder="0" 
-      allow="autoplay; fullscreen; picture-in-picture" 
-      allowFullScreen
-    ></iframe>
-  );
+    // URLパラメータの t を取得して開始秒数を設定
+    const params = new URLSearchParams(window.location.search);
+    const tStr = params.get('t');
+    
+    // vimeoIdだけを数値として抽出（https://vimeo.com/...等のURLの可能性も考慮）
+    const cleanId = vimeoId.split('?')[0].split('/').pop() || vimeoId;
+
+    const options: any = {
+      id: parseInt(cleanId),
+      responsive: true,
+      title: false,
+      byline: false,
+      portrait: false,
+    };
+
+    if (tStr) {
+      options.t = tStr; // 例: "1m30s" 
+    }
+
+    const player = new Player(containerRef.current, options);
+    onReady(player);
+
+    return () => {
+      player.destroy();
+    };
+  }, [vimeoId]);
+
+  return <div ref={containerRef} className="w-full h-full"></div>;
 }
 
 export default function VideoPlayerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -90,6 +105,18 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
 
   const [activeTab, setActiveTab] = useState("memo");
   const [noteText, setNoteText] = useState("");
+  
+  // Vimeo Player と付箋用ステート
+  const [vimeoPlayer, setVimeoPlayer] = useState<Player | null>(null);
+  const [isAddingBookmark, setIsAddingBookmark] = useState(false);
+  const [bookmarkTime, setBookmarkTime] = useState<number>(0);
+  const [bookmarkContent, setBookmarkContent] = useState("");
+  
+  // ダミーの付箋データ（後でSupabaseから取得するように変更可能）
+  const [bookmarks, setBookmarks] = useState([
+    { id: "1", timeSeconds: 135, timeStr: "02:15", content: "ここすごく大事！", author: "Kさん", likes: 12 },
+    { id: "2", timeSeconds: 330, timeStr: "05:30", content: "音が全然違う...", author: "Mさん", likes: 5 }
+  ]);
   
   const timestamps = [
     { time: "00:00", desc: "オープニング：今日のテーマ" },
@@ -201,36 +228,110 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
 
       {/* 動画プレイヤー枠 */}
       <div className="bg-stone-900 rounded-2xl overflow-hidden shadow-lg border border-stone-200 aspect-video relative">
-        <VideoPlayer iframeSrc={`https://player.vimeo.com/video/${videoData.vimeoId}?title=0&byline=0&portrait=0`} />
+        <CustomVideoPlayer vimeoId={videoData.vimeoId} onReady={(player) => setVimeoPlayer(player)} />
       </div>
 
-      <div className="flex justify-end">
-        <button className="bg-stone-800 text-stone-50 font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+        {/* みんなの付箋追加ボタン */}
+        <button 
+          onClick={async () => {
+            if (vimeoPlayer) {
+              const seconds = await vimeoPlayer.getCurrentTime();
+              setBookmarkTime(Math.floor(seconds));
+              setIsAddingBookmark(true);
+            }
+          }}
+          className="bg-white border-2 border-[#b8a98f] text-[#b8a98f] font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-[#faf9f6] transition-colors shadow-sm w-full sm:w-auto"
+        >
+          <Star size={20} />
+          今のシーンに付箋を貼る
+        </button>
+
+        <button className="bg-stone-800 text-stone-50 font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full sm:w-auto">
           <CheckCircle2 size={20} />
           この動画を「完了」にする
         </button>
       </div>
+
+      {/* 付箋追加フォーム（インライン展開） */}
+      <AnimatePresence>
+        {isAddingBookmark && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-[#faf9f6] border border-[#b8a98f] rounded-2xl p-6 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 mb-4 text-[#b8a98f] font-bold">
+              <Star size={20} />
+              <span>{Math.floor(bookmarkTime / 60).toString().padStart(2, '0')}:{(bookmarkTime % 60).toString().padStart(2, '0')} に付箋を貼る</span>
+            </div>
+            <textarea 
+              className="w-full border border-stone-300 rounded-xl p-4 focus:ring-2 focus:ring-[#b8a98f] focus:border-transparent transition-shadow resize-none mb-4"
+              rows={3}
+              placeholder="このシーンの気づきやメモを入力してください（他の受講生にも共有されます）"
+              value={bookmarkContent}
+              onChange={(e) => setBookmarkContent(e.target.value)}
+            ></textarea>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsAddingBookmark(false)}
+                className="px-6 py-2 rounded-lg font-bold text-stone-500 hover:bg-stone-200 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={() => {
+                  if (!bookmarkContent.trim()) return;
+                  const newBm = {
+                    id: Date.now().toString(),
+                    timeSeconds: bookmarkTime,
+                    timeStr: `${Math.floor(bookmarkTime / 60).toString().padStart(2, '0')}:${(bookmarkTime % 60).toString().padStart(2, '0')}`,
+                    content: bookmarkContent,
+                    author: "あなた", // 実際はSupabaseから取得した表示名
+                    likes: 0
+                  };
+                  setBookmarks([...bookmarks, newBm].sort((a, b) => a.timeSeconds - b.timeSeconds));
+                  setBookmarkContent("");
+                  setIsAddingBookmark(false);
+                  setActiveTab("bookmarks");
+                }}
+                className="bg-[#b8a98f] text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-700 transition-colors"
+              >
+                付箋を投稿する
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* タブ切り替え領域 */}
       <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mt-8">
         <div className="flex border-b border-stone-200 overflow-x-auto hide-scrollbar">
           <button 
             onClick={() => setActiveTab("timestamp")}
-            className={`flex-1 min-w-[150px] py-4 px-6 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "timestamp" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
+            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "timestamp" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
           >
             <Play size={18} />
             お豆ナビ（目次）
           </button>
           <button 
             onClick={() => setActiveTab("memo")}
-            className={`flex-1 min-w-[150px] py-4 px-6 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "memo" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
+            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "memo" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
           >
             <FileText size={18} />
             レバレッジメモ
           </button>
           <button 
+            onClick={() => setActiveTab("bookmarks")}
+            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "bookmarks" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
+          >
+            <Star size={18} />
+            みんなの付箋
+          </button>
+          <button 
             onClick={() => setActiveTab("notes")}
-            className={`flex-1 min-w-[150px] py-4 px-6 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "notes" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
+            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "notes" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
           >
             <BookOpen size={18} />
             マイノート
@@ -286,6 +387,53 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                       <FileText size={20} />
                       元のGoogleドキュメントを開く
                     </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "bookmarks" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-bold text-stone-800 flex items-center gap-2">
+                  <Star className="text-amber-500" size={24} />
+                  みんなの付箋
+                </h3>
+                <span className="text-sm text-stone-500">{bookmarks.length}件の付箋</span>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {bookmarks.length > 0 ? bookmarks.map((bm) => (
+                  <div key={bm.id} className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:border-[#b8a98f] transition-colors relative group">
+                    <div className="flex justify-between items-start mb-3">
+                      <button 
+                        onClick={() => {
+                          if (vimeoPlayer) vimeoPlayer.setCurrentTime(bm.timeSeconds);
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 font-mono font-bold px-3 py-1 rounded-md text-sm hover:bg-amber-200 transition-colors"
+                      >
+                        <Play size={14} />
+                        {bm.timeStr}
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+                          {bm.author}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-stone-800 leading-relaxed font-medium mb-4">{bm.content}</p>
+                    <div className="flex justify-end border-t border-stone-100 pt-3">
+                      <button className="flex items-center gap-1.5 text-stone-400 hover:text-rose-500 transition-colors group/btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                        <span className="text-sm font-bold">助かった！ {bm.likes}</span>
+                      </button>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-12 text-stone-400">
+                    <Star size={48} className="mx-auto mb-4 opacity-20" />
+                    <p>まだ付箋がありません。<br/>最初の付箋を貼ってみましょう！</p>
                   </div>
                 )}
               </div>
