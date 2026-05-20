@@ -91,7 +91,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     if (!videoData.memoContent) return null;
 
     const parsedElements = [];
-    let hasActionListStarted = false;
+    let currentSection = ''; // 'action' | 'summary' | ''
     const lines = videoData.memoContent.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
@@ -102,7 +102,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       }
       
       if (line.includes('行動リスト')) {
-        hasActionListStarted = true;
+        currentSection = 'action';
         parsedElements.push(
           <div key={i} className="flex items-center gap-2 mt-8 mb-4 border-b border-stone-200 pb-2">
             <span className="text-xl">🎯</span>
@@ -110,6 +110,10 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           </div>
         );
         continue;
+      }
+
+      if (line.includes('まとめポイント')) {
+        currentSection = 'summary';
       }
       
       // 区切り線（---など）は無視
@@ -123,12 +127,12 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       if (listMatch) {
         const text = listMatch[1].trim();
         
-        // 行動リスト以降の箇条書きはすべてチェックボックスにする
-        if (hasActionListStarted || text.includes('みる') || text.includes('する')) {
+        // 「行動リスト」セクションの箇条書きのみをチェックボックスにする
+        if (currentSection === 'action') {
           parsedElements.push(<ActionCheckbox key={i} text={text} onCheck={() => handleTaskCheck(text)} />);
         } else {
-          // それ以前のものは普通のリスト
-          parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600 my-2">{text}</li>);
+          // それ以外のセクション（タイムライン、まとめ等）のものは普通のリスト
+          parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600 my-2 leading-relaxed">{text}</li>);
         }
         continue;
       }
