@@ -111,12 +111,24 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [isAddingBookmark, setIsAddingBookmark] = useState(false);
   const [bookmarkTime, setBookmarkTime] = useState<number>(0);
   const [bookmarkContent, setBookmarkContent] = useState("");
-  
-  // ダミーの付箋データ（後でSupabaseから取得するように変更可能）
-  const [bookmarks, setBookmarks] = useState([
-    { id: "1", timeSeconds: 135, timeStr: "02:15", content: "ここすごく大事！", author: "Kさん", likes: 12 },
-    { id: "2", timeSeconds: 330, timeStr: "05:30", content: "音が全然違う...", author: "Mさん", likes: 5 }
-  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookmarks, setBookmarks] = useState<any[]>([]);
+
+  // 付箋一覧の取得
+  React.useEffect(() => {
+    async function fetchBookmarks() {
+      try {
+        const res = await fetch(`/api/bookmarks?videoId=${videoId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBookmarks(data.bookmarks);
+        }
+      } catch (error) {
+        console.error("Failed to fetch bookmarks:", error);
+      }
+    }
+    fetchBookmarks();
+  }, [videoId]);
   
   const timestamps = [
     { time: "00:00", desc: "オープニング：今日のテーマ" },
@@ -281,24 +293,41 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                 キャンセル
               </button>
               <button 
-                onClick={() => {
-                  if (!bookmarkContent.trim()) return;
-                  const newBm = {
-                    id: Date.now().toString(),
-                    timeSeconds: bookmarkTime,
-                    timeStr: `${Math.floor(bookmarkTime / 60).toString().padStart(2, '0')}:${(bookmarkTime % 60).toString().padStart(2, '0')}`,
-                    content: bookmarkContent,
-                    author: "あなた", // 実際はSupabaseから取得した表示名
-                    likes: 0
-                  };
-                  setBookmarks([...bookmarks, newBm].sort((a, b) => a.timeSeconds - b.timeSeconds));
-                  setBookmarkContent("");
-                  setIsAddingBookmark(false);
-                  setActiveTab("bookmarks");
+                onClick={async () => {
+                  if (!bookmarkContent.trim() || isSubmitting) return;
+                  setIsSubmitting(true);
+                  try {
+                    const res = await fetch("/api/bookmarks", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        videoId: videoId,
+                        timestampSeconds: bookmarkTime,
+                        content: bookmarkContent
+                      })
+                    });
+                    
+                    if (res.ok) {
+                      const data = await res.json();
+                      setBookmarks(prev => [...prev, data.bookmark].sort((a, b) => a.timeSeconds - b.timeSeconds));
+                      setBookmarkContent("");
+                      setIsAddingBookmark(false);
+                      setActiveTab("bookmarks");
+                    } else {
+                      const errorData = await res.json();
+                      alert(`投稿に失敗しました: ${errorData.error}`);
+                    }
+                  } catch (error) {
+                    console.error("Failed to post bookmark:", error);
+                    alert("通信エラーが発生しました。");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
                 }}
-                className="bg-[#b8a98f] text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-700 transition-colors"
+                disabled={isSubmitting}
+                className={`px-6 py-2 rounded-lg font-bold transition-colors ${isSubmitting ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-[#b8a98f] text-white hover:bg-amber-700'}`}
               >
-                付箋を投稿する
+                {isSubmitting ? '送信中...' : '付箋を投稿する'}
               </button>
             </div>
           </motion.div>
