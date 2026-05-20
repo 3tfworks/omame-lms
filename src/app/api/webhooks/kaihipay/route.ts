@@ -4,21 +4,27 @@ import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
-    // 1. リクエストボディの取得 (会費ペイからのPOSTデータ)
-    // ※会費ペイからのデータがJSONかFormデータかによって適宜パースします。
-    // 今回は一般的なJSONを想定します。
-    const body = await request.json();
-    console.log("[Kaihipay Webhook] Received body:", body);
+    // 1. セキュリティ検証 (URLの?token=XXXが一致するか確認)
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get("token");
+    const secret = process.env.KAIHIPAY_WEBHOOK_SECRET;
 
-    // TODO: ここで本来は会費ペイからのWebhookであることを検証するシークレットキーのチェックを入れます
-    // const secret = request.headers.get("x-kaihipay-signature");
+    if (!secret || token !== secret) {
+      console.warn("[Kaihipay Webhook] Unauthorized access attempt.");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. リクエストボディの取得 (会費ペイからのPOSTデータ)
+    const body = await request.json().catch(() => ({}));
+    console.log("[Kaihipay Webhook] Received body:", JSON.stringify(body));
 
     // 会費ペイ側で設定した項目（名前、メールアドレスなど）
-    const email = body.email;
-    const name = body.name || body.lastName + " " + body.firstName;
-    const planId = body.plan_id; // コースやプランの識別子
+    const email = body.email || body.MailAddress; // キー名は会費ペイの設定により変動する可能性あり
+    const name = body.name || (body.lastName ? body.lastName + " " + body.firstName : "受講生");
+    const planId = body.plan_id || body.PlanId;
 
     if (!email) {
+      console.error("[Kaihipay Webhook] Error: Email is missing in payload.");
       return NextResponse.json(
         { error: "Email is required" },
         { status: 400 }
@@ -27,7 +33,7 @@ export async function POST(request: Request) {
 
     const supabaseAdmin = createAdminClient();
 
-    // 2. ユーザーが既に存在するかチェック
+    // 3. ユーザーが既に存在するかチェック
     const { data: existingUsers, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (searchError) {
@@ -39,13 +45,10 @@ export async function POST(request: Request) {
 
     if (isExistingUser) {
       console.log(`[Kaihipay Webhook] User already exists: ${email}`);
-      // 既にユーザーがいる場合は、ロールのアップデートだけ行う（必要に応じて）
-      // 例: 動画購入者からサロンメンバーへのアップグレードなど
-      return NextResponse.json({ message: "User already exists. Updated roles if necessary." });
+      return NextResponse.json({ message: "User already exists. Skipping creation." });
     }
 
-    // 3. 新規ユーザーの作成 (Auth)
-    // パスワードはランダム生成（マジックリンクでログインさせるため、パスワードは使用しない）
+    // 4. 新規ユーザーの作成 (Auth)
     const randomPassword = crypto.randomBytes(16).toString("hex") + "aA1!";
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -67,9 +70,8 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id;
 
-    // 4. public.users テーブルへのレコード作成
-    // プランIDに応じて Role を決定する（動画のみなら'user'、サロンなら'salon_member'など）
-    const role = (planId === "salon_plan_id") ? "salon_member" : "user";
+    // 5. public.users テーブルへのレコード作成
+    const role = (planId && String(planId).includes("salon")) ? "salon_member" : "user";
 
     const { error: dbError } = await supabaseAdmin.from("users").insert({
       id: userId,
@@ -79,16 +81,31 @@ export async function POST(request: Request) {
 
     if (dbError) {
       console.error("[Kaihipay Webhook] Error inserting to public.users:", dbError);
-      // Authの作成には成功したがDBへのINSERTに失敗した場合のリトライ処理等が本来は必要です
       return NextResponse.json(
         { error: "Failed to create user profile" },
         { status: 500 }
       );
     }
 
-    console.log(`[Kaihipay Webhook] Successfully created user: ${email} (ID: ${userId})`);
+    // 6. 完了のご案内メール（Magic Link）を自動送信する
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://omamepiano.com";
+    const redirectUrl = `${siteUrl}/ja/api/auth/callback?next=/ja/lms`;
+    
+    const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
 
-    // 5. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
+    if (otpError) {
+      console.error("[Kaihipay Webhook] Error sending magic link:", otpError);
+      // メールの送信に失敗しても、ユーザー作成自体は成功しているので200を返す
+    }
+
+    console.log(`[Kaihipay Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
+
+    // 7. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
     return NextResponse.json({ message: "Webhook processed successfully" }, { status: 200 });
 
   } catch (error: any) {

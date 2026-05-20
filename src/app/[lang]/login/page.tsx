@@ -32,6 +32,7 @@ export default function LoginPage() {
       email,
       options: {
         emailRedirectTo: getUrl(),
+        shouldCreateUser: false,
       },
     });
 
