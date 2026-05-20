@@ -92,7 +92,7 @@ export default function LMSDashboard() {
             </div>
             
             <Link 
-              href="/ja/lms/video/v3-2"
+              href="/ja/lms/video/video-1188100452"
               className="bg-stone-800 text-stone-50 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full text-lg"
             >
               <Play size={24} fill="currentColor" />
