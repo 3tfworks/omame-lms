@@ -130,14 +130,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     fetchBookmarks();
   }, [videoId]);
   
-  const timestamps = [
-    { time: "00:00", desc: "オープニング：今日のテーマ" },
-    { time: "02:15", desc: "ピアノの音を決める「打鍵スピード」の解説" },
-    { time: "05:30", desc: "【実演】力で弾いた音と、スピードで弾いた音の違い" },
-    { time: "08:45", desc: "指先の感覚を掴むための練習法" },
-    { time: "12:00", desc: "よくある間違い：手首の固さについて" },
-  ];
-
   if (!videoData) {
     return <div className="p-12 text-center">動画が見つかりませんでした</div>;
   }
@@ -338,13 +330,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mt-8">
         <div className="flex border-b border-stone-200 overflow-x-auto hide-scrollbar">
           <button 
-            onClick={() => setActiveTab("timestamp")}
-            className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "timestamp" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
-          >
-            <Play size={18} />
-            お豆ナビ（目次）
-          </button>
-          <button 
             onClick={() => setActiveTab("memo")}
             className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "memo" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
           >
@@ -368,21 +353,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="p-6 lg:p-8 bg-[#faf9f6] min-h-[400px]">
-          {activeTab === "timestamp" && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-stone-800 mb-6">動画の目次（クリックでその秒数から再生します）</h3>
-              <div className="grid grid-cols-1 gap-3">
-                {timestamps.map((ts, idx) => (
-                  <button key={idx} className="flex items-center gap-4 p-4 bg-white border border-stone-200 rounded-xl hover:border-[#b8a98f] transition-colors text-left group">
-                    <span className="bg-amber-100 text-amber-900 font-mono font-bold px-3 py-1 rounded-md text-sm shrink-0 group-hover:bg-amber-200 transition-colors">
-                      {ts.time}
-                    </span>
-                    <span className="font-medium text-stone-700">{ts.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {activeTab === "memo" && (
             <div className="prose prose-stone max-w-none">
