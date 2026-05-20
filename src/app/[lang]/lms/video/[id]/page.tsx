@@ -453,7 +453,24 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                     </div>
                     <p className="text-stone-800 leading-relaxed font-medium mb-4">{bm.content}</p>
                     <div className="flex justify-end border-t border-stone-100 pt-3">
-                      <button className="flex items-center gap-1.5 text-stone-400 hover:text-rose-500 transition-colors group/btn">
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch("/api/bookmarks", {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ bookmarkId: bm.id })
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              setBookmarks(prev => prev.map(b => b.id === bm.id ? { ...b, likes: data.likes } : b));
+                            }
+                          } catch (error) {
+                            console.error("Failed to like bookmark:", error);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 text-stone-400 hover:text-rose-500 transition-colors group/btn"
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                         <span className="text-sm font-bold">助かった！ {bm.likes}</span>
                       </button>

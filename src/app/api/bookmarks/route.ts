@@ -111,3 +111,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createClient();
+    
+    // 認証チェック
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { bookmarkId } = await request.json();
+    if (!bookmarkId) {
+      return NextResponse.json({ error: "bookmarkId is required" }, { status: 400 });
+    }
+
+    // RPCを使うのが確実だが、一旦現在の値を読んで+1する簡易実装にするか、
+    // Supabaseの機能的に UPDATE likes_count = likes_count + 1 ができないため、
+    // 現在のlikesを取得して+1する。
+    // ※ 厳密には同時に押されると競合するが、初期リリースとしては許容範囲。
+    const { data: current, error: fetchError } = await supabase
+      .from("video_bookmarks")
+      .select("likes_count")
+      .eq("id", bookmarkId)
+      .single();
+
+    if (fetchError || !current) {
+      return NextResponse.json({ error: "Bookmark not found" }, { status: 404 });
+    }
+
+    const newLikesCount = (current.likes_count || 0) + 1;
+
+    const { error: updateError } = await supabase
+      .from("video_bookmarks")
+      .update({ likes_count: newLikesCount })
+      .eq("id", bookmarkId);
+
+    if (updateError) {
+      console.error("Error updating likes:", updateError);
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, likes: newLikesCount });
+  } catch (error: any) {
+    console.error("Exception in PATCH bookmarks:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
