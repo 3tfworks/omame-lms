@@ -21,11 +21,11 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  // クイック絞り込み用のタグデータ
+  // クイック絞り込み用のタグデータ（実際に動画メモで言及されている言葉）
   const quickTags = [
-    { category: "お悩み", tags: ["手が痛い", "音が硬い", "暗譜が飛ぶ", "速く弾けない"] },
-    { category: "身体の部位", tags: ["指先", "手首", "腕・肩", "姿勢・重心"] },
-    { category: "その他", tags: ["練習法", "マインドセット", "ペダル", "脱力", "力み"] },
+    { category: "お悩み", tags: ["痛い", "力み", "疲れる", "テンポ"] },
+    { category: "身体・感覚", tags: ["指", "手首", "腕", "重力"] },
+    { category: "その他", tags: ["脱力", "スピード", "自然体", "レガート"] },
   ];
 
   // lmsData から検索可能なブロック（インデックス）を生成する
