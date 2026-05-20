@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy } from "lucide-react";
+import { ChevronLeft, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star } from "lucide-react";
 import { getVideoById, getChapterByVideoId, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
