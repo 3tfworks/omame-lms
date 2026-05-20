@@ -57,6 +57,30 @@ function ActionCheckbox({ text, onCheck }: { text: string, onCheck: () => void }
   );
 }
 
+function VideoPlayer({ iframeSrc }: { iframeSrc: string }) {
+  const [srcWithTime, setSrcWithTime] = useState(iframeSrc);
+
+  React.useEffect(() => {
+    // クライアントサイドでのみURLパラメータを取得
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('t');
+    if (t) {
+      // #t=1m30s のような形式でVimeoに渡す
+      setSrcWithTime(`${iframeSrc}#t=${t}`);
+    }
+  }, [iframeSrc]);
+
+  return (
+    <iframe 
+      src={srcWithTime} 
+      className="absolute top-0 left-0 w-full h-full" 
+      frameBorder="0" 
+      allow="autoplay; fullscreen; picture-in-picture" 
+      allowFullScreen
+    ></iframe>
+  );
+}
+
 export default function VideoPlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = React.use(params);
   const videoId = resolvedParams.id;
@@ -177,13 +201,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
 
       {/* 動画プレイヤー枠 */}
       <div className="bg-stone-900 rounded-2xl overflow-hidden shadow-lg border border-stone-200 aspect-video relative">
-        <iframe 
-          src={`https://player.vimeo.com/video/${videoData.vimeoId}?title=0&byline=0&portrait=0`} 
-          className="absolute top-0 left-0 w-full h-full" 
-          frameBorder="0" 
-          allow="autoplay; fullscreen; picture-in-picture" 
-          allowFullScreen
-        ></iframe>
+        <VideoPlayer iframeSrc={`https://player.vimeo.com/video/${videoData.vimeoId}?title=0&byline=0&portrait=0`} />
       </div>
 
       <div className="flex justify-end">
