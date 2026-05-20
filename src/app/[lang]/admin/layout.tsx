@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake } from "lucide-react";
+import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, PlayCircle } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -65,7 +65,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </nav>
         
-        <div className="p-4 border-t border-stone-800">
+        <div className="p-4 border-t border-stone-800 space-y-2">
+          <Link href="/ja/lms" className="w-full flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-stone-800 hover:text-white rounded-xl transition-colors font-medium">
+            <PlayCircle size={20} />
+            動画（LMS）に戻る
+          </Link>
           <button className="w-full flex items-center gap-3 px-4 py-3 text-stone-400 hover:text-white transition-colors font-medium">
             <LogOut size={20} />
             ログアウト
