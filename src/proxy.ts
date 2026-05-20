@@ -104,12 +104,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
   }
 
-  // ログイン済みユーザーがトップページ（LP）にアクセスした場合 → LMSへ（フェイルセーフ）
-  const isRootOrLangRoot = /^\/[a-z]{2}$/.test(pathname);
-  if (isRootOrLangRoot && user) {
-    const lang = pathname.split('/')[1] || 'ja';
-    return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
-  }
+  // ※トップページは公式HPのため、ログイン済みでもリダイレクトしない
+  // LMSへは「学習ページへログイン」ボタンから遷移する
 
   return supabaseResponse;
 }
