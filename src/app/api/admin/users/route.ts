@@ -87,7 +87,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: "Only owner can change roles" }, { status: 403 });
       }
       
-      const validRoles = ["user", "admin", "owner"];
+      const validRoles = ["user", "salon_member", "admin", "owner"];
       if (!validRoles.includes(newRole)) {
         return NextResponse.json({ error: "Invalid role" }, { status: 400 });
       }

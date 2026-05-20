@@ -2,9 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import { MessageSquare, CheckSquare, Users, LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div className="min-h-screen bg-omame-bg flex flex-col md:flex-row font-serif">
       {/* 管理者用サイドバー */}
@@ -27,9 +30,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Users size={20} />
             生徒の進捗を見る
           </button>
-          <Link href="/ja/admin/users" className="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-stone-800 hover:text-white rounded-xl font-bold transition-colors">
-            <Users size={20} className="text-emerald-400" />
+          <Link
+            href="/ja/admin/users"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/users') 
+                ? 'bg-stone-800 text-white' 
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Users size={20} />
             ユーザー管理
+          </Link>
+          <Link
+            href="/ja/admin/campaign"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/campaign') 
+                ? 'bg-stone-800 text-white' 
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Calendar size={20} />
+            キャンペーン設定
+          </Link>
+          <Link
+            href="/ja/admin/affiliate"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/affiliate') 
+                ? 'bg-stone-800 text-white' 
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Handshake size={20} />
+            アフィリエイト管理
           </Link>
         </nav>
         

@@ -57,16 +57,33 @@ export async function proxy(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
+  let nextUrlModified = false;
   // 言語コードがない場合、自動判定してリダイレクト
   if (!pathnameHasLocale) {
     const locale = getLocale(request);
     request.nextUrl.pathname = `/${locale}${pathname}`;
-    return NextResponse.redirect(request.nextUrl);
+    nextUrlModified = true;
   }
 
+  // --- アフィリエイト（紹介リンク）トラッキング ---
+  const ref = searchParams.get("ref");
+  
   // --- 認証セッション管理 ---
   // Supabaseクライアントを作成してセッションをリフレッシュ
-  let supabaseResponse = NextResponse.next({ request });
+  let supabaseResponse = nextUrlModified 
+    ? NextResponse.redirect(request.nextUrl)
+    : NextResponse.next({ request });
+
+  // リファラー情報があればCookieに保存（30日間有効）
+  if (ref) {
+    supabaseResponse.cookies.set("referrer_id", ref, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

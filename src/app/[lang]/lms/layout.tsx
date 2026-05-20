@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles } from "lucide-react";
+import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles, Handshake } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
 
 // アコーディオン用のコンポーネント
@@ -47,6 +47,23 @@ function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: any, defa
 
 export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<{ role: string; display_name: string | null } | null>(null);
+
+  useEffect(() => {
+    // ユーザープロフィールの取得
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setProfile(data.profile);
+        }
+      } catch (e) {
+        console.error("プロフィール取得エラー:", e);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   return (
     <div className="min-h-screen bg-omame-bg flex font-serif">
@@ -100,6 +117,23 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
+          {/* サロンメンバー限定メニュー */}
+          {(profile?.role === "salon_member" || profile?.role === "owner") && (
+            <div className="mt-8">
+              <h3 className="px-3 mb-2 text-xs font-bold text-stone-400 uppercase tracking-wider">
+                サロンメンバー特典
+              </h3>
+              <Link
+                href="/ja/lms/affiliate"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg font-bold transition-colors"
+              >
+                <Handshake className="w-5 h-5" />
+                紹介プログラム
+              </Link>
+            </div>
+          )}
+
           {/* アップセル：基礎実践講座バナー（常設） */}
           <div className="border-t border-amber-200/50 pt-5">
             <Link
@@ -123,16 +157,18 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
         
-        {/* 管理者メニュー（admin/ownerのみ有効、一般ユーザーはリダイレクトされる） */}
-        <div className="p-4 border-t border-stone-200 bg-[#faf9f6]">
-          <Link
-            href="/ja/admin"
-            className="flex items-center gap-3 px-3 py-2.5 text-stone-500 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg font-medium transition-colors text-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            管理者ページ
-          </Link>
-        </div>
+        {/* 管理者メニュー（admin/ownerのみ有効） */}
+        {(profile?.role === "admin" || profile?.role === "owner") && (
+          <div className="p-4 border-t border-stone-200 bg-[#faf9f6]">
+            <Link
+              href="/ja/admin"
+              className="flex items-center gap-3 px-3 py-2.5 text-stone-500 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg font-medium transition-colors text-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              管理者ページ
+            </Link>
+          </div>
+        )}
 
         {/* ユーザープロファイル・ログアウト */}
         <div className="p-4 border-t border-stone-200 bg-[#faf9f6] space-y-3">
@@ -141,7 +177,9 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
               👤
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm text-stone-800 truncate">受講生</div>
+              <div className="font-bold text-sm text-stone-800 truncate">
+                {profile ? (profile.display_name || "受講生") : "..."}
+              </div>
               <div className="text-xs text-stone-500">ログイン中</div>
             </div>
           </div>

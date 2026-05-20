@@ -14,6 +14,7 @@ type User = {
 const roleLabels: Record<string, { label: string; color: string; icon: typeof Shield }> = {
   owner: { label: "オーナー", color: "text-amber-600 bg-amber-50 border-amber-200", icon: Crown },
   admin: { label: "管理者", color: "text-indigo-600 bg-indigo-50 border-indigo-200", icon: ShieldCheck },
+  salon_member: { label: "サロンメンバー", color: "text-emerald-600 bg-emerald-50 border-emerald-200", icon: Shield },
   user: { label: "一般ユーザー", color: "text-stone-600 bg-stone-50 border-stone-200", icon: Shield },
 };
 
@@ -130,6 +131,7 @@ export default function AdminUsersPage() {
               <p className="text-xs opacity-70">
                 {key === "owner" && "全権限（権限管理含む）"}
                 {key === "admin" && "コンテンツ・ユーザー名管理"}
+                {key === "salon_member" && "LMS閲覧＋アフィリエイト"}
                 {key === "user" && "LMS閲覧のみ"}
               </p>
             </div>
@@ -249,6 +251,7 @@ export default function AdminUsersPage() {
                             className="text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-white hover:border-omame-primary focus:outline-none focus:ring-2 focus:ring-omame-primary/20 transition-all cursor-pointer disabled:opacity-50"
                           >
                             <option value="user">一般ユーザー</option>
+                            <option value="salon_member">サロンメンバー</option>
                             <option value="admin">管理者</option>
                             <option value="owner">オーナー</option>
                           </select>
