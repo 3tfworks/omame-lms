@@ -19,9 +19,18 @@ export async function POST(request: Request) {
     console.log("[Kaihipay Webhook] Received body:", JSON.stringify(body));
 
     // 会費ペイ側で設定した項目（名前、メールアドレスなど）
-    const email = body.email || body.MailAddress; // キー名は会費ペイの設定により変動する可能性あり
-    const name = body.name || (body.lastName ? body.lastName + " " + body.firstName : "受講生");
-    const planId = body.plan_id || body.PlanId;
+    const email = body.email || body.mail || body.MailAddress; 
+    const name = body.name || (body.last_name ? body.last_name + " " + body.first_name : "受講生");
+    
+    // コース情報の取得
+    let planId = body.plan_id || body.PlanId;
+    let courseName = "";
+    if (body.contracted_courses && body.contracted_courses.length > 0) {
+      planId = body.contracted_courses[0].course_id;
+      courseName = body.contracted_courses[0].course_name;
+    }
+
+    console.log(`[Kaihipay Webhook] Parsed data - Email: ${email}, Name: ${name}, Course: ${courseName}`);
 
     if (!email) {
       console.error("[Kaihipay Webhook] Error: Email is missing in payload.");
