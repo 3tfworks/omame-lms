@@ -27,7 +27,7 @@ export async function GET() {
     // 全ユーザーを取得
     const { data: users, error } = await supabaseAdmin
       .from("users")
-      .select("id, email, role, created_at")
+      .select("id, email, role, display_name, created_at")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -45,7 +45,7 @@ export async function GET() {
   }
 }
 
-// ユーザーのロール変更（ownerのみ）
+// ユーザーのロール・名前変更（owner/admin可、ただしrole変更はownerのみ）
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
@@ -55,7 +55,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // リクエスト者がownerか確認
     const supabaseAdmin = createAdminClient();
     const { data: requester } = await supabaseAdmin
       .from("users")
@@ -63,32 +62,51 @@ export async function PATCH(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (!requester || requester.role !== "owner") {
-      return NextResponse.json({ error: "Only owner can change roles" }, { status: 403 });
+    if (!requester || (requester.role !== "owner" && requester.role !== "admin")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
-    const { targetUserId, newRole } = body;
+    const { targetUserId, newRole, newDisplayName } = body;
 
-    // バリデーション
-    if (!targetUserId || !newRole) {
-      return NextResponse.json({ error: "targetUserId and newRole are required" }, { status: 400 });
+    if (!targetUserId) {
+      return NextResponse.json({ error: "targetUserId is required" }, { status: 400 });
     }
 
-    const validRoles = ["user", "admin", "owner"];
-    if (!validRoles.includes(newRole)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    // 更新データの構築
+    const updateData: any = { updated_at: new Date().toISOString() };
+
+    // 名前の更新（adminもownerも可能）
+    if (newDisplayName !== undefined) {
+      updateData.display_name = newDisplayName;
     }
 
-    // 自分自身のロールは変更不可（誤操作防止）
-    if (targetUserId === user.id) {
-      return NextResponse.json({ error: "Cannot change your own role" }, { status: 400 });
+    // ロールの更新（ownerのみ可能）
+    if (newRole !== undefined) {
+      if (requester.role !== "owner") {
+        return NextResponse.json({ error: "Only owner can change roles" }, { status: 403 });
+      }
+      
+      const validRoles = ["user", "admin", "owner"];
+      if (!validRoles.includes(newRole)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+      }
+      if (targetUserId === user.id) {
+        return NextResponse.json({ error: "Cannot change your own role" }, { status: 400 });
+      }
+      
+      updateData.role = newRole;
     }
 
-    // ロールを更新
+    // 何も更新するデータがない場合
+    if (Object.keys(updateData).length === 1) { // updated_atのみ
+      return NextResponse.json({ message: "No changes requested" });
+    }
+
+    // ロールと名前を更新
     const { error } = await supabaseAdmin
       .from("users")
-      .update({ role: newRole, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq("id", targetUserId);
 
     if (error) {
