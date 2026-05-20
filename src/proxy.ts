@@ -90,17 +90,32 @@ export async function proxy(request: NextRequest) {
   // セッションをリフレッシュ
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 保護されたルート（/lms, /admin）へ未ログインでアクセスした場合 → ログイン画面へ
-  // ⚠️ 一時的に認証チェックを無効化中（確認後に戻すこと）
-  // const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
-  // if (isProtectedRoute && !user) {
-  //   const lang = pathname.split('/')[1] || 'ja';
-  //   return NextResponse.redirect(new URL(`/${lang}/login`, request.url));
-  // }
+  // 保護されたルートへのアクセス制限
+  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
+  const isAdminRoute = pathname.includes("/admin");
+  const lang = pathname.split('/')[1] || 'ja';
+
+  if (isProtectedRoute && !user) {
+    // 未ログインユーザー → ログイン画面へリダイレクト
+    return NextResponse.redirect(new URL(`/${lang}/login`, request.url));
+  }
+
+  if (isAdminRoute && user) {
+    // 管理者ページはadminロールのみアクセス可能
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      // admin以外のユーザー → LMSへリダイレクト
+      return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+    }
+  }
 
   // ログイン済みユーザーがログイン画面にアクセスした場合 → LMSへ
   if (pathname.includes("/login") && user) {
-    const lang = pathname.split('/')[1] || 'ja';
     return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
   }
 
