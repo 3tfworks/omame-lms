@@ -30,7 +30,17 @@ function getLocale(request: NextRequest): string {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // 認証コードがURLに含まれている場合、/api/auth/callback に転送
+  // （Supabase Magic Linkクリック後のリダイレクト処理）
+  const code = searchParams.get("code");
+  if (code && !pathname.startsWith("/api/auth/callback")) {
+    const callbackUrl = new URL("/api/auth/callback", request.url);
+    callbackUrl.searchParams.set("code", code);
+    callbackUrl.searchParams.set("next", searchParams.get("next") || "/ja/lms");
+    return NextResponse.redirect(callbackUrl);
+  }
 
   // 静的ファイルやAPIリクエストはスキップ
   if (
