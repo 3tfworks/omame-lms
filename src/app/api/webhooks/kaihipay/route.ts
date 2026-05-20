@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     // 6. 完了のご案内メール（Magic Link）を自動送信する
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://omamepiano.com";
-    const redirectUrl = `${siteUrl}/ja/api/auth/callback?next=/ja/lms`;
+    const redirectUrl = `${siteUrl}/api/auth/callback?next=/ja/lms`;
     
     const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
       email: email,
