@@ -13,8 +13,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* 管理者用サイドバー */}
       <aside className="w-full md:w-64 bg-stone-900 text-stone-50 flex flex-col shadow-xl z-10">
         <div className="p-6 border-b border-stone-800">
-          <div className="text-xs font-bold text-stone-400 tracking-wider mb-1">えりな先生 専用画面</div>
-          <h1 className="font-bold text-xl tracking-tight text-white">お豆奏法基礎講座<br/>管理室</h1>
+          <div className="text-xs font-bold text-stone-400 tracking-wider mb-1">管理者専用画面</div>
+          <h1 className="font-bold text-xl tracking-tight text-white">おうちで学べる<br/>お豆奏法管理室</h1>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
