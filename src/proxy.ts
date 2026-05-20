@@ -108,8 +108,8 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "admin") {
-      // admin以外のユーザー → LMSへリダイレクト
+    if (!profile || (profile.role !== "admin" && profile.role !== "owner")) {
+      // admin/owner以外のユーザー → LMSへリダイレクト
       return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
     }
   }

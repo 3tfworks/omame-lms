@@ -27,6 +27,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Users size={20} />
             生徒の進捗を見る
           </button>
+          <Link href="/ja/admin/users" className="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-stone-800 hover:text-white rounded-xl font-bold transition-colors">
+            <Users size={20} className="text-emerald-400" />
+            ユーザー管理
+          </Link>
         </nav>
         
         <div className="p-4 border-t border-stone-800">
