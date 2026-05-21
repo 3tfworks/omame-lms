@@ -466,7 +466,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                                 console.error("Failed to delete bookmark:", error);
                               }
                             }}
-                            className="p-1 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="p-1 rounded-md text-stone-500 hover:text-red-500 hover:bg-red-50 transition-colors"
                             title="この付箋を削除"
                           >
                             <Trash2 size={14} />
