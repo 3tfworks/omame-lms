@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2 } from "lucide-react";
 import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -446,6 +446,32 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                         {bm.timeStr}
                       </button>
                       <div className="flex items-center gap-2">
+                        {bm.isOwn && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm("この付箋を削除しますか？")) return;
+                              try {
+                                const res = await fetch("/api/bookmarks", {
+                                  method: "DELETE",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ bookmarkId: bm.id })
+                                });
+                                if (res.ok) {
+                                  setBookmarks(prev => prev.filter(b => b.id !== bm.id));
+                                } else {
+                                  const errData = await res.json();
+                                  alert(`削除に失敗しました: ${errData.error}`);
+                                }
+                              } catch (error) {
+                                console.error("Failed to delete bookmark:", error);
+                              }
+                            }}
+                            className="p-1 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="この付箋を削除"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                         <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
                           {bm.author}
                         </span>
