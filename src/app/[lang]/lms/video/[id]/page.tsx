@@ -254,12 +254,16 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         </button>
 
         <button 
-          onClick={() => setIsVideoCompleted(true)}
-          disabled={isVideoCompleted}
-          className={`font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm w-full sm:w-auto ${isVideoCompleted ? 'bg-emerald-600 text-white cursor-default' : 'bg-stone-800 text-stone-50 hover:bg-stone-700'}`}
+          onClick={() => setIsVideoCompleted(!isVideoCompleted)}
+          className={`font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm w-full sm:w-auto group ${isVideoCompleted ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-stone-800 text-stone-50 hover:bg-stone-700'}`}
+          title={isVideoCompleted ? "未完了の状態に戻す" : "完了にする"}
         >
           <CheckCircle2 size={20} />
-          {isVideoCompleted ? '完了しました' : 'この動画を「完了」にする'}
+          {isVideoCompleted ? (
+            <span className="flex items-center gap-2">
+              完了しました <span className="text-emerald-200 text-xs font-normal opacity-0 group-hover:opacity-100 transition-opacity">（クリックで取消）</span>
+            </span>
+          ) : 'この動画を「完了」にする'}
         </button>
       </div>
 
