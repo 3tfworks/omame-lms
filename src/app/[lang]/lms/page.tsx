@@ -66,6 +66,8 @@ export default async function LMSDashboard() {
       chapter: curriculumData[0],
       video: curriculumData[0].videos[0]
     };
+  }
+
   // 「今日の一言」メッセージを取得
   let todaysMessage = "ここでは、ピアノを弾くための「本当の身体の使い方」と「音の鳴る仕組み」を基礎から順を追って学んでいきます。焦らず、ご自身のペースで一つ一つの感覚を大切にしながら進めていきましょう！";
   try {
