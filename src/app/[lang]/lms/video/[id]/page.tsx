@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2, HelpCircle } from "lucide-react";
 import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } from "@/lib/lmsData";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -503,9 +503,44 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center py-12 text-stone-400">
-                    <Star size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>まだ付箋がありません。<br/>最初の付箋を貼ってみましょう！</p>
+                  <div className="text-center py-10 px-4 bg-white rounded-xl border border-stone-200 shadow-sm relative overflow-hidden">
+                    {/* 背景の装飾 */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-100/50 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-stone-100 rounded-full blur-2xl pointer-events-none" />
+                    
+                    <div className="relative z-10">
+                      <Star size={48} className="mx-auto mb-4 text-[#b8a98f] opacity-40" />
+                      <h4 className="font-bold text-stone-800 mb-2 text-lg">まだ付箋がありません</h4>
+                      <p className="text-stone-500 text-sm mb-6 leading-relaxed max-w-sm mx-auto">
+                        動画の気づきや疑問を書き留めて、他の受講生とシェアしましょう！えりな先生の目に留まるかもしれません✨
+                      </p>
+                      
+                      <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+                        <Link
+                          href="/ja/lms/bookmarks-guide"
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#faf9f6] border border-[#b8a98f] text-amber-900 font-bold py-2.5 px-6 rounded-xl hover:bg-amber-50 transition-colors shadow-sm"
+                        >
+                          <HelpCircle size={18} />
+                          みんなの付箋とは？
+                        </Link>
+                        
+                        <button
+                          onClick={async () => {
+                            if (vimeoPlayer) {
+                              const seconds = await vimeoPlayer.getCurrentTime();
+                              setBookmarkTime(Math.floor(seconds));
+                              setIsAddingBookmark(true);
+                              // 画面上部（付箋追加フォーム）へスクロールさせる
+                              window.scrollTo({ top: 300, behavior: 'smooth' });
+                            }
+                          }}
+                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-stone-800 text-stone-50 font-bold py-2.5 px-6 rounded-xl hover:bg-stone-700 transition-colors shadow-sm"
+                        >
+                          <Star size={18} fill="currentColor" />
+                          最初の付箋を貼る
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
