@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Handshake, Copy, CheckCircle2, TrendingUp, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift } from "lucide-react";
+import { Handshake, Copy, CheckCircle2, TrendingUp, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift, ChevronDown } from "lucide-react";
 import Image from "next/image";
 
 type AffiliateStats = {
@@ -158,20 +158,19 @@ export default function AffiliatePage() {
       </div>
 
       {/* お豆メッセンジャーのステップ図解 */}
-      <div className="mb-14">
-        <h3 className="text-xl font-bold text-stone-800 text-center mb-8 flex items-center justify-center gap-2">
+      <div className="mb-14 max-w-2xl mx-auto">
+        <h3 className="text-xl md:text-2xl font-bold text-stone-800 text-center mb-10 flex items-center justify-center gap-2">
           <Sparkles className="text-amber-500" />
           お豆メッセンジャーのはじめ方
           <Sparkles className="text-amber-500" />
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200">
+        <div className="flex flex-col gap-6">
+          {/* STEP 1 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
             <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
-              {/* NOTE: 拡張子は保存されたもの(.png/.jpg等)に合わせて読み込めるようにします */}
               <Image src="/images/messenger-step1.png" alt="STEP 1" fill className="object-cover" 
                 onError={(e) => {
-                  // 画像がない場合のフォールバック（pngではなくjpgで保存されていた場合など）
                   const target = e.target as HTMLImageElement;
                   if (target.src.endsWith('.png')) {
                     target.src = '/images/messenger-step1.jpg';
@@ -183,12 +182,18 @@ export default function AffiliatePage() {
                 }}
               />
             </div>
-            <div className="p-4 text-center">
-              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full mb-2">STEP 1</span>
-              <p className="font-bold text-stone-700">あなた専用のリンクをシェア</p>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 1</span>
+              <p className="font-bold text-stone-800 text-lg">あなた専用のリンクをシェア</p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200">
+
+          <div className="flex justify-center -my-2">
+            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
+          </div>
+
+          {/* STEP 2 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
             <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
               <Image src="/images/messenger-step2.png" alt="STEP 2" fill className="object-cover" 
                 onError={(e) => {
@@ -199,12 +204,18 @@ export default function AffiliatePage() {
                 }}
               />
             </div>
-            <div className="p-4 text-center">
-              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full mb-2">STEP 2</span>
-              <p className="font-bold text-stone-700">お友達がお豆奏法をスタート！</p>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 2</span>
+              <p className="font-bold text-stone-800 text-lg">お友達がお豆奏法をスタート！</p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200">
+
+          <div className="flex justify-center -my-2">
+            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
+          </div>
+
+          {/* STEP 3 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
             <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
               <Image src="/images/messenger-step3.png" alt="STEP 3" fill className="object-cover" 
                 onError={(e) => {
@@ -215,9 +226,9 @@ export default function AffiliatePage() {
                 }}
               />
             </div>
-            <div className="p-4 text-center">
-              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full mb-2">STEP 3</span>
-              <p className="font-bold text-stone-700">お互いに嬉しいギフトが届く</p>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 3</span>
+              <p className="font-bold text-stone-800 text-lg">お互いに嬉しいギフトが届く</p>
             </div>
           </div>
         </div>
