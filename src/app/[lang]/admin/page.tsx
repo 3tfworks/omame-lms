@@ -133,7 +133,7 @@ export default function AdminDashboard() {
       </section>
 
 
-      {/* 2. 生徒からの付箋（タイムスタンプ）承認 */}
+      {/* 2. 生徒からの付箋（タイムスタンプ）承認 - ※未実装のため一時非表示
       <section>
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -201,6 +201,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </section>
+      */}
 
     </div>
   );
