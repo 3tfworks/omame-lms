@@ -114,6 +114,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [bookmarkContent, setBookmarkContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookmarks, setBookmarks] = useState<any[]>([]);
+  const [isVideoCompleted, setIsVideoCompleted] = useState(false); // 完了状態のステート追加
 
   // 付箋一覧の取得
   React.useEffect(() => {
@@ -252,9 +253,13 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           今のシーンに付箋を貼る
         </button>
 
-        <button className="bg-stone-800 text-stone-50 font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full sm:w-auto">
+        <button 
+          onClick={() => setIsVideoCompleted(true)}
+          disabled={isVideoCompleted}
+          className={`font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm w-full sm:w-auto ${isVideoCompleted ? 'bg-emerald-600 text-white cursor-default' : 'bg-stone-800 text-stone-50 hover:bg-stone-700'}`}
+        >
           <CheckCircle2 size={20} />
-          この動画を「完了」にする
+          {isVideoCompleted ? '完了しました' : 'この動画を「完了」にする'}
         </button>
       </div>
 
@@ -571,8 +576,8 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
 
       {/* ② リッチ版：前後ナビゲーション（ページ最下部） */}
       <div className="mt-10">
-        {/* 章クリア表示（次の動画が別の章の場合） */}
-        {next?.isNewChapter && (
+        {/* 章クリア表示（次の動画が別の章の場合 ＆＆ 動画が完了した場合のみ表示） */}
+        {next?.isNewChapter && isVideoCompleted && (
           <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 rounded-2xl p-6 lg:p-8 border border-amber-200 text-center relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl pointer-events-none" />
             <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-orange-200/20 rounded-full blur-2xl pointer-events-none" />
@@ -646,6 +651,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         const lastChapter = curriculumData[curriculumData.length - 1];
         const lastVideoId = lastChapter?.videos[lastChapter.videos.length - 1]?.id;
         if (videoId !== lastVideoId) return null;
+        if (!isVideoCompleted) return null; // 完了ボタンを押すまでは表示しない
         
         return (
           <div className="mt-10 bg-gradient-to-br from-amber-50 via-white to-orange-50 rounded-2xl p-8 lg:p-10 border border-amber-200 shadow-lg relative overflow-hidden">
