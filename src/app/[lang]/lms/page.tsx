@@ -6,19 +6,20 @@ import { currentTenantConfig } from "@/lib/tenantConfig";
 import { Watermark } from "@/components/decorations/Watermark";
 import { PixieDust } from "@/components/decorations/PixieDust";
 import { createClient } from "@/utils/supabase/server";
+import { curriculumData } from "@/lib/lmsData";
 
 export default async function LMSDashboard() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const userId = session?.user?.id;
 
-  // 全動画数を取得
-  const { count: totalVideosCount } = await supabase
-    .from("videos")
-    .select("*", { count: "exact", head: true });
-  const totalVideos = totalVideosCount || 0;
+  // 全動画数を lmsData から計算
+  let totalVideos = 0;
+  curriculumData.forEach((chapter) => {
+    totalVideos += chapter.videos.length;
+  });
 
-  // ユーザーの完了動画数を取得
+  // ユーザーの完了動画数を取得 (user_progress から取得)
   let completedVideos = 0;
   if (userId) {
     const { count } = await supabase
@@ -32,40 +33,39 @@ export default async function LMSDashboard() {
   // 進捗率を計算
   const progressPercent = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
 
-  // 「前回の続きから学ぶ」用の動画データを取得
-  let nextVideo = null;
+  // 「前回の続きから学ぶ」または「最初の動画」のデータを lmsData から取得
+  let nextVideoInfo = null;
   let isFirstTime = false;
 
   if (userId) {
-    // 最後に視聴した動画を取得
+    // 最後に視聴した動画を取得 (video_id は文字列 "video-xxx" などになっている前提)
     const { data: lastWatched } = await supabase
       .from("user_progress")
-      .select("video_id, videos(*)")
+      .select("video_id")
       .eq("user_id", userId)
       .order("last_watched_at", { ascending: false })
       .limit(1)
       .single();
 
-    if (lastWatched && lastWatched.videos) {
-      // SupabaseのJOIN結果としてvideosは配列ではなく単一オブジェクトとして返る前提（単一参照のため）
-      nextVideo = Array.isArray(lastWatched.videos) ? lastWatched.videos[0] : lastWatched.videos;
+    if (lastWatched && lastWatched.video_id) {
+      // lmsData から該当動画を探す
+      for (const chapter of curriculumData) {
+        const video = chapter.videos.find(v => v.id === lastWatched.video_id);
+        if (video) {
+          nextVideoInfo = { chapter, video };
+          break;
+        }
+      }
     }
   }
 
-  // 視聴履歴がない場合、または最後に見た動画が完了済み等でうまく取れなかった場合は「最初の動画」を取得
-  if (!nextVideo) {
+  // 視聴履歴がない場合、または該当動画が見つからなかった場合は「第一章の最初の動画」を取得
+  if (!nextVideoInfo && curriculumData.length > 0 && curriculumData[0].videos.length > 0) {
     isFirstTime = true;
-    const { data: firstVideo } = await supabase
-      .from("videos")
-      .select("*")
-      .order("chapter_number", { ascending: true })
-      .order("sort_order", { ascending: true })
-      .limit(1)
-      .single();
-    
-    if (firstVideo) {
-      nextVideo = firstVideo;
-    }
+    nextVideoInfo = {
+      chapter: curriculumData[0],
+      video: curriculumData[0].videos[0]
+    };
   }
   
   return (
@@ -137,13 +137,13 @@ export default async function LMSDashboard() {
                 {isFirstTime ? "さっそく学習を始めましょう" : "前回の続きから学ぶ"}
               </h3>
               
-              {nextVideo ? (
+              {nextVideoInfo ? (
                 <div className="bg-[#faf9f6] rounded-xl p-4 mb-6 border border-stone-100">
-                  <div className="text-xs font-bold text-[#b8a98f] mb-1">第{nextVideo.chapter_number}章</div>
-                  <h4 className="font-bold text-stone-800 text-lg">{nextVideo.title}</h4>
-                  {nextVideo.leverage_memo && (
+                  <div className="text-xs font-bold text-[#b8a98f] mb-1">{nextVideoInfo.chapter.title}</div>
+                  <h4 className="font-bold text-stone-800 text-lg">{nextVideoInfo.video.title}</h4>
+                  {nextVideoInfo.video.memoContent && (
                     <p className="text-sm text-stone-500 mt-2 line-clamp-2">
-                      {nextVideo.leverage_memo}
+                      {nextVideoInfo.video.memoContent.split('\n')[0] || nextVideoInfo.video.title}
                     </p>
                   )}
                 </div>
@@ -154,9 +154,9 @@ export default async function LMSDashboard() {
               )}
             </div>
             
-            {nextVideo && (
+            {nextVideoInfo && (
               <Link 
-                href={`/ja/lms/video/${nextVideo.vimeo_id}`}
+                href={`/ja/lms/video/${nextVideoInfo.video.id}`}
                 className="bg-stone-800 text-stone-50 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full text-lg"
               >
                 <Play size={24} fill="currentColor" />
