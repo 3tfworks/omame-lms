@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, CheckCircle, XCircle, Clock, Video, Loader2 } from "lucide-react";
+import { Send, CheckCircle, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [message, setMessage] = useState("");
