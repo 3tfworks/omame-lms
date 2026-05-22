@@ -71,10 +71,11 @@ export default function LMSDashboard() {
         <div className="absolute -bottom-24 -right-12 w-64 h-64 bg-omame-gold opacity-20 rounded-full blur-3xl pointer-events-none"></div>
       </section>
 
-      {/* アクション領域：続きから見る ＆ 進捗 */}
+      {/* アクション領域：続きから見る ＆ 進捗（ダミーデータのため一時非表示） */}
+      {/* 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* メインアクション：前回の続きから */}
+        // メインアクション：前回の続きから
         <div className="col-span-1 lg:col-span-2">
           <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm h-full flex flex-col justify-between hover:border-[#d4c5b0] transition-colors group">
             <div>
@@ -101,7 +102,7 @@ export default function LMSDashboard() {
           </div>
         </div>
 
-        {/* 進捗プログレス */}
+        // 進捗プログレス
         <div className="col-span-1">
           <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm h-full">
             <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6">
@@ -114,7 +115,7 @@ export default function LMSDashboard() {
               <span className="text-sm font-bold text-stone-500">{completedVideos} / {totalVideos} 本完了</span>
             </div>
             
-            {/* プログレスバー */}
+            // プログレスバー
             <div className="w-full bg-[#faf9f6] rounded-full h-4 mb-8 overflow-hidden border border-stone-200/50">
               <div 
                 className="bg-gradient-to-r from-[#d4c5b0] to-[#b8a98f] h-4 rounded-full shadow-inner" 
@@ -135,6 +136,7 @@ export default function LMSDashboard() {
           </div>
         </div>
       </section>
+      */}
 
       {/* お豆ナビ検索（大きな入口） */}
       <section>
