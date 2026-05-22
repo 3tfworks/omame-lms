@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import Image from "next/image";
@@ -9,6 +10,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // すでにログインしている場合は自動的に受講画面へ飛ばす
+        router.push("/ja/lms");
+      }
+    };
+    checkSession();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,9 +85,16 @@ export default function LoginPage() {
                 メールを送信しました！
               </h3>
               <p className="text-sm text-omame-primary/70 mb-6">
-                <strong>{email}</strong> 宛にログイン用の魔法のリンクをお送りしました。
-                メールを開いて、リンクをクリックしてください。
+                <strong>{email}</strong> 宛にログイン用のメールをお送りしました。
+                メールを開いて、中のボタンをクリックしてください。
               </p>
+              <div className="bg-omame-gold/10 rounded-lg p-3 mb-6 text-xs text-omame-primary/80 text-left">
+                <p className="font-semibold mb-1">※メールが見当たらない場合：</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>迷惑メールフォルダをご確認ください</li>
+                  <li>Gmailの場合は「すべてのメール」や「プロモーション」タブに振り分けられていることがあります</li>
+                </ul>
+              </div>
               <button
                 onClick={() => setStatus("idle")}
                 className="text-sm text-omame-accent hover:text-omame-primary transition-colors underline"
@@ -122,7 +143,7 @@ export default function LoginPage() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      ログインリンクを受け取る
+                      メールでログインする
                       <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
@@ -130,7 +151,8 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 text-center text-xs text-omame-primary/50 space-y-2">
-                <p>パスワードは不要です。入力したメールアドレス宛に、一度だけ使えるログインURLが届きます。</p>
+                <p>パスワードは不要です。入力したメールアドレス宛にログイン用のボタンが届きます。</p>
+                <p className="text-omame-primary/40 mt-2">※数分待っても届かない場合は、迷惑メールフォルダや「すべてのメール」「プロモーション」タブ等をご確認ください。</p>
               </div>
             </form>
           )}
