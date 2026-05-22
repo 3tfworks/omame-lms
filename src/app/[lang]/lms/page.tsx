@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,12 +5,68 @@ import { Play, Sparkles, BookOpen, ChevronRight, Trophy, Search } from "lucide-r
 import { currentTenantConfig } from "@/lib/tenantConfig";
 import { Watermark } from "@/components/decorations/Watermark";
 import { PixieDust } from "@/components/decorations/PixieDust";
+import { createClient } from "@/utils/supabase/server";
 
-export default function LMSDashboard() {
-  // モックデータ
-  const progressPercent = 35;
-  const totalVideos = 44;
-  const completedVideos = 15;
+export default async function LMSDashboard() {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const userId = session?.user?.id;
+
+  // 全動画数を取得
+  const { count: totalVideosCount } = await supabase
+    .from("videos")
+    .select("*", { count: "exact", head: true });
+  const totalVideos = totalVideosCount || 0;
+
+  // ユーザーの完了動画数を取得
+  let completedVideos = 0;
+  if (userId) {
+    const { count } = await supabase
+      .from("user_progress")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_completed", true);
+    completedVideos = count || 0;
+  }
+
+  // 進捗率を計算
+  const progressPercent = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
+
+  // 「前回の続きから学ぶ」用の動画データを取得
+  let nextVideo = null;
+  let isFirstTime = false;
+
+  if (userId) {
+    // 最後に視聴した動画を取得
+    const { data: lastWatched } = await supabase
+      .from("user_progress")
+      .select("video_id, videos(*)")
+      .eq("user_id", userId)
+      .order("last_watched_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastWatched && lastWatched.videos) {
+      // SupabaseのJOIN結果としてvideosは配列ではなく単一オブジェクトとして返る前提（単一参照のため）
+      nextVideo = Array.isArray(lastWatched.videos) ? lastWatched.videos[0] : lastWatched.videos;
+    }
+  }
+
+  // 視聴履歴がない場合、または最後に見た動画が完了済み等でうまく取れなかった場合は「最初の動画」を取得
+  if (!nextVideo) {
+    isFirstTime = true;
+    const { data: firstVideo } = await supabase
+      .from("videos")
+      .select("*")
+      .order("chapter_number", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .single();
+    
+    if (firstVideo) {
+      nextVideo = firstVideo;
+    }
+  }
   
   return (
     <div className="space-y-8 pb-12">
@@ -71,38 +125,48 @@ export default function LMSDashboard() {
         <div className="absolute -bottom-24 -right-12 w-64 h-64 bg-omame-gold opacity-20 rounded-full blur-3xl pointer-events-none"></div>
       </section>
 
-      {/* アクション領域：続きから見る ＆ 進捗（ダミーデータのため一時非表示） */}
-      {/* 
+      {/* アクション領域：続きから見る ＆ 進捗 */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        // メインアクション：前回の続きから
+        {/* メインアクション：前回の続きから / 最初の動画 */}
         <div className="col-span-1 lg:col-span-2">
           <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm h-full flex flex-col justify-between hover:border-[#d4c5b0] transition-colors group">
             <div>
               <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-4">
                 <Play size={20} className="text-[#b8a98f]" />
-                前回の続きから学ぶ
+                {isFirstTime ? "さっそく学習を始めましょう" : "前回の続きから学ぶ"}
               </h3>
-              <div className="bg-[#faf9f6] rounded-xl p-4 mb-6 border border-stone-100">
-                <div className="text-xs font-bold text-[#b8a98f] mb-1">第2章：音の鳴る仕組みと鍵盤の扱い</div>
-                <h4 className="font-bold text-stone-800 text-lg">ピアノの音を決めるのは「打鍵スピード」だけ</h4>
-                <p className="text-sm text-stone-500 mt-2 line-clamp-2">
-                  打鍵する瞬間のスピードがどのように音色に変化をもたらすのか。力ではなくスピードでコントロールする感覚をマスターしましょう。
-                </p>
-              </div>
+              
+              {nextVideo ? (
+                <div className="bg-[#faf9f6] rounded-xl p-4 mb-6 border border-stone-100">
+                  <div className="text-xs font-bold text-[#b8a98f] mb-1">第{nextVideo.chapter_number}章</div>
+                  <h4 className="font-bold text-stone-800 text-lg">{nextVideo.title}</h4>
+                  {nextVideo.leverage_memo && (
+                    <p className="text-sm text-stone-500 mt-2 line-clamp-2">
+                      {nextVideo.leverage_memo}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-[#faf9f6] rounded-xl p-4 mb-6 border border-stone-100 flex items-center justify-center h-24">
+                  <p className="text-sm text-stone-500">現在、動画データが準備中です。</p>
+                </div>
+              )}
             </div>
             
-            <Link 
-              href="/ja/lms/video/video-1188100452"
-              className="bg-stone-800 text-stone-50 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full text-lg"
-            >
-              <Play size={24} fill="currentColor" />
-              今すぐこの動画を見る
-            </Link>
+            {nextVideo && (
+              <Link 
+                href={`/ja/lms/video/${nextVideo.vimeo_id}`}
+                className="bg-stone-800 text-stone-50 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 hover:bg-stone-700 transition-colors shadow-sm w-full text-lg"
+              >
+                <Play size={24} fill="currentColor" />
+                今すぐこの動画を見る
+              </Link>
+            )}
           </div>
         </div>
 
-        // 進捗プログレス
+        {/* 進捗プログレス */}
         <div className="col-span-1">
           <div className="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm h-full">
             <h3 className="font-bold text-stone-800 flex items-center gap-2 mb-6">
@@ -115,10 +179,10 @@ export default function LMSDashboard() {
               <span className="text-sm font-bold text-stone-500">{completedVideos} / {totalVideos} 本完了</span>
             </div>
             
-            // プログレスバー
+            {/* プログレスバー */}
             <div className="w-full bg-[#faf9f6] rounded-full h-4 mb-8 overflow-hidden border border-stone-200/50">
               <div 
-                className="bg-gradient-to-r from-[#d4c5b0] to-[#b8a98f] h-4 rounded-full shadow-inner" 
+                className="bg-gradient-to-r from-[#d4c5b0] to-[#b8a98f] h-4 rounded-full shadow-inner transition-all duration-1000 ease-out" 
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
@@ -136,7 +200,6 @@ export default function LMSDashboard() {
           </div>
         </div>
       </section>
-      */}
 
       {/* お豆ナビ検索（大きな入口） */}
       <section>
