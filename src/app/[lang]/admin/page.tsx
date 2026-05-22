@@ -1,17 +1,52 @@
 "use client";
 
-import React, { useState } from "react";
-import { Send, CheckCircle, XCircle, Clock, Video } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Send, CheckCircle, XCircle, Clock, Video, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [message, setMessage] = useState(
-    "「重力に従う」感覚が少しずつ掴めてきた頃だね！焦らず、自分の指先が鍵盤の底とどう対話しているか、その感覚だけを一緒に大切にしていこうね！"
-  );
+  const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingMsg, setIsLoadingMsg] = useState(true);
 
-  const handleSaveMessage = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  // 初回ロード時にメッセージを取得
+  useEffect(() => {
+    const fetchMessage = async () => {
+      try {
+        const res = await fetch("/api/admin/message");
+        if (res.ok) {
+          const data = await res.json();
+          setMessage(data.message);
+        }
+      } catch (e) {
+        console.error("Failed to fetch message", e);
+      } finally {
+        setIsLoadingMsg(false);
+      }
+    };
+    fetchMessage();
+  }, []);
+
+  const handleSaveMessage = async () => {
+    if (!message.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/admin/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message.trim() })
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        alert("保存に失敗しました");
+      }
+    } catch (e) {
+      alert("通信エラーが発生しました");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // モックデータ：生徒から届いた付箋提案
@@ -59,8 +94,9 @@ export default function AdminDashboard() {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="w-full h-32 p-4 bg-[#faf9f6] border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8a98f] resize-none text-stone-800 text-lg leading-relaxed"
-            placeholder="例：今日も練習がんばってね！無理せず休むことも大切だよ。"
+            disabled={isLoadingMsg || isSaving}
+            className="w-full h-32 p-4 bg-[#faf9f6] border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#b8a98f] resize-none text-stone-800 text-lg leading-relaxed disabled:opacity-50"
+            placeholder={isLoadingMsg ? "読み込み中..." : "例：今日も練習がんばってね！無理せず休むことも大切だよ。"}
           />
           <div className="flex items-center justify-between">
             <span className="text-sm text-stone-400">
@@ -68,13 +104,19 @@ export default function AdminDashboard() {
             </span>
             <button 
               onClick={handleSaveMessage}
-              className={`font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-sm ${
+              disabled={isLoadingMsg || isSaving || !message.trim()}
+              className={`font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 ${
                 saved 
                   ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
                   : "bg-stone-800 text-white hover:bg-stone-700"
               }`}
             >
-              {saved ? (
+              {isSaving ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  保存中...
+                </>
+              ) : saved ? (
                 <>
                   <CheckCircle size={20} />
                   保存しました！

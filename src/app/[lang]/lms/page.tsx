@@ -66,6 +66,19 @@ export default async function LMSDashboard() {
       chapter: curriculumData[0],
       video: curriculumData[0].videos[0]
     };
+  // 「今日の一言」メッセージを取得
+  let todaysMessage = "ここでは、ピアノを弾くための「本当の身体の使い方」と「音の鳴る仕組み」を基礎から順を追って学んでいきます。焦らず、ご自身のペースで一つ一つの感覚を大切にしながら進めていきましょう！";
+  try {
+    const { data: messageData } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("id", "todays_message")
+      .single();
+    if (messageData && messageData.value) {
+      todaysMessage = messageData.value;
+    }
+  } catch (error) {
+    console.error("Failed to fetch todays message", error);
   }
   
   return (
@@ -95,8 +108,8 @@ export default async function LMSDashboard() {
           <h2 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight text-omame-text">
             ようこそ！<br className="lg:hidden" />お豆奏法基礎講座へ
           </h2>
-          <p className="text-omame-text/80 max-w-2xl leading-relaxed">
-            ここでは、ピアノを弾くための「本当の身体の使い方」と「音の鳴る仕組み」を基礎から順を追って学んでいきます。焦らず、ご自身のペースで一つ一つの感覚を大切にしながら進めていきましょう！
+          <p className="text-omame-text/80 max-w-2xl leading-relaxed whitespace-pre-wrap">
+            {todaysMessage}
           </p>
           <div className="mt-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
