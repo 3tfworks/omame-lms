@@ -66,10 +66,10 @@ function CustomVideoPlayer({ vimeoId, onReady }: { vimeoId: string, onReady: (pl
   React.useEffect(() => {
     if (!containerRef.current) return;
 
-    // URLパラメータの t を取得して開始秒数を設定
+    // URLパラメータの t（秒数）を取得して開始位置を設定
     const params = new URLSearchParams(window.location.search);
     const tStr = params.get('t');
-    
+
     // vimeoIdだけを数値として抽出（https://vimeo.com/...等のURLの可能性も考慮）
     const cleanId = vimeoId.split('?')[0].split('/').pop() || vimeoId;
 
@@ -82,7 +82,10 @@ function CustomVideoPlayer({ vimeoId, onReady }: { vimeoId: string, onReady: (pl
     };
 
     if (tStr) {
-      options.t = tStr; // 例: "1m30s" 
+      const seconds = parseInt(tStr, 10);
+      if (!isNaN(seconds) && seconds > 0) {
+        options.t = seconds;
+      }
     }
 
     const player = new Player(containerRef.current, options);

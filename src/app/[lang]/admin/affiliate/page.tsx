@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Handshake, Download, RefreshCw, CheckCircle2, Clock } from "lucide-react";
+import { Handshake, Download, RefreshCw, CheckCircle2, Clock, Settings, Save, Percent } from "lucide-react";
 
 type AffiliateReward = {
   id: string;
@@ -21,10 +21,20 @@ type AffiliateReward = {
   };
 };
 
+type RewardRateConfig = {
+  default: number;
+  campaign: number;
+  active: "default" | "campaign";
+};
+
 export default function AdminAffiliatePage() {
   const [rewards, setRewards] = useState<AffiliateReward[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const [rateConfig, setRateConfig] = useState<RewardRateConfig>({ default: 35, campaign: 50, active: "default" });
+  const [savingRate, setSavingRate] = useState(false);
+  const [rateSaveMsg, setRateSaveMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const fetchRewards = async () => {
     setLoading(true);
@@ -33,11 +43,43 @@ export default function AdminAffiliatePage() {
       if (res.ok) {
         const data = await res.json();
         setRewards(data.rewards || []);
+        if (data.rewardRateConfig) {
+          setRateConfig({
+            default: data.rewardRateConfig.default ?? 35,
+            campaign: data.rewardRateConfig.campaign ?? 50,
+            active: data.rewardRateConfig.active ?? "default",
+          });
+        }
       }
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
+  };
+
+  const handleSaveRates = async () => {
+    setSavingRate(true);
+    setRateSaveMsg(null);
+    try {
+      const res = await fetch("/api/admin/affiliate", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          defaultRate: rateConfig.default,
+          campaignRate: rateConfig.campaign,
+          active: rateConfig.active,
+        }),
+      });
+      if (res.ok) {
+        setRateSaveMsg({ text: "保存しました", ok: true });
+      } else {
+        setRateSaveMsg({ text: "保存に失敗しました", ok: false });
+      }
+    } catch {
+      setRateSaveMsg({ text: "通信エラーが発生しました", ok: false });
+    }
+    setSavingRate(false);
+    setTimeout(() => setRateSaveMsg(null), 3000);
   };
 
   useEffect(() => {
@@ -139,6 +181,84 @@ export default function AdminAffiliatePage() {
             <Download className="w-4 h-4" />
             未払いリスト(CSV)
           </button>
+        </div>
+      </div>
+
+      {/* 報酬率設定 */}
+      <div className="bg-white rounded-2xl shadow-sm border border-omame-gold/20 overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
+          <Settings className="w-5 h-5 text-amber-600" />
+          <h3 className="font-bold text-omame-deep">報酬率の設定</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            {(["default", "campaign"] as const).map((key) => {
+              const isActive = rateConfig.active === key;
+              const label = key === "default" ? "通常報酬率" : "キャンペーン報酬率";
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRateConfig(prev => ({ ...prev, active: key }))}
+                  className={`text-left rounded-xl border-2 p-5 transition-all ${
+                    isActive
+                      ? "border-amber-400 bg-amber-50"
+                      : "border-stone-200 bg-stone-50 hover:border-stone-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-bold text-stone-700">{label}</span>
+                    <span
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                        isActive
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-stone-200 text-stone-500"
+                      }`}
+                    >
+                      {isActive ? "● 適用中" : "○ 切り替える"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <Percent className="w-4 h-4 text-stone-400 shrink-0" />
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={rateConfig[key]}
+                      onChange={e =>
+                        setRateConfig(prev => ({
+                          ...prev,
+                          [key]: Math.min(100, Math.max(1, parseInt(e.target.value) || 1)),
+                        }))
+                      }
+                      className="w-20 border border-stone-300 rounded-lg px-3 py-1.5 text-lg font-bold text-omame-deep focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 bg-white"
+                    />
+                    <span className="text-stone-600 font-bold">%</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleSaveRates}
+              disabled={savingRate}
+              className="flex items-center gap-2 px-5 py-2.5 bg-stone-800 text-white font-bold rounded-lg hover:bg-black transition-colors text-sm disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              {savingRate ? "保存中..." : "変更を保存"}
+            </button>
+            {rateSaveMsg && (
+              <span
+                className={`text-sm font-bold ${
+                  rateSaveMsg.ok ? "text-emerald-600" : "text-red-600"
+                }`}
+              >
+                {rateSaveMsg.text}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

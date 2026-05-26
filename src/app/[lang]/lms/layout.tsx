@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles, Handshake, Star } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
+import ReferralPopup from "@/components/ReferralPopup";
 
 // アコーディオン用のコンポーネント
 function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: any, defaultOpen?: boolean }) {
@@ -47,16 +48,19 @@ function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: any, defa
 
 export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<{ role: string; display_name: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ role: string; display_name: string | null; referral_prompt_shown: boolean } | null>(null);
+  const [showReferralPopup, setShowReferralPopup] = useState(false);
 
   useEffect(() => {
-    // ユーザープロフィールの取得
     const fetchProfile = async () => {
       try {
         const res = await fetch('/api/user/profile');
         if (res.ok) {
           const data = await res.json();
           setProfile(data.profile);
+          if (data.profile && data.profile.referral_prompt_shown === false) {
+            setShowReferralPopup(true);
+          }
         }
       } catch (e) {
         console.error("プロフィール取得エラー:", e);
@@ -214,10 +218,15 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
 
       {/* スマホ用オーバーレイ */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 z-30 lg:hidden backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
+      )}
+
+      {/* 救済ポップアップ（初回ログイン時のみ） */}
+      {showReferralPopup && (
+        <ReferralPopup onClose={() => setShowReferralPopup(false)} />
       )}
     </div>
   );

@@ -13,7 +13,7 @@ export async function GET() {
     // usersテーブルからプロフィールを取得
     const { data: profile, error: dbError } = await supabase
       .from("users")
-      .select("id, email, role, display_name")
+      .select("id, email, role, display_name, referral_prompt_shown")
       .eq("id", user.id)
       .single();
 

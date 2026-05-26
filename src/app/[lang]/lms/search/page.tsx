@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, Filter, PlayCircle, Star } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
@@ -12,9 +12,16 @@ interface SearchResult {
   videoTitle: string;
   chapterTitle: string;
   timestamp: string;
+  timestampSeconds: number;
   desc: string;
   contributor: string;
   likes: number;
+}
+
+// "MM:SS" → 秒数（数値）に変換
+function timestampToSeconds(ts: string): number {
+  const [m, s] = ts.split(":").map(Number);
+  return (m || 0) * 60 + (s || 0);
 }
 
 export default function SearchPage() {
@@ -41,8 +48,10 @@ export default function SearchPage() {
         let currentDesc = "動画全体（要約など）";
         let currentText = "";
 
-        // タイムスタンプ行を抽出する正規表現 (例: "00:02〜00:27 ピアノの基本構造")
-        const timeRegex = /^([0-9]{2}:[0-9]{2})(?:〜|~)[0-9]{2}:[0-9]{2}\s+(.+)$/;
+        // タイムスタンプ行を抽出する正規表現
+        // 例1: "00:02〜00:27 ピアノの基本構造" (スペース区切り)
+        // 例2: "00:00〜00:40｜イントロ・動画の目的" (パイプ区切り)
+        const timeRegex = /^([0-9]{2}:[0-9]{2})(?:〜|~)[0-9]{2}:[0-9]{2}[｜\s]\s*(.+)$/;
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -110,9 +119,9 @@ export default function SearchPage() {
       videoTitle: block.videoTitle,
       chapterTitle: block.chapterTitle,
       timestamp: block.timestamp,
+      timestampSeconds: timestampToSeconds(block.timestamp),
       desc: block.desc,
-      contributor: "公式", // TODO: 将来的にユーザー投稿も混ぜる場合はここを変える
-      // ダミーの「助かった！」数（固定値として生成）
+      contributor: "公式",
       likes: Math.floor(Math.abs(Math.sin(idx + block.videoId.length)) * 100) + 10,
     }));
   }, [searchQuery, activeTag, searchableBlocks]);
@@ -203,9 +212,9 @@ export default function SearchPage() {
           {searchResults.length > 0 ? (
             <div className="grid grid-cols-1 gap-4">
               {searchResults.map((result) => (
-                <Link 
+                <Link
                   key={result.id}
-                  href={`/ja/lms/video/${result.videoId}?t=${result.timestamp.replace(":", "m")}s`}
+                  href={`/ja/lms/video/${result.videoId}?t=${result.timestampSeconds}`}
                   className="block bg-white border border-stone-200 rounded-2xl p-5 hover:border-[#b8a98f] hover:shadow-md transition-all group relative overflow-hidden"
                 >
                   {/* 装飾用ライン */}

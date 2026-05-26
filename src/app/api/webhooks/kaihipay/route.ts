@@ -96,7 +96,67 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. 完了のご案内メール（Magic Link）を自動送信する
+    // 6. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
+    try {
+      const paymentAmount: number =
+        body.amount ??
+        body.price ??
+        body.total_price ??
+        body.total_amount ??
+        body.contracted_courses?.[0]?.price ??
+        0;
+
+      if (paymentAmount > 0) {
+        const { data: lead } = await supabaseAdmin
+          .from("invite_leads")
+          .select("id, referrer_id")
+          .eq("email", email.trim().toLowerCase())
+          .eq("converted", false)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lead) {
+          const { data: setting } = await supabaseAdmin
+            .from("system_settings")
+            .select("value")
+            .eq("id", "affiliate_reward_rate")
+            .single();
+
+          const rateConfig = setting
+            ? JSON.parse(setting.value as string)
+            : { default: 35, campaign: 50, active: "default" };
+          const activeKey: "default" | "campaign" = rateConfig.active === "campaign" ? "campaign" : "default";
+          const rewardRate: number = rateConfig[activeKey] ?? rateConfig.default ?? 35;
+          const rewardAmount = Math.floor((paymentAmount * rewardRate) / 100);
+
+          const { error: rewardError } = await supabaseAdmin
+            .from("affiliate_rewards")
+            .insert({
+              referrer_id: lead.referrer_id,
+              buyer_id: userId,
+              amount: rewardAmount,
+              reward_rate: rewardRate,
+              status: "pending",
+            });
+
+          if (rewardError) {
+            console.error("[Kaihipay Webhook] Failed to insert affiliate reward:", rewardError);
+          } else {
+            await supabaseAdmin
+              .from("invite_leads")
+              .update({ converted: true })
+              .eq("id", lead.id);
+
+            console.log(`[Kaihipay Webhook] Affiliate reward recorded: referrer=${lead.referrer_id}, amount=${rewardAmount}, rate=${rewardRate}%`);
+          }
+        }
+      }
+    } catch (affiliateErr) {
+      console.error("[Kaihipay Webhook] Affiliate reward step failed:", affiliateErr);
+    }
+
+    // 7. 完了のご案内メール（Magic Link）を自動送信する
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://omamepiano.com";
     const redirectUrl = `${siteUrl}/api/auth/callback?next=/ja/lms`;
     
@@ -114,7 +174,7 @@ export async function POST(request: Request) {
 
     console.log(`[Kaihipay Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
 
-    // 7. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
+    // 8. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
     return NextResponse.json({ message: "Webhook processed successfully" }, { status: 200 });
 
   } catch (error: any) {
