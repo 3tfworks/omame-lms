@@ -50,7 +50,7 @@ export default function AffiliatePage() {
     fetchData();
   }, []);
 
-  const affiliateUrl = userId ? `https://omamepiano.com/ja/offer?ref=${userId}` : "";
+  const affiliateUrl = userId ? `https://omamepiano.com/invite/${userId}` : "";
 
   const handleCopy = async () => {
     try {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function GET() {
   try {
@@ -83,31 +84,15 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "bankInfo is required" }, { status: 400 });
     }
 
-    // usersテーブルを更新
-    // supabase-jsのv2ではサーバー側で自身のデータを更新できるかはRLS次第ですが、
-    // service_roleキーを使ったadminクライアントが必要かもしれない。
-    // とりあえず今回は通常のクライアントで試行。エラーになればadminクライアントに切り替え。
-    const { error } = await supabase
+    const adminClient = createAdminClient();
+    const { error } = await adminClient
       .from("users")
-      .update({ bank_info: bankInfo, updated_at: new Date().toISOString() })
+      .update({ bank_info: bankInfo })
       .eq("id", user.id);
 
     if (error) {
       console.error("[Affiliate API] Update Error:", error);
-      // RLSエラー対策としてadminクライアントで再試行
-      const { createClient: createAdmin } = await import("@supabase/supabase-js");
-      const adminClient = createAdmin(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-      const { error: retryError } = await adminClient
-        .from("users")
-        .update({ bank_info: bankInfo, updated_at: new Date().toISOString() })
-        .eq("id", user.id);
-        
-      if (retryError) {
-        return NextResponse.json({ error: "Failed to update bank info" }, { status: 500 });
-      }
+      return NextResponse.json({ error: "Failed to update bank info" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
