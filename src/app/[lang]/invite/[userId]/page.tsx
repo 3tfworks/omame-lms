@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, Mail, User, Sparkles } from "lucide-react";
 
-export default function InvitePage({ params }: { params: Promise<{ userId: string }> }) {
-  const { userId } = React.use(params);
+export default function InvitePage({ params }: { params: Promise<{ lang: string; userId: string }> }) {
+  const { lang, userId } = React.use(params);
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -24,7 +24,7 @@ export default function InvitePage({ params }: { params: Promise<{ userId: strin
         body: JSON.stringify({ name, email, referrerId: userId }),
       });
       if (res.ok) {
-        router.push(`/invite/${userId}/thanks`);
+        router.push(`/${lang}/invite/${userId}/thanks`);
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || "エラーが発生しました。もう一度お試しください。");
