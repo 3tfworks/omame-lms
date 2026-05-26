@@ -24,11 +24,15 @@ export async function POST(request: Request) {
 
   const { data: referrer, error: referrerError } = await adminClient
     .from("users")
-    .select("id")
+    .select("id, role")
     .eq("id", referrerId)
     .single();
 
   if (referrerError || !referrer) {
+    return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
+  }
+
+  if (referrer.role !== "salon_member" && referrer.role !== "sys_admin" && referrer.role !== "instructor") {
     return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
   }
 
