@@ -208,7 +208,7 @@ export const curriculumData: ChapterData[] = [
   },
   {
     "id": "chapter-4",
-    "title": "第4章：「たて読み」で譜読みが超楽になる",
+    "title": "第4章：「たて読み」で譜読みが超楽になる💕",
     "videos": [
       {
         "id": "video-1188100767",
