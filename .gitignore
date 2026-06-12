@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# レバメモ取得の中間生成物（生テキスト）
+/scripts/memos_raw/
+
 # production
 /build
 
