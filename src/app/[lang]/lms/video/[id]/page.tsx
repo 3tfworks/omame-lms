@@ -7,17 +7,18 @@ import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } 
 import { motion, AnimatePresence } from "framer-motion";
 
 import Player from '@vimeo/player';
+import { createClient } from "@/utils/supabase/client";
 
-function ActionCheckbox({ text, onCheck }: { text: string, onCheck: () => void }) {
-  const [checked, setChecked] = useState(false);
+function ActionCheckbox({ text, checked, onToggle }: { text: string, checked: boolean, onToggle: () => void }) {
   const [showBeans, setShowBeans] = useState(false);
 
   const handleClick = () => {
-    if (checked) return;
-    setChecked(true);
-    setShowBeans(true);
-    onCheck();
-    setTimeout(() => setShowBeans(false), 2000);
+    // チェックON にするときだけお豆エフェクトを出す（OFF はそのまま解除）
+    if (!checked) {
+      setShowBeans(true);
+      setTimeout(() => setShowBeans(false), 2000);
+    }
+    onToggle();
   };
 
   return (
@@ -146,12 +147,84 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     setNoteText(prev => prev ? `${prev}\n${newRecord}` : newRecord);
   };
 
+  // 行動リストのチェック状態（item_key の集合）。Supabase に presence 方式で永続化する。
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+
+  // ページ表示時に、ログインユーザー×この動画のチェック済み項目を読み込む
+  React.useEffect(() => {
+    let active = true;
+    async function loadProgress() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return; // 未ログイン時は何も読み込まない（このページはログイン必須）
+      const { data, error } = await supabase
+        .from("action_item_progress")
+        .select("item_key")
+        .eq("video_id", videoId);
+      if (!error && data && active) {
+        setCheckedItems(new Set(data.map((row: any) => row.item_key)));
+      }
+    }
+    loadProgress();
+    return () => { active = false; };
+  }, [videoId]);
+
+  // 楽観的更新つきトグル: UI を即反映 → Supabase へ保存（presence 方式の insert / delete）。失敗時は元に戻す。
+  const toggleActionItem = async (itemKey: string, text: string) => {
+    const wasChecked = checkedItems.has(itemKey);
+
+    // 1) 楽観的更新
+    setCheckedItems(prev => {
+      const next = new Set(prev);
+      if (wasChecked) next.delete(itemKey);
+      else next.add(itemKey);
+      return next;
+    });
+    // チェックON にしたときだけ、マイノートへ完了記録を追記（既存挙動を維持）
+    if (!wasChecked) handleTaskCheck(text);
+
+    // 2) 保存
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const revert = () => {
+      setCheckedItems(prev => {
+        const reverted = new Set(prev);
+        if (wasChecked) reverted.add(itemKey);
+        else reverted.delete(itemKey);
+        return reverted;
+      });
+    };
+    if (!user) { revert(); return; }
+
+    try {
+      if (wasChecked) {
+        const { error } = await supabase
+          .from("action_item_progress")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("video_id", videoId)
+          .eq("item_key", itemKey);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("action_item_progress")
+          .insert({ user_id: user.id, video_id: videoId, item_key: itemKey });
+        // 23505 = unique 制約違反（既にチェック済み）。冪等なので成功扱いにする
+        if (error && error.code !== "23505") throw error;
+      }
+    } catch (e) {
+      console.error("行動リストの進捗保存に失敗:", e);
+      revert();
+    }
+  };
+
   // memoContentのパースロジック
   const renderMemoContent = () => {
     if (!videoData.memoContent) return null;
 
     const parsedElements = [];
-    let currentSection = ''; // 'action' | 'summary' | ''
+    let currentSection = ''; // 'action' | 'summary' | 'flow' | ''
+    let actionIndex = 0; // 行動リスト内の項目連番（item_key の採番に使用）
     const lines = videoData.memoContent.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
@@ -201,7 +274,17 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         
         // 「行動リスト」セクションの箇条書きのみをチェックボックスにする
         if (currentSection === 'action') {
-          parsedElements.push(<ActionCheckbox key={i} text={text} onCheck={() => handleTaskCheck(text)} />);
+          // item_key は行動リスト内の並び順インデックス（案A）。並び順から自動採番する。
+          const itemKey = `action-${actionIndex}`;
+          actionIndex++;
+          parsedElements.push(
+            <ActionCheckbox
+              key={i}
+              text={text}
+              checked={checkedItems.has(itemKey)}
+              onToggle={() => toggleActionItem(itemKey, text)}
+            />
+          );
         } else {
           // それ以外のセクション（タイムライン、まとめ等）のものは普通のリスト
           parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600 my-2 leading-relaxed">{text}</li>);
