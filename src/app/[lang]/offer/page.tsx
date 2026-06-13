@@ -37,6 +37,26 @@ function CheckList({ items }: { items: string[] }) {
 }
 
 export default function OfferPage() {
+  // 決済ボタンのアクション（Stripe Checkout へ遷移）
+  // ※旧・会費ペイ(LINE登録フォーム)のリンクは並行運用のため、下のボタン箇所にコメントアウトで保持
+  const handleCheckout = async () => {
+    try {
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[offer] checkout failed:", data);
+      }
+    } catch (err) {
+      console.error("[offer] checkout error:", err);
+    }
+  };
+
   return (
     <div className="w-full bg-[#FAFAF8] text-stone-700 overflow-x-hidden selection:bg-amber-500 selection:text-white font-serif">
 
@@ -429,7 +449,15 @@ export default function OfferPage() {
                   ※この内容は、LINEでのみお届けしています。
                 </p>
 
-                {/* LINEボタン */}
+                {/* 申し込みボタン（Stripe Checkout） */}
+                <button
+                  onClick={handleCheckout}
+                  className="inline-flex items-center gap-3 bg-amber-500 text-white font-bold py-5 px-10 rounded-full text-lg hover:bg-amber-600 transition-all shadow-xl hover:shadow-2xl hover:scale-105 transform"
+                >
+                  🎹 動画コンテンツに申し込む
+                </button>
+
+                {/* --- 旧・会費ペイ(LINE登録フォーム)版（並行運用のため保持） ---
                 <a
                   href="https://www.kaihipay.jp/forms?form_code=3006074313979285"
                   className="inline-flex items-center gap-3 bg-[#06C755] text-white font-bold py-5 px-10 rounded-full text-lg hover:bg-[#05b34d] transition-all shadow-xl hover:shadow-2xl hover:scale-105 transform"
@@ -439,6 +467,7 @@ export default function OfferPage() {
                   </svg>
                   公式LINEで受け取る
                 </a>
+                --- 旧・会費ペイ版ここまで --- */}
 
                 <div className="space-y-4 text-stone-300 text-sm leading-relaxed pt-4">
                   <p>

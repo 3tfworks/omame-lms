@@ -1,0 +1,220 @@
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
+import { createAdminClient } from "@/utils/supabase/admin";
+import crypto from "crypto";
+
+// Stripe Webhook 受信エンドポイント。
+//
+// - Stripe-Signature ヘッダーで署名検証（STRIPE_WEBHOOK_SECRET は後で登録するので参照のみ）
+// - event.type で分岐できる構造（将来サブスク: invoice.paid / customer.subscription.* 等を追加する）
+// - checkout.session.completed:
+//     a. Supabase Auth でユーザー作成（既存ならスキップ）
+//     b. public.users に INSERT（role は "user" で統一）
+//     c. metadata.referrer_id があればアフィリエイト報酬を記録
+//     d. referrer_id が無い場合は email で invite_leads を検索してフォールバック
+//     e. Magic Link を送信
+//
+// ※既存の会費ペイ Webhook (/api/webhooks/kaihipay) はそのまま残し、本エンドポイントと並行運用する。
+
+export async function POST(request: Request) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    // シークレット未登録の段階では検証できないため拒否する（後で Vercel に登録予定）
+    console.error("[Stripe Webhook] Missing STRIPE_WEBHOOK_SECRET");
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+  }
+
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) {
+    console.warn("[Stripe Webhook] Missing Stripe-Signature header");
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+
+  // 署名検証には生のリクエストボディが必要（JSON パース前）
+  const rawBody = await request.text();
+
+  let event: Stripe.Event;
+  try {
+    event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+  } catch (err) {
+    console.error("[Stripe Webhook] Signature verification failed:", (err as Error).message);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  try {
+    // イベント種別で分岐（将来サブスク対応時はここに case を追加）
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        // 単発購入(payment)のみ処理。サブスク初回も completed が来るが、ここでは payment に限定。
+        if (session.mode === "payment") {
+          await handleCheckoutCompleted(session);
+        } else {
+          console.log(`[Stripe Webhook] Skipping checkout.session.completed (mode: ${session.mode})`);
+        }
+        break;
+      }
+      default:
+        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+    }
+
+    return NextResponse.json({ received: true }, { status: 200 });
+  } catch (error) {
+    console.error("[Stripe Webhook] Unhandled error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const email = session.customer_details?.email || session.customer_email;
+  const name = session.customer_details?.name || "受講生";
+  const referrerIdFromMeta =
+    typeof session.metadata?.referrer_id === "string" && session.metadata.referrer_id.trim()
+      ? session.metadata.referrer_id.trim()
+      : undefined;
+  // JPY はゼロ十進通貨なので amount_total はそのまま「円」
+  const paymentAmount = session.amount_total ?? 0;
+
+  if (!email) {
+    console.error("[Stripe Webhook] checkout.session.completed without email:", session.id);
+    return;
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  // 1. 既存ユーザーかチェック
+  const { data: existingUsers, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
+  if (searchError) {
+    console.error("[Stripe Webhook] Error fetching users:", searchError);
+    throw searchError;
+  }
+
+  const existing = existingUsers.users.find((u) => u.email === email);
+  let userId: string;
+
+  if (existing) {
+    console.log(`[Stripe Webhook] User already exists: ${email}`);
+    userId = existing.id;
+  } else {
+    // 2. 新規ユーザー作成（Auth）
+    const randomPassword = crypto.randomBytes(16).toString("hex") + "aA1!";
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: randomPassword,
+      email_confirm: true,
+      user_metadata: { full_name: name },
+    });
+
+    if (authError || !authData.user) {
+      console.error("[Stripe Webhook] Error creating auth user:", authError);
+      throw authError ?? new Error("Failed to create user");
+    }
+    userId = authData.user.id;
+
+    // 3. public.users へ INSERT（role は全員 "user"）
+    const { error: dbError } = await supabaseAdmin.from("users").insert({
+      id: userId,
+      email,
+      role: "user",
+    });
+
+    if (dbError) {
+      console.error("[Stripe Webhook] Error inserting to public.users:", dbError);
+      throw dbError;
+    }
+  }
+
+  // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
+  try {
+    let referrerId = referrerIdFromMeta;
+    let leadId: string | null = null;
+
+    // metadata に referrer_id が無ければ email で invite_leads をフォールバック検索
+    if (!referrerId) {
+      const { data: lead } = await supabaseAdmin
+        .from("invite_leads")
+        .select("id, referrer_id")
+        .eq("email", email.trim().toLowerCase())
+        .eq("converted", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lead) {
+        referrerId = lead.referrer_id;
+        leadId = lead.id;
+      }
+    } else {
+      // metadata 経由でも、対応する未コンバートのリードがあれば converted 更新対象にする
+      const { data: lead } = await supabaseAdmin
+        .from("invite_leads")
+        .select("id")
+        .eq("email", email.trim().toLowerCase())
+        .eq("referrer_id", referrerId)
+        .eq("converted", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lead) leadId = lead.id;
+    }
+
+    if (referrerId && paymentAmount > 0) {
+      const { data: setting } = await supabaseAdmin
+        .from("system_settings")
+        .select("value")
+        .eq("id", "affiliate_reward_rate")
+        .single();
+
+      const rateConfig = setting
+        ? JSON.parse(setting.value as string)
+        : { default: 35, campaign: 50, active: "default" };
+      const activeKey: "default" | "campaign" = rateConfig.active === "campaign" ? "campaign" : "default";
+      const rewardRate: number = rateConfig[activeKey] ?? rateConfig.default ?? 35;
+      const rewardAmount = Math.floor((paymentAmount * rewardRate) / 100);
+
+      const { error: rewardError } = await supabaseAdmin.from("affiliate_rewards").insert({
+        referrer_id: referrerId,
+        buyer_id: userId,
+        amount: rewardAmount,
+        reward_rate: rewardRate,
+        status: "pending",
+      });
+
+      if (rewardError) {
+        console.error("[Stripe Webhook] Failed to insert affiliate reward:", rewardError);
+      } else {
+        if (leadId) {
+          await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", leadId);
+        }
+        console.log(
+          `[Stripe Webhook] Affiliate reward recorded: referrer=${referrerId}, amount=${rewardAmount}, rate=${rewardRate}%`,
+        );
+      }
+    }
+  } catch (affiliateErr) {
+    console.error("[Stripe Webhook] Affiliate reward step failed:", affiliateErr);
+  }
+
+  // 既存ユーザーには Magic Link を再送しない（新規のみ案内）
+  if (existing) {
+    console.log(`[Stripe Webhook] Processed purchase for existing user: ${email} (ID: ${userId})`);
+    return;
+  }
+
+  // 5. Magic Link（ログイン案内メール）を送信
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://omamepiano.com";
+  const redirectUrl = `${siteUrl}/api/auth/callback?next=/ja/lms`;
+
+  const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectUrl },
+  });
+
+  if (otpError) {
+    console.error("[Stripe Webhook] Error sending magic link:", otpError);
+    // メール送信失敗でもユーザー作成自体は成功しているので処理は継続
+  }
+
+  console.log(`[Stripe Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
+}

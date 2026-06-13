@@ -1,9 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { use } from "react";
 import { Heart, CheckCircle2, Sparkles } from "lucide-react";
 
-export default function ThanksPage() {
+export default function ThanksPage({
+  params,
+}: {
+  params: Promise<{ lang: string; userId: string }>;
+}) {
+  // userId = 招待者(リファラー)のID。Stripe Checkout の metadata.referrer_id に渡してアフィリエイト紐付けする。
+  const { userId } = use(params);
+
+  const handleCheckout = async () => {
+    try {
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referrerId: userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[invite/thanks] checkout failed:", data);
+      }
+    } catch (err) {
+      console.error("[invite/thanks] checkout error:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#faf9f6] flex flex-col">
       {/* ヘッダー */}
@@ -36,6 +61,22 @@ export default function ThanksPage() {
           えりな先生から、まもなくメールをお届けします。<br />
           届かない場合は、迷惑メールフォルダもご確認ください。
         </p>
+
+        {/* お豆奏法 動画コンテンツへの申し込み（Stripe Checkout） */}
+        <div className="w-full bg-gradient-to-br from-amber-50 to-[#faf6ee] rounded-3xl p-8 border border-amber-200 shadow-sm text-center mb-10">
+          <p className="text-lg font-bold text-stone-800 mb-3">
+            さらに、お豆奏法の動画コンテンツへ
+          </p>
+          <p className="text-sm text-stone-500 leading-relaxed mb-6">
+            えりな先生の奏法を、ご自宅でじっくり学べる動画コンテンツをご用意しています。
+          </p>
+          <button
+            onClick={handleCheckout}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-base md:text-lg py-4 px-10 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 tracking-wide"
+          >
+            🎹 動画コンテンツに申し込む
+          </button>
+        </div>
 
         {/* 次のステップ */}
         <div className="w-full bg-white rounded-3xl p-8 border border-[#e8dfce] shadow-sm text-left mb-10">

@@ -33,10 +33,30 @@ export default function OfferWaterPage({
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
-  // 決済ボタンのアクション（会費ペイへ遷移）
-  const handleCheckoutMock = () => {
-    window.location.href = "https://www.kaihipay.jp/forms?form_code=3006074313979285";
+  // 決済ボタンのアクション（Stripe Checkout へ遷移）
+  // ※旧・会費ペイ版は並行運用のため残しておく（下にコメントアウト）
+  const handleCheckoutMock = async () => {
+    try {
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[offer-water] checkout failed:", data);
+      }
+    } catch (err) {
+      console.error("[offer-water] checkout error:", err);
+    }
   };
+
+  // --- 旧・会費ペイ版（並行運用のため保持） ---
+  // const handleCheckoutMock = () => {
+  //   window.location.href = "https://www.kaihipay.jp/forms?form_code=3006074313979285";
+  // };
 
   return (
     <div className="w-full bg-[#E0F7FA] text-blue-950 overflow-x-hidden selection:bg-cyan-400 selection:text-white font-serif relative">

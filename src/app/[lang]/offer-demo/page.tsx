@@ -30,10 +30,30 @@ export default function OfferDemoPage({
   const locale = locales.includes(lang) ? lang : "ja";
   const t = getDictionary(locale);
 
-  // 決済ボタンのアクション（会費ペイへ遷移）
-  const handleCheckoutMock = () => {
-    window.location.href = "https://www.kaihipay.jp/forms?form_code=3006074313979285";
+  // 決済ボタンのアクション（Stripe Checkout へ遷移）
+  // ※旧・会費ペイ版は並行運用のため残しておく（下にコメントアウト）
+  const handleCheckoutMock = async () => {
+    try {
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("[offer-demo] checkout failed:", data);
+      }
+    } catch (err) {
+      console.error("[offer-demo] checkout error:", err);
+    }
   };
+
+  // --- 旧・会費ペイ版（並行運用のため保持） ---
+  // const handleCheckoutMock = () => {
+  //   window.location.href = "https://www.kaihipay.jp/forms?form_code=3006074313979285";
+  // };
 
   return (
     <div className="w-full bg-[#FAFAF8] text-omame-text overflow-x-hidden selection:bg-omame-accent selection:text-white font-serif">
