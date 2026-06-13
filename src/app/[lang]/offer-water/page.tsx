@@ -402,7 +402,7 @@ export default function OfferWaterPage({
         <div className="max-w-4xl mx-auto px-6 space-y-6">
           <p className="text-sm tracking-widest">{t.footer.copyright}</p>
           <div className="flex justify-center gap-6 text-xs">
-            <Link href="#" className="hover:text-white/60 transition-colors">特定商取引法に基づく表記</Link>
+            <Link href={`/${locale}/tokutei`} className="hover:text-white/60 transition-colors">特定商取引法に基づく表記</Link>
             <Link href="#" className="hover:text-white/60 transition-colors">プライバシーポリシー</Link>
             <Link href="#" className="hover:text-white/60 transition-colors">利用規約</Link>
           </div>
