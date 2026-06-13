@@ -330,7 +330,8 @@ export default function InvitePage({ params }: { params: Promise<{ lang: string;
           <p className="text-sm tracking-widest">© OMAME SOHO LAB. / たちえりな</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href={`/${lang}/tokutei`} className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
-            <Link href="#" className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href={`/${lang}/privacy`} className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href={`/${lang}/terms`} className="hover:text-white transition-colors">利用規約</Link>
           </div>
         </div>
       </footer>

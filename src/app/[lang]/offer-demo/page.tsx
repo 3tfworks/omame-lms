@@ -362,8 +362,8 @@ export default function OfferDemoPage({
           <p className="text-sm tracking-widest">{t.footer.copyright}</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href={`/${locale}/tokutei`} className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
-            <Link href="#" className="hover:text-white transition-colors">プライバシーポリシー</Link>
-            <Link href="#" className="hover:text-white transition-colors">利用規約</Link>
+            <Link href={`/${locale}/privacy`} className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href={`/${locale}/terms`} className="hover:text-white transition-colors">利用規約</Link>
           </div>
         </div>
       </footer>

@@ -471,8 +471,8 @@ export default function OfferPage() {
           <p className="text-sm tracking-widest">© 2026 OMAME SOHO LAB. All rights reserved.</p>
           <div className="flex justify-center gap-6 text-xs">
             <Link href="/ja/tokutei" className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
-            <Link href="#" className="hover:text-white transition-colors">プライバシーポリシー</Link>
-            <Link href="#" className="hover:text-white transition-colors">利用規約</Link>
+            <Link href="/ja/privacy" className="hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href="/ja/terms" className="hover:text-white transition-colors">利用規約</Link>
           </div>
         </div>
       </footer>

@@ -1,20 +1,11 @@
 import Link from "next/link";
 import { isValidLocale } from "@/lib/i18n";
+import { BUSINESS_INFO } from "@/lib/businessInfo";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "特定商取引法に基づく表記 | OMAME SOHO LAB.",
-};
-
-// ▼ 事業者情報（確認でき次第ここだけ差し替え）
-//   grep で "BUSINESS_INFO" を検索すれば一箇所にまとまっています。
-const BUSINESS_INFO = {
-  name: "（確認中）", // 事業者の名称
-  manager: "（確認中）", // 運営統括責任者
-  address: "（確認中）", // 所在地
-  phone: "（確認中）", // 電話番号
-  email: "（確認中）", // メールアドレス
 };
 
 // 特定商取引法に基づく表記の項目（和文中心・3ロケール共通）
