@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -32,6 +32,24 @@ export default function OfferWaterPage({
 
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+
+  // 価格は DB(system_settings.product_pricing)から取得する。
+  // 初期値は i18n 辞書（フォールバック兼ちらつき防止）。
+  const [pricing, setPricing] = useState({
+    regularPrice: 34800,
+    salePrice: 29800,
+    campaignLabel: t.offer.pricing.campaignLabel,
+    showCampaign: true,
+  });
+
+  useEffect(() => {
+    fetch("/api/pricing")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setPricing((prev) => ({ ...prev, ...d }));
+      })
+      .catch(() => {});
+  }, []);
 
   // 決済ボタンのアクション（Stripe Checkout へ遷移）
   // ※旧・会費ペイ版は並行運用のため残しておく（下にコメントアウト）
@@ -325,18 +343,32 @@ export default function OfferWaterPage({
               </h2>
               
               <div className="space-y-6 mb-16">
-                <p className="text-lg text-cyan-100/50 line-through decoration-1">
-                  {t.offer.pricing.normalLabel} {t.offer.pricing.normalPrice}{t.offer.pricing.taxIncluded}
-                </p>
-                <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                  <span className="font-medium text-xl text-cyan-100">{t.offer.pricing.campaignLabel}</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-6xl md:text-8xl font-black font-sans text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
-                      {t.offer.pricing.campaignPrice}
-                    </span>
-                    <span className="text-xl font-bold text-cyan-200">{t.offer.pricing.taxIncluded}</span>
+                {pricing.showCampaign ? (
+                  <>
+                    <p className="text-lg text-cyan-100/50 line-through decoration-1">
+                      {t.offer.pricing.normalLabel} {pricing.regularPrice.toLocaleString()}{t.offer.pricing.taxIncluded}
+                    </p>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                      <span className="font-medium text-xl text-cyan-100">{pricing.campaignLabel}</span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-6xl md:text-8xl font-black font-sans text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                          {pricing.salePrice.toLocaleString()}
+                        </span>
+                        <span className="text-xl font-bold text-cyan-200">{t.offer.pricing.taxIncluded}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                    <span className="font-medium text-xl text-cyan-100">{t.offer.pricing.normalLabel}</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-6xl md:text-8xl font-black font-sans text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                        {pricing.regularPrice.toLocaleString()}
+                      </span>
+                      <span className="text-xl font-bold text-cyan-200">{t.offer.pricing.taxIncluded}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="space-y-12">

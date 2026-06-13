@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, PlayCircle } from "lucide-react";
+import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, PlayCircle, Tag } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -60,6 +60,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Calendar size={20} />
             キャンペーン設定
+          </Link>
+          <Link
+            href="/ja/admin/pricing"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/pricing')
+                ? 'bg-stone-800 text-white'
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Tag size={20} />
+            価格設定
           </Link>
           <Link
             href="/ja/admin/affiliate"

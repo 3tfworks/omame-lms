@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { getProductPricing } from "@/lib/pricing";
 
 // Stripe Checkout Session を作成する API。
 // POST { referrerId?: string } を受け取り、単発購入(mode: "payment")の Session を作成して URL を返す。
@@ -8,9 +9,11 @@ import { stripe } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   try {
-    const priceId = process.env.STRIPE_PRICE_ID_OMAME_BASIC;
+    // 価格は DB(system_settings.product_pricing)の stripePriceId を使用する。
+    // DB に値が無い場合は環境変数 STRIPE_PRICE_ID_OMAME_BASIC へフォールバックする。
+    const { stripePriceId: priceId } = await getProductPricing();
     if (!priceId) {
-      console.error("[checkout/stripe] Missing STRIPE_PRICE_ID_OMAME_BASIC");
+      console.error("[checkout/stripe] Missing Stripe Price ID (DB and STRIPE_PRICE_ID_OMAME_BASIC)");
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -29,6 +29,24 @@ export default function OfferDemoPage({
   const { lang } = use(params);
   const locale = locales.includes(lang) ? lang : "ja";
   const t = getDictionary(locale);
+
+  // 価格は DB(system_settings.product_pricing)から取得する。
+  // 初期値は i18n 辞書（フォールバック兼ちらつき防止）。
+  const [pricing, setPricing] = useState({
+    regularPrice: 34800,
+    salePrice: 29800,
+    campaignLabel: t.offer.pricing.campaignLabel,
+    showCampaign: true,
+  });
+
+  useEffect(() => {
+    fetch("/api/pricing")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setPricing((prev) => ({ ...prev, ...d }));
+      })
+      .catch(() => {});
+  }, []);
 
   // 決済ボタンのアクション（Stripe Checkout へ遷移）
   // ※旧・会費ペイ版は並行運用のため残しておく（下にコメントアウト）
@@ -290,16 +308,28 @@ export default function OfferDemoPage({
               </h2>
               
               <div className="space-y-4 mb-12 mt-4">
-                <p className="text-lg text-omame-text/80 line-through decoration-1 font-medium">
-                  {t.offer.pricing.normalLabel} {t.offer.pricing.normalPrice}{t.offer.pricing.taxIncluded}
-                </p>
-                <div className="flex flex-col md:flex-row items-baseline justify-center gap-2 md:gap-4 text-omame-deep">
-                  <span className="font-bold text-lg md:text-xl whitespace-nowrap">{t.offer.pricing.campaignLabel}</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-6xl md:text-7xl font-black font-sans text-omame-deep tracking-tight">{t.offer.pricing.campaignPrice}</span>
-                    <span className="text-lg font-bold whitespace-nowrap">円（税込）❣️</span>
+                {pricing.showCampaign ? (
+                  <>
+                    <p className="text-lg text-omame-text/80 line-through decoration-1 font-medium">
+                      {t.offer.pricing.normalLabel} {pricing.regularPrice.toLocaleString()}{t.offer.pricing.taxIncluded}
+                    </p>
+                    <div className="flex flex-col md:flex-row items-baseline justify-center gap-2 md:gap-4 text-omame-deep">
+                      <span className="font-bold text-lg md:text-xl whitespace-nowrap">{pricing.campaignLabel}</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-6xl md:text-7xl font-black font-sans text-omame-deep tracking-tight">{pricing.salePrice.toLocaleString()}</span>
+                        <span className="text-lg font-bold whitespace-nowrap">円（税込）❣️</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col md:flex-row items-baseline justify-center gap-2 md:gap-4 text-omame-deep">
+                    <span className="font-bold text-lg md:text-xl whitespace-nowrap">{t.offer.pricing.normalLabel}</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-6xl md:text-7xl font-black font-sans text-omame-deep tracking-tight">{pricing.regularPrice.toLocaleString()}</span>
+                      <span className="text-lg font-bold whitespace-nowrap">{t.offer.pricing.taxIncluded}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="space-y-10">
