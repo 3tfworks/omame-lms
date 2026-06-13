@@ -175,7 +175,19 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       if (line.includes('まとめポイント')) {
         currentSection = 'summary';
       }
-      
+
+      // 「動画のながれ」（旧タイムライン）セクションの見出し。【】や箇条書き接頭辞付きでも検出する。
+      if (line.includes('動画のながれ') || line.includes('タイムライン別の重要ポイント')) {
+        currentSection = 'flow';
+        parsedElements.push(
+          <div key={i} className="flex items-center gap-2 mt-8 mb-4 border-b border-stone-200 pb-2">
+            <span className="text-xl">🎬</span>
+            <h4 className="text-lg font-bold text-amber-800">動画のながれ</h4>
+          </div>
+        );
+        continue;
+      }
+
       // 区切り線（---など）は無視
       if (line.match(/^[-_]{3,}$/)) {
         parsedElements.push(<hr key={i} className="my-6 border-stone-200 border-dashed" />);
@@ -197,16 +209,24 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         continue;
       }
 
-      // 通常のタイムライン表記
-      if (line.match(/^[0-9]{2}:[0-9]{2}/)) {
-        const parts = line.split('|');
-        parsedElements.push(
-          <div key={i} className="bg-[#faf9f6] p-4 rounded-lg border border-stone-200 my-4">
-            <div className="font-bold text-amber-800 mb-1">{parts[0]}</div>
-            <div className="font-bold text-stone-800">{parts.slice(1).join('|')}</div>
-          </div>
-        );
-        continue;
+      // 「動画のながれ」セクション内のポイント行（"NN 見出し"）→ 連番の丸バッジ＋見出し。
+      // 連番はデータ生成時に並び順から自動採番済み（scripts/clean-memo.mjs）。
+      if (currentSection === 'flow') {
+        const pointMatch = line.match(/^(\d{2})[ 　]+(.+)$/);
+        if (pointMatch) {
+          parsedElements.push(
+            <div key={i} className="flex items-start gap-3 my-4">
+              <span
+                className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold"
+                style={{ backgroundColor: "rgba(203,163,101,0.15)", color: "#cba365" }}
+              >
+                {pointMatch[1]}
+              </span>
+              <div className="font-bold text-stone-800 leading-snug pt-1.5">{pointMatch[2]}</div>
+            </div>
+          );
+          continue;
+        }
       }
 
       // 見出し（全体要約、まとめポイントなど短い強調行）

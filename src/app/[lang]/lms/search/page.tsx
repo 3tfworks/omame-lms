@@ -11,17 +11,9 @@ interface SearchResult {
   videoId: string;
   videoTitle: string;
   chapterTitle: string;
-  timestamp: string;
-  timestampSeconds: number;
   desc: string;
   contributor: string;
   likes: number;
-}
-
-// "MM:SS" → 秒数（数値）に変換
-function timestampToSeconds(ts: string): number {
-  const [m, s] = ts.split(":").map(Number);
-  return (m || 0) * 60 + (s || 0);
 }
 
 export default function SearchPage() {
@@ -35,62 +27,70 @@ export default function SearchPage() {
     { category: "その他", tags: ["脱力", "スピード", "自然体", "レガート"] },
   ];
 
-  // lmsData から検索可能なブロック（インデックス）を生成する
+  // lmsData から検索可能なブロック（インデックス）を生成する。
+  // 旧仕様は時刻でブロック分割していたが、時刻は撤廃したため、
+  // 「動画のながれ」の各ポイント見出し（"NN 見出し"）を分割境界に切り替える。
   const searchableBlocks = useMemo(() => {
-    const blocks: { videoId: string; videoTitle: string; chapterTitle: string; timestamp: string; desc: string; text: string }[] = [];
+    const blocks: { videoId: string; videoTitle: string; chapterTitle: string; desc: string; text: string }[] = [];
+
+    // 箇条書き接頭辞や【】を除いた見出しテキストを得る
+    const cleanDesc = (s: string) =>
+      s.replace(/^[\s　*・●＊-]+/, "").replace(/^【/, "").replace(/】$/, "").trim();
 
     curriculumData.forEach(chapter => {
       chapter.videos.forEach(video => {
         if (!video.memoContent) return;
 
         const lines = video.memoContent.split('\n');
-        let currentTimestamp = "00:00";
+        let currentSection = "";
         let currentDesc = "動画全体（要約など）";
         let currentText = "";
 
-        // タイムスタンプ行を抽出する正規表現
-        // 例1: "00:02〜00:27 ピアノの基本構造" (スペース区切り)
-        // 例2: "00:00〜00:40｜イントロ・動画の目的" (パイプ区切り)
-        const timeRegex = /^([0-9]{2}:[0-9]{2})(?:〜|~)[0-9]{2}:[0-9]{2}[｜\s]\s*(.+)$/;
+        const flush = () => {
+          if (currentText.trim()) {
+            blocks.push({
+              videoId: video.id,
+              videoTitle: video.title,
+              chapterTitle: chapter.title,
+              desc: currentDesc,
+              text: currentText.toLowerCase(),
+            });
+          }
+        };
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
 
-          const timeMatch = line.match(timeRegex);
-          if (timeMatch) {
-            // 前のブロックを保存（テキストが溜まっていれば）
-            if (currentText.trim()) {
-              blocks.push({
-                videoId: video.id,
-                videoTitle: video.title,
-                chapterTitle: chapter.title,
-                timestamp: currentTimestamp,
-                desc: currentDesc,
-                text: currentText.toLowerCase(),
-              });
-            }
-            // 新しいブロックを開始
-            currentTimestamp = timeMatch[1];
-            currentDesc = timeMatch[2];
-            currentText = line + "\n";
-          } else {
-            // ブロックにテキストを追加
-            currentText += line + "\n";
+          // 「動画のながれ」見出し（境界にはせず、セクション状態だけ切り替える）
+          if (line.includes('動画のながれ') || line.includes('タイムライン別の重要ポイント')) {
+            currentSection = "flow";
+            continue;
           }
+
+          // 行動リスト / まとめポイント … 別セクション見出しを新ブロック境界にする
+          if (line.includes('行動リスト') || line.includes('まとめポイント')) {
+            flush();
+            currentSection = "other";
+            currentDesc = cleanDesc(line);
+            currentText = line + "\n";
+            continue;
+          }
+
+          // 「動画のながれ」内のポイント行（"NN 見出し"）を新ブロック境界にする
+          const pointMatch = currentSection === "flow" ? line.match(/^(\d{2})[ 　]+(.+)$/) : null;
+          if (pointMatch) {
+            flush();
+            currentDesc = pointMatch[2];
+            currentText = pointMatch[2] + "\n";
+            continue;
+          }
+
+          // それ以外は現在のブロックに本文として追加
+          currentText += line + "\n";
         }
-        
-        // 最後のブロックを保存
-        if (currentText.trim()) {
-          blocks.push({
-            videoId: video.id,
-            videoTitle: video.title,
-            chapterTitle: chapter.title,
-            timestamp: currentTimestamp,
-            desc: currentDesc,
-            text: currentText.toLowerCase(),
-          });
-        }
+
+        flush();
       });
     });
     return blocks;
@@ -118,8 +118,6 @@ export default function SearchPage() {
       videoId: block.videoId,
       videoTitle: block.videoTitle,
       chapterTitle: block.chapterTitle,
-      timestamp: block.timestamp,
-      timestampSeconds: timestampToSeconds(block.timestamp),
       desc: block.desc,
       contributor: "公式",
       likes: Math.floor(Math.abs(Math.sin(idx + block.videoId.length)) * 100) + 10,
@@ -145,7 +143,7 @@ export default function SearchPage() {
           お豆ナビ（魔法の辞書）
         </h1>
         <p className="text-stone-500">
-          気になるキーワードや悩みで検索すると、えりな先生の解説シーン（秒数）が直接見つかります。
+          気になるキーワードや悩みで検索すると、えりな先生の解説ポイントが直接見つかります。
         </p>
       </div>
 
@@ -214,7 +212,7 @@ export default function SearchPage() {
               {searchResults.map((result) => (
                 <Link
                   key={result.id}
-                  href={`/ja/lms/video/${result.videoId}?t=${result.timestampSeconds}`}
+                  href={`/ja/lms/video/${result.videoId}`}
                   className="block bg-white border border-stone-200 rounded-2xl p-5 hover:border-[#b8a98f] hover:shadow-md transition-all group relative overflow-hidden"
                 >
                   {/* 装飾用ライン */}
@@ -222,12 +220,12 @@ export default function SearchPage() {
                   
                   <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
                     
-                    {/* タイムスタンプと内容 */}
+                    {/* 内容 */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 font-mono font-bold px-2.5 py-1 rounded-md text-sm border border-stone-200">
+                        <span className="inline-flex items-center gap-1 bg-stone-100 text-stone-700 font-bold px-2.5 py-1 rounded-md text-sm border border-stone-200">
                           <PlayCircle size={14} className="text-[#b8a98f]" />
-                          {result.timestamp} から再生
+                          解説を見る
                         </span>
                         <span className="text-xs font-bold text-stone-400 line-clamp-1">{result.chapterTitle} ＞ {result.videoTitle}</span>
                       </div>

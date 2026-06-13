@@ -137,7 +137,7 @@ export default function GuidePage() {
               step: 2,
               icon: <FileText size={20} />,
               title: "レバレッジメモで要点を確認",
-              desc: "動画の下にある「レバレッジメモ」で、各動画の要約・重要ポイント・タイムラインをいつでも振り返ることができます。",
+              desc: "動画の下にある「レバレッジメモ」で、各動画の要約・重要ポイント・動画のながれをいつでも振り返ることができます。",
               color: "bg-emerald-50 text-emerald-600 border-emerald-200"
             },
             {

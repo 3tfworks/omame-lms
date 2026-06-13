@@ -13,6 +13,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { cleanMemoText } from './clean-memo.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -96,13 +97,15 @@ async function main() {
     try {
       const text = await fetchWithRetry(e.docId);
       const normalized = normalize(text);
+      // 生テキストは点検用に原本のまま保存し、生成データ側だけ時刻を撤廃する。
       await writeFile(join(RAW_DIR, `${e.vimeoId}.txt`), text, 'utf8');
-      memoContents[e.videoId] = normalized;
-      if (normalized.length === 0) {
+      const cleaned = cleanMemoText(normalized);
+      memoContents[e.videoId] = cleaned;
+      if (cleaned.length === 0) {
         console.log('△ 空（中身なし）');
         report.empty.push(e);
       } else {
-        console.log(`✓ ${normalized.length} 文字`);
+        console.log(`✓ ${cleaned.length} 文字`);
         report.ok.push(e);
       }
     } catch (err) {
