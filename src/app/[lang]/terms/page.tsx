@@ -2,9 +2,10 @@ import Link from "next/link";
 import { isValidLocale } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { BUSINESS_INFO } from "@/lib/businessInfo";
 
 export const metadata: Metadata = {
-  title: "利用規約 | OMAME SOHO LAB.",
+  title: `利用規約 | ${BUSINESS_INFO.name}`,
 };
 
 // 制定日・最終更新日
@@ -16,7 +17,7 @@ const ARTICLES: { title: string; items: string[] }[] = [
   {
     title: "第1条（適用）",
     items: [
-      "本規約は、OMAME SOHO LAB.（以下「運営者」といいます）が提供するオンライン講座サービス（以下「本サービス」といいます）の利用に関する一切の関係に適用されます。",
+      `本規約は、${BUSINESS_INFO.name}（以下「運営者」といいます）が提供するオンライン講座サービス（以下「本サービス」といいます）の利用に関する一切の関係に適用されます。`,
       "利用者は、本サービスを利用することにより、本規約に同意したものとみなされます。",
     ],
   },
@@ -141,7 +142,7 @@ export default async function TermsPage({
 
         {/* 前文 */}
         <p className="mb-10 text-sm md:text-base text-omame-text/80 leading-loose">
-          本利用規約（以下「本規約」といいます）は、OMAME SOHO LAB.（以下「運営者」といいます）が提供するオンライン講座サービスの利用条件を定めるものです。利用者の皆さまには、本規約に同意の上で本サービスをご利用いただきます。
+          本利用規約（以下「本規約」といいます）は、{BUSINESS_INFO.name}（以下「運営者」といいます）が提供するオンライン講座サービスの利用条件を定めるものです。利用者の皆さまには、本規約に同意の上で本サービスをご利用いただきます。
         </p>
 
         <div className="space-y-10">
