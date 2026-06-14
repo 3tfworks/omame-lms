@@ -83,7 +83,7 @@ export async function GET() {
     // ユーザー情報と銀行口座情報を取得
     const { data: profile } = await supabase
       .from("users")
-      .select("id, role, bank_info")
+      .select("id, role, bank_info, display_name, referral_display_name")
       .eq("id", user.id)
       .single();
 
@@ -115,6 +115,8 @@ export async function GET() {
     return NextResponse.json({
       userId: user.id,
       bankInfo: profile.bank_info || null,
+      displayName: profile.display_name ?? null,
+      referralDisplayName: profile.referral_display_name ?? null,
       stats: {
         totalReferrals,
         totalEarned,

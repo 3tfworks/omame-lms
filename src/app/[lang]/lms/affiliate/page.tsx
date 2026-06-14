@@ -30,6 +30,12 @@ export default function AffiliatePage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState({ text: "", type: "" });
 
+  // 招待用表示名（任意の上書き）。displayName は placeholder と補助文に使う。
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [referralName, setReferralName] = useState("");
+  const [savingReferral, setSavingReferral] = useState(false);
+  const [referralMessage, setReferralMessage] = useState({ text: "", type: "" });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,6 +47,8 @@ export default function AffiliatePage() {
           if (data.bankInfo) {
             setBankInfo(data.bankInfo);
           }
+          setDisplayName(data.displayName ?? null);
+          setReferralName(data.referralDisplayName ?? "");
         }
       } catch (e) {
         console.error(e);
@@ -49,6 +57,28 @@ export default function AffiliatePage() {
     };
     fetchData();
   }, []);
+
+  const handleSaveReferralName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingReferral(true);
+    setReferralMessage({ text: "", type: "" });
+    try {
+      const res = await fetch("/api/user/referral-name", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referralDisplayName: referralName }),
+      });
+      if (res.ok) {
+        setReferralMessage({ text: "招待状のお名前を保存しました", type: "success" });
+      } else {
+        const data = await res.json().catch(() => null);
+        setReferralMessage({ text: data?.error || "保存に失敗しました", type: "error" });
+      }
+    } catch {
+      setReferralMessage({ text: "通信エラーが発生しました", type: "error" });
+    }
+    setSavingReferral(false);
+  };
 
   const affiliateUrl = userId ? `https://omamepiano.com/ja/invite/${userId}` : "";
 
@@ -287,6 +317,51 @@ export default function AffiliatePage() {
               {copied ? "コピーしました！" : "リンクをコピー"}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 招待状で表示されるお名前（任意の上書き） */}
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-10">
+        <div className="bg-[#faf9f6] px-6 py-4 border-b border-stone-200 flex items-center gap-2">
+          <Mail className="w-5 h-5 text-amber-600" />
+          <h2 className="font-bold text-omame-deep text-lg">招待状で表示されるお名前（任意）</h2>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-stone-500 mb-6 leading-relaxed">
+            {displayName
+              ? `未入力の場合は「${displayName}」が招待状に表示されます。お友達に分かりやすいお名前にしたい方は、こちらでご変更ください。`
+              : "お友達への招待状に表示されるお名前です。分かりやすいお名前をご登録ください。"}
+          </p>
+          <form onSubmit={handleSaveReferralName} className="space-y-5 max-w-xl">
+            <div>
+              <label className="block text-sm font-bold text-stone-700 mb-1.5">招待状でのお名前</label>
+              <input
+                type="text"
+                maxLength={20}
+                placeholder={displayName || "あなたのお名前"}
+                value={referralName}
+                onChange={e => setReferralName(e.target.value)}
+                className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+              />
+              <p className="mt-2 text-xs text-stone-400">20文字以内。空欄で保存すると上書きが解除されます。</p>
+            </div>
+
+            {referralMessage.text && (
+              <div className={`p-4 rounded-xl text-sm flex items-center gap-2 font-bold ${referralMessage.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                <AlertCircle className="w-4 h-4" />
+                {referralMessage.text}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={savingReferral}
+              className="flex items-center justify-center gap-2 px-8 py-3.5 bg-stone-800 text-white font-bold rounded-xl hover:bg-stone-700 transition-colors disabled:opacity-50 w-full sm:w-auto"
+            >
+              <Save className="w-5 h-5" />
+              {savingReferral ? "保存中..." : "お名前を保存する"}
+            </button>
+          </form>
         </div>
       </div>
 

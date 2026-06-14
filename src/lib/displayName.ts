@@ -28,3 +28,25 @@ export function validateDisplayName(input: unknown): DisplayNameResult {
   }
   return { ok: true, value: trimmed };
 }
+
+// 任意の表示名（招待用 referral_display_name 用）。
+// 空文字・空白のみは「上書き解除」として null を返す（許可）。値があれば必須版と同じ基準で検証。
+export type OptionalDisplayNameResult =
+  | { ok: true; value: string | null }
+  | { ok: false; message: string };
+
+export function validateOptionalDisplayName(input: unknown): OptionalDisplayNameResult {
+  // 未指定・空は「解除」として許可
+  if (input === undefined || input === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof input !== "string") {
+    return { ok: false, message: "お名前に使用できない値です。" };
+  }
+  if (input.trim() === "") {
+    return { ok: true, value: null };
+  }
+  const result = validateDisplayName(input);
+  if (!result.ok) return result;
+  return { ok: true, value: result.value };
+}
