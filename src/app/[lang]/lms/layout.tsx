@@ -156,7 +156,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
                 基礎実践講座のご案内
               </p>
               <p className="text-xs text-stone-500 leading-relaxed">
-                学んだ原理を、あなたの曲で実践してみませんか？
+                学んだ原理を、実際のレッスンで確かめてみませんか？
               </p>
               <div className="mt-2 text-xs font-bold text-amber-600 group-hover:text-amber-700 flex items-center gap-1">
                 詳しく見る →
