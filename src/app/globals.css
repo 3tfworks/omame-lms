@@ -24,3 +24,28 @@ body {
   line-height: 2;
   -webkit-font-smoothing: antialiased;
 }
+
+/* 日本語タイポグラフィの土台（プロジェクト全体に適用）。
+   ・@layer base に置くことで、Tailwind ユーティリティでの個別上書きを優先させる。
+   ・auto-phrase は Chromium 系のみ有効。非対応（Safari/Firefox）は normal に自然劣化。 */
+@layer base {
+  body {
+    line-break: strict;          /* 行頭禁則の強化（、。…ー 閉じ括弧 等） */
+    overflow-wrap: break-word;   /* 長語・URL のはみ出し耐性（intrinsic幅に非影響） */
+    word-break: normal;          /* keep-all は使わない旨を明示 */
+  }
+  p {
+    text-wrap: pretty;           /* 最終行オーファン抑制（非対応は normal） */
+    word-break: auto-phrase;     /* 文節境界で改行（Chromium 系のみ有効） */
+  }
+  h1, h2, h3 {
+    text-wrap: balance;          /* 見出しの行バランス改善（非対応は normal） */
+    word-break: auto-phrase;     /* 文節境界で改行（Chromium 系のみ有効） */
+  }
+  /* 等幅・コード系は日本語禁則/分割/文節改行を無効化（誤分割防止） */
+  code, pre, kbd, samp {
+    line-break: auto;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+}
