@@ -91,7 +91,7 @@ export default function InviteClient({
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 pt-24 sm:pt-20"
+          className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 pt-20 sm:pt-20"
         >
           <p className="text-omame-primary tracking-[0.2em] sm:tracking-[0.35em] md:tracking-[0.4em] text-xs sm:text-sm md:text-base font-medium mb-8 uppercase font-sans break-words">
             A Letter, Hand-Delivered
@@ -107,7 +107,7 @@ export default function InviteClient({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 1 }}
-            className="mt-16 text-omame-primary/40 animate-bounce flex justify-center"
+            className="mt-10 md:mt-16 text-omame-primary/40 animate-bounce flex justify-center"
           >
             <ArrowDown className="w-8 h-8" />
           </motion.div>
@@ -115,8 +115,8 @@ export default function InviteClient({
       </section>
 
       {/* えりな先生からのメッセージ */}
-      <section className="py-16 md:py-32 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 text-lg md:text-xl leading-[2.5] space-y-16">
+      <section className="py-12 md:py-32 relative z-10">
+        <div className="max-w-4xl mx-auto px-5 md:px-6 text-base md:text-xl leading-loose md:leading-[2.5] space-y-10 md:space-y-16">
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
             <p className="text-center text-omame-deep font-medium text-xl md:text-2xl">
@@ -124,12 +124,12 @@ export default function InviteClient({
             </p>
           </motion.div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="space-y-10 text-omame-text/90">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="space-y-6 md:space-y-10 text-omame-text/90">
             <p>
               あなたに、この奏法を知っていただきたくてお声がけしました。
             </p>
             <p>
-              「頑張らなくていい」「力まなくていい」——<br />
+              「頑張らなくていい」「力まなくていい」——<br className="hidden md:block" />
               ただ重力に任せるだけで、ピアノの音はびっくりするほど美しく変わります。
             </p>
             <p>
@@ -138,7 +138,7 @@ export default function InviteClient({
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
-            <div className="bg-white p-8 md:p-12 rounded-3xl shadow-xl shadow-omame-gold/10 border border-omame-gold/20 relative">
+            <div className="bg-white p-6 md:p-12 rounded-3xl shadow-xl shadow-omame-gold/10 border border-omame-gold/20 relative">
               <Heart className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 text-omame-primary bg-white rounded-full p-2 shadow-sm" />
               <p className="text-omame-deep font-medium text-lg md:text-xl leading-loose text-center">
                 「力んでいたのが嘘みたい。<br className="hidden md:block" />弾くのがこんなに楽しかったんだ、と思いました」<br />
@@ -160,7 +160,7 @@ export default function InviteClient({
       {/* お試し動画 */}
       <section className="py-12 md:py-20 bg-white">
         <div className="max-w-4xl mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-10">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-6 md:mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-omame-deep">まずはこちらをご覧ください</h2>
           </motion.div>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
@@ -177,16 +177,16 @@ export default function InviteClient({
       </section>
 
       {/* お豆奏法で変わること */}
-      <section className="py-20 md:py-32 bg-omame-bg relative overflow-hidden">
+      <section className="pt-14 pb-12 md:py-32 bg-omame-bg relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-omame-gold/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-omame-accent/30 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="max-w-5xl mx-auto px-6 relative z-10">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-omame-deep">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-10 md:mb-16 space-y-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-omame-deep leading-snug md:leading-normal">
               お豆奏法で、こんな変化が起きます
             </h2>
-            <p className="text-omame-text/70 text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-omame-text/70 text-lg max-w-2xl mx-auto leading-loose md:leading-relaxed">
               技術より先に、「体の感覚」を見る。<br />それだけで、音も、気持ちも、驚くほど変わります。
             </p>
           </motion.div>
@@ -218,11 +218,11 @@ export default function InviteClient({
               <motion.div
                 key={item.title}
                 variants={fadeInUp}
-                className="bg-white rounded-3xl p-8 shadow-xl shadow-omame-gold/10 border border-omame-gold/20 flex flex-col items-center text-center"
+                className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-omame-gold/10 border border-omame-gold/20 flex flex-col items-center text-center"
               >
-                <div className="text-4xl mb-5">{item.icon}</div>
+                <div className="text-4xl mb-3 md:mb-5">{item.icon}</div>
                 <h3 className="text-lg font-bold text-omame-deep mb-3">{item.title}</h3>
-                <p className="text-omame-text/80 leading-relaxed text-base">{item.body}</p>
+                <p className="text-omame-text/80 leading-loose md:leading-relaxed text-base">{item.body}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -230,9 +230,9 @@ export default function InviteClient({
       </section>
 
       {/* 登録セクション（CTA） */}
-      <section className="py-20 md:py-32 bg-white relative overflow-hidden">
+      <section className="py-12 md:py-32 bg-white relative overflow-hidden">
         <div className="max-w-3xl mx-auto px-6 relative z-10">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="space-y-16">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="space-y-10 md:space-y-16">
 
             <div className="text-center space-y-4">
               <p className="text-2xl md:text-3xl text-omame-primary font-medium leading-loose">
@@ -244,14 +244,14 @@ export default function InviteClient({
               </p>
             </div>
 
-            <div className="bg-[#FAFAF8] p-8 md:p-14 rounded-3xl shadow-2xl border border-omame-gold/30">
+            <div className="bg-[#FAFAF8] px-5 py-7 md:p-14 rounded-3xl shadow-2xl border border-omame-gold/30">
 
               {/* LINE友達追加ボタン */}
               <a
                 href="https://lin.ee/XXXXXXXX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-3 w-full py-5 rounded-full text-white font-bold text-lg font-sans transition-all shadow-xl hover:shadow-2xl hover:scale-105 duration-300 mb-10"
+                className="flex items-center justify-center gap-3 w-full py-5 rounded-full text-white font-bold text-lg font-sans transition-all shadow-xl hover:shadow-2xl hover:scale-105 duration-300 mb-8 md:mb-10"
                 style={{ background: "linear-gradient(135deg, #06C755, #05a847)" }}
               >
                 <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white flex-shrink-0">
@@ -260,7 +260,7 @@ export default function InviteClient({
                 LINE 公式アカウントを友達追加する
               </a>
 
-              <div className="flex items-center gap-4 mb-10">
+              <div className="flex items-center gap-4 mb-8 md:mb-10">
                 <div className="flex-1 h-px bg-omame-gold/30" />
                 <span className="text-sm text-omame-text/50 font-sans font-bold tracking-wider shrink-0">さらに登録する</span>
                 <div className="flex-1 h-px bg-omame-gold/30" />
@@ -316,7 +316,7 @@ export default function InviteClient({
                 </p>
               </form>
 
-              <div className="mt-12 pt-8 border-t border-omame-gold/20 text-center">
+              <div className="mt-10 md:mt-12 pt-8 border-t border-omame-gold/20 text-center">
                 <p className="text-omame-primary font-medium text-lg leading-loose">
                   一緒に、魂がよろこぶ音の世界を<br />創っていけることを楽しみにしています。
                 </p>
@@ -335,10 +335,10 @@ export default function InviteClient({
       <footer className="bg-omame-text text-white/50 py-12 text-center font-sans">
         <div className="max-w-4xl mx-auto px-6 space-y-6">
           <p className="text-sm tracking-widest">© OMAME SOHO LAB. / たちえりな</p>
-          <div className="flex justify-center gap-6 text-xs">
-            <Link href={`/${lang}/tokutei`} className="hover:text-white transition-colors">特定商取引法に基づく表記</Link>
-            <Link href={`/${lang}/privacy`} className="hover:text-white transition-colors">プライバシーポリシー</Link>
-            <Link href={`/${lang}/terms`} className="hover:text-white transition-colors">利用規約</Link>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs">
+            <Link href={`/${lang}/tokutei`} className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">特定商取引法に基づく表記</Link>
+            <Link href={`/${lang}/privacy`} className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">プライバシーポリシー</Link>
+            <Link href={`/${lang}/terms`} className="inline-flex items-center min-h-[44px] px-1 hover:text-white transition-colors">利用規約</Link>
           </div>
         </div>
       </footer>
