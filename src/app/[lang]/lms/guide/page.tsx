@@ -2,10 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { 
-  Sparkles, Play, FileText, CheckSquare, BookOpen, 
-  ChevronRight, MapPin, Lightbulb, ArrowRight, Music,
-  Heart, Eye, Hand
+  Sparkles, Play, FileText, CheckSquare, BookOpen,
+  ChevronRight, MapPin, Lightbulb, ArrowRight, Music
 } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
 
@@ -83,36 +83,16 @@ export default function GuidePage() {
         </div>
       </section>
 
-      {/* 2. お豆奏法ってなに？ */}
+      {/* 2. お豆奏法ってなに？（説明画像） */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <span className="text-xl">🌱</span>
-          </div>
-          <h2 className="text-xl font-bold text-stone-800">お豆奏法ってなに？</h2>
-        </div>
-        
-        <div className="bg-white rounded-xl p-6 border border-stone-200 shadow-sm space-y-4">
-          <p className="text-stone-600 leading-relaxed">
-            お豆奏法は、テクニックや弾き方の「方法論」ではありません。
-          </p>
-          <div className="grid gap-3">
-            {[
-              { icon: <Hand size={18} className="text-amber-600" />, text: "力を抜き、身体の自然な状態を取り戻す" },
-              { icon: <Eye size={18} className="text-amber-600" />, text: "ピアノの仕組みを知り、音の鳴る原理を理解する" },
-              { icon: <Heart size={18} className="text-amber-600" />, text: "ピアノと「共鳴」する感覚で、音が変わる体験をする" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 bg-amber-50/50 p-3 rounded-lg">
-                <div className="mt-0.5 shrink-0">{item.icon}</div>
-                <span className="text-stone-700 font-medium">{item.text}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-stone-500 text-sm pt-2 border-t border-stone-100">
-            「どれだけ練習しても変わらない」「力んでしまう」——そんな悩みの根本にある
-            <strong className="text-stone-700">「やり方」そのもの</strong>を見直すのが、お豆奏法の考え方です。
-          </p>
-        </div>
+        <Image
+          src="/images/omamesoho-setsumei.png"
+          alt="お豆奏法ってなに？ ― お豆奏法は、テクニックや弾き方の「方法論」ではありません。①力を抜き、身体の自然な状態を取り戻す ②ピアノの仕組みを知り、音の鳴る原理を理解する ③ピアノと「共鳴」する感覚で、音が変わる体験をする。「どれだけ練習しても変わらない」「力んでしまう」という悩みの根本にある「やり方」そのものを見直すアプローチです。"
+          width={1536}
+          height={1024}
+          className="w-full h-auto rounded-xl border border-stone-200 shadow-sm"
+          sizes="(max-width: 768px) 100vw, 768px"
+        />
       </section>
 
       {/* 3. この講座の進め方 */}
