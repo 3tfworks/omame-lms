@@ -35,7 +35,7 @@ export default function SearchPage() {
 
     // 箇条書き接頭辞や【】を除いた見出しテキストを得る
     const cleanDesc = (s: string) =>
-      s.replace(/^[\s　*・●＊-]+/, "").replace(/^【/, "").replace(/】$/, "").trim();
+      s.replace(/^[\s　*・●＊•-]+/, "").replace(/^【/, "").replace(/】$/, "").trim();
 
     curriculumData.forEach(chapter => {
       chapter.videos.forEach(video => {
