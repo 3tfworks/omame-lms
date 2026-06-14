@@ -178,7 +178,7 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // 保護されたルートへのアクセス制限
-  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin");
+  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin") || pathname.includes("/setup-name");
   const isAdminRoute = pathname.includes("/admin");
   const lang = pathname.split('/')[1] || 'ja';
 
@@ -198,6 +198,25 @@ export async function proxy(request: NextRequest) {
     if (!profile || (profile.role !== "admin" && profile.role !== "owner")) {
       // admin/owner以外のユーザー → LMSへリダイレクト
       return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+    }
+  }
+
+  // 表示名（display_name）未設定ガード:
+  //   ログイン済みで display_name が空のユーザーが /lms 配下を開いたら、/setup-name へ誘導する。
+  //   ・対象は /lms 配下のみ（/setup-name 自身・/admin・公式トップ等は対象外＝ループ回避）
+  //   ・自分の行のみ読む（RLS の SELECT ポリシー auth.uid()=id で担保。admin client 不要）
+  if (user && pathname.includes("/lms") && !pathname.includes("/setup-name")) {
+    const { data: nameProfile } = await supabase
+      .from("users")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+
+    if (nameProfile && (!nameProfile.display_name || nameProfile.display_name.trim() === "")) {
+      const setupUrl = new URL(`/${lang}/setup-name`, request.url);
+      // 設定完了後に元のページへ戻すための next（ローカルパスのみ）
+      setupUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(setupUrl);
     }
   }
 
