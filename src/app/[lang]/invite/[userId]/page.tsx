@@ -136,7 +136,8 @@ export default function InvitePage({ params }: { params: Promise<{ lang: string;
               <Heart className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 text-omame-primary bg-white rounded-full p-2 shadow-sm" />
               <p className="text-omame-deep font-medium text-lg md:text-xl leading-loose text-center">
                 「力んでいたのが嘘みたい。<br className="hidden md:block" />弾くのがこんなに楽しかったんだ、と思いました」<br />
-                「手の痛みがなくなって、もっとピアノが好きになりました」
+                「手の痛みがなくなって、もっとピアノが好きになりました」<br />
+                「弾けなかった曲なのに、満足出来る演奏になった。」
               </p>
             </div>
           </motion.div>
@@ -180,7 +181,7 @@ export default function InvitePage({ params }: { params: Promise<{ lang: string;
               お豆奏法で、こんな変化が起きます
             </h2>
             <p className="text-omame-text/70 text-lg max-w-2xl mx-auto leading-relaxed">
-              技術より先に「体の使い方」を変える。<br />それだけで、音も、気持ちも、驚くほど変わります。
+              技術より先に、「体の感覚」を見る。<br />それだけで、音も、気持ちも、驚くほど変わります。
             </p>
           </motion.div>
 
@@ -195,7 +196,7 @@ export default function InvitePage({ params }: { params: Promise<{ lang: string;
               {
                 icon: "🎹",
                 title: "手が痛くならない",
-                body: "力みゼロで弾けるから、長時間弾いても疲れません。腱鞘炎に悩む方からも喜びの声が届いています。",
+                body: "力みゼロで弾けるから、長時間弾いても疲れません。腱鞘炎など手の悩みがある方からも喜びの声が届いています。",
               },
               {
                 icon: "✨",
@@ -311,7 +312,7 @@ export default function InvitePage({ params }: { params: Promise<{ lang: string;
 
               <div className="mt-12 pt-8 border-t border-omame-gold/20 text-center">
                 <p className="text-omame-primary font-medium text-lg leading-loose">
-                  一緒に、優しい音のあふれる世界を<br />創っていけることを楽しみにしています。
+                  一緒に、魂がよろこぶ音の世界を<br />創っていけることを楽しみにしています。
                 </p>
                 <p className="text-omame-text/50 mt-4 font-serif">
                   <Heart className="inline w-4 h-4 fill-omame-primary/40 text-omame-primary/40 mb-0.5 mr-1" />
