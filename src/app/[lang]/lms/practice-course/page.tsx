@@ -154,7 +154,7 @@ export default function PracticeCoursePage() {
 
           <motion.div variants={fadeInUp} className="space-y-6 text-lg leading-loose text-stone-300">
             <p>だからこそ、お豆奏法は、</p>
-            <p className="text-stone-400 line-through decoration-stone-500">"知識を増やす"だけではなく、</p>
+            <p className="text-stone-300">"知識を増やす"だけではなく、</p>
             <p className="text-xl lg:text-2xl text-white font-medium mt-8">
               実際に弾きながら、<br className="md:hidden" />
               身体の感覚として<br />
