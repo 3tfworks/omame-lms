@@ -157,22 +157,59 @@ export default function InviteClient({
         </div>
       </section>
 
-      {/* お試し動画 */}
+      {/* ご招待された方だけの特別な5本 */}
       <section className="py-12 md:py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-6 md:mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-omame-deep">まずはこちらをご覧ください</h2>
+        <div className="max-w-4xl mx-auto px-5 md:px-6">
+
+          {/* セクション見出し（eyebrow は hero のトーンに統一） */}
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="text-center mb-10 md:mb-16">
+            <p className="text-omame-gold tracking-[0.2em] sm:tracking-[0.35em] md:tracking-[0.4em] text-xs sm:text-sm md:text-base font-medium mb-4 uppercase font-sans break-words">
+              Five Films, For Invited Guests
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-omame-deep leading-snug">
+              ご招待された方にだけ<br />お届けする5つの動画
+            </h2>
           </motion.div>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp}>
-            <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-              <iframe
-                src="https://player.vimeo.com/video/76979871?autoplay=0&title=0&byline=0&portrait=0"
-                className="w-full h-full"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+
+          {/* 5本の縦スタック */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="space-y-12 md:space-y-20"
+          >
+            {[
+              { no: "01", title: "2010年に生まれた〈お豆奏法〉の原点〜発見者自身の驚き", vimeoId: "1188100383" },
+              { no: "02", title: "なぜ「お豆」なのか", vimeoId: "1188100452" },
+              { no: "03", title: "お豆奏法は「特別な奏法」ではない ― 原則原理に従うだけ", vimeoId: "1188100489" },
+              { no: "04", title: "やらなくていいことだらけ ― 身体を緩めて弾く", vimeoId: "1188100547" },
+              { no: "05", title: "たった1つで、全ての不調を同時に改善できる。", vimeoId: "1188100602" },
+            ].map((video) => (
+              <motion.div key={video.no} variants={fadeInUp} className="flex flex-col items-center text-center">
+                {/* 番号バッジ */}
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-omame-gold/10 text-omame-gold border border-omame-gold/30 text-sm font-bold tracking-wider font-sans">
+                  {video.no}
+                </span>
+                {/* タイトル */}
+                <h3 className="text-lg md:text-xl font-bold text-omame-text mt-4 mb-5 max-w-2xl leading-snug">
+                  {video.title}
+                </h3>
+                {/* Vimeo iframe */}
+                <div className="relative aspect-video w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+                  <iframe
+                    src={`https://player.vimeo.com/video/${video.vimeoId}?title=0&byline=0&portrait=0`}
+                    title={video.title}
+                    loading="lazy"
+                    className="w-full h-full"
+                    allow="fullscreen; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
+
         </div>
       </section>
 
