@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
   }
 
-  if (referrer.role !== "salon_member" && referrer.role !== "sys_admin" && referrer.role !== "instructor") {
+  if (referrer.role !== "salon_member" && referrer.role !== "owner" && referrer.role !== "admin") {
     return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
   }
 

@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 
-// 招待を出せる紹介者の role（invite/register の検証条件と完全に一致させる）
-const VALID_REFERRER_ROLES = ["salon_member", "sys_admin", "instructor"];
+// 招待を出せる紹介者の role（invite/register の検証条件・アフィリエイトページ表示条件と一致させる）
+const VALID_REFERRER_ROLES = ["salon_member", "owner", "admin"];
 
 // 空文字・空白のみは「未設定」として null に正規化する
 function normalize(value: unknown): string | null {
