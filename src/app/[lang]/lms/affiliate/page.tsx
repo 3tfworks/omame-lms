@@ -76,7 +76,9 @@ export default function AffiliatePage() {
       if (res.ok) {
         setSaveMessage({ text: "口座情報を保存しました", type: "success" });
       } else {
-        setSaveMessage({ text: "保存に失敗しました", type: "error" });
+        // サーバ側バリデーション等のエラーメッセージがあれば表示する
+        const data = await res.json().catch(() => null);
+        setSaveMessage({ text: data?.error || "保存に失敗しました", type: "error" });
       }
     } catch (e) {
       setSaveMessage({ text: "通信エラーが発生しました", type: "error" });
