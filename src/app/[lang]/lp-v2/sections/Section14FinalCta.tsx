@@ -43,11 +43,11 @@ export function Section14FinalCta({
           ここにご用意しています。
         </p>
 
-        <div className="mx-auto mt-12 max-w-md rounded-2xl border border-omame-gold/50 bg-white p-8 text-center shadow-sm shadow-omame-gold/10">
+        <div className="mx-auto mt-8 max-w-[340px] rounded-2xl border border-omame-gold/50 bg-white px-5 py-7 text-center shadow-sm shadow-omame-gold/10 md:mt-12 md:max-w-md md:p-8">
           <p className="text-sm tracking-wide text-omame-deep">お豆奏法 基礎講座</p>
           {showCampaign ? (
             <>
-              <p className="mt-3 text-3xl font-bold text-omame-deep md:text-4xl">
+              <p className="mt-3 text-4xl font-bold text-omame-deep">
                 <span className="mr-2 align-middle text-lg font-normal text-omame-text/50 line-through">
                   {yen(regularPrice)}
                 </span>
@@ -59,7 +59,7 @@ export function Section14FinalCta({
             </>
           ) : (
             <>
-              <p className="mt-3 text-3xl font-bold text-omame-deep md:text-4xl">
+              <p className="mt-3 text-4xl font-bold text-omame-deep">
                 {yen(regularPrice)}
               </p>
               <p className="mt-1 text-xs text-omame-text/70">税込</p>
@@ -67,13 +67,17 @@ export function Section14FinalCta({
           )}
         </div>
 
-        <div className="mt-10">
-          <CtaButton lang={lang} size="lg">
+        <div className="mt-8 md:mt-10">
+          <CtaButton
+            lang={lang}
+            size="lg"
+            className="h-14 w-[85%] max-w-[320px] md:h-auto md:w-auto md:max-w-none"
+          >
             今すぐ受講する
           </CtaButton>
         </div>
 
-        <div className="mt-12 space-y-2 text-center text-xs leading-relaxed text-omame-text/60">
+        <div className="mt-7 space-y-2 text-center text-xs leading-7 text-omame-text/60 md:mt-12">
           <p>視聴期限: 受講開始から無期限</p>
           <p>決済方法: クレジットカード（Stripe）</p>
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-2">

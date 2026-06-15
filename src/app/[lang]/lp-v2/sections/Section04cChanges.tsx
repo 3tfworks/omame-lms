@@ -68,12 +68,14 @@ export function Section04cChanges() {
                 width={c.w}
                 height={c.h}
                 loading="lazy"
-                className="mx-auto h-auto w-full max-w-[900px] rounded-3xl shadow-md"
+                decoding="async"
+                className="mx-auto h-auto w-full max-w-none rounded-3xl shadow-md md:max-w-[900px]"
               />
               <p className="mt-6 text-center text-xl font-bold leading-relaxed text-omame-deep md:text-2xl">
                 {c.title}
               </p>
-              <p className="mt-3 text-center text-sm leading-loose text-omame-text/70 md:text-base">
+              {/* 本文は SP では非表示（画像と見出しで視覚的テンポを上げる） */}
+              <p className="mt-3 hidden text-center text-sm leading-loose text-omame-text/70 md:block md:text-base">
                 {c.body.map((line, j) => (
                   <span key={j}>
                     {line}

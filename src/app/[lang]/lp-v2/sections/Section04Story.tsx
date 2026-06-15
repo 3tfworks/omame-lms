@@ -50,6 +50,7 @@ export function Section04Story() {
             width={1536}
             height={1024}
             loading="lazy"
+            decoding="async"
             className="mx-auto h-auto w-full max-w-[860px] rounded-2xl shadow-md"
           />
           <p className="mt-4 text-center text-sm text-omame-text/60">

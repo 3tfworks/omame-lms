@@ -8,6 +8,7 @@ import { Section04cChanges } from "./sections/Section04cChanges";
 import { Section04bBridge } from "./sections/Section04bBridge";
 import { Section05WhatItIs } from "./sections/Section05WhatItIs";
 import { Section07Voices } from "./sections/Section07Voices";
+import { Section07bMidCta } from "./sections/Section07bMidCta";
 import { Section08Structure } from "./sections/Section08Structure";
 import { Section09Course } from "./sections/Section09Course";
 import { Section10System } from "./sections/Section10System";
@@ -38,6 +39,7 @@ export default async function LpV2Page({
       <Section04cChanges />
       <Section04bBridge />
       <Section07Voices />
+      <Section07bMidCta />
       <Section05WhatItIs />
       <Section08Structure />
       <Section09Course />

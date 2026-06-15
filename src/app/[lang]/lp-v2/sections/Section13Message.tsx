@@ -20,11 +20,12 @@ export function Section13Message() {
             width={1536}
             height={1024}
             loading="lazy"
-            className="mx-auto h-auto w-full max-w-[760px] rounded-2xl shadow-md"
+            decoding="async"
+            className="mx-auto h-auto w-full max-w-[400px] rounded-2xl shadow-md md:max-w-[760px]"
           />
         </div>
 
-        <div className="mx-auto mt-12 max-w-md space-y-6 text-base leading-loose text-omame-text md:text-lg">
+        <div className="mx-auto mt-8 max-w-[340px] space-y-6 text-[15px] leading-loose text-omame-text md:mt-12 md:max-w-md md:text-lg">
           <p>
             私は、奏法を教えたいのでは
             <br />

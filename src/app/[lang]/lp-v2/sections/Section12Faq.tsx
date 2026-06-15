@@ -53,10 +53,10 @@ export function Section12Faq() {
                 <button
                   type="button"
                   onClick={() => setOpen(isOpen ? null : i)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 p-5 text-left"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 p-4 text-left md:p-5"
                   aria-expanded={isOpen}
                 >
-                  <span className="flex items-start gap-3 font-bold text-omame-deep">
+                  <span className="flex items-start gap-3 text-sm font-bold text-omame-deep md:text-base">
                     <span className="text-omame-gold">Q.</span>
                     <span>{item.q}</span>
                   </span>
@@ -67,8 +67,8 @@ export function Section12Faq() {
                   )}
                 </button>
                 {isOpen && (
-                  <div className="border-t border-omame-gold/10 px-5 pb-5 pt-4">
-                    <p className="flex gap-2 text-sm leading-loose text-omame-text/80 md:text-base">
+                  <div className="border-t border-omame-gold/10 px-4 pb-4 pt-4 md:px-5 md:pb-5">
+                    <p className="flex gap-2 text-sm leading-7 text-omame-text/80 md:text-base md:leading-loose">
                       <span className="font-bold text-omame-gold">A.</span>
                       <span>{item.a}</span>
                     </p>

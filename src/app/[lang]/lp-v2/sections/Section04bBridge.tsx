@@ -30,6 +30,7 @@ export function Section04bBridge() {
             width={1402}
             height={1122}
             loading="lazy"
+            decoding="async"
             className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
           />
           <p className="mt-4 text-center text-sm leading-loose text-omame-text/60">

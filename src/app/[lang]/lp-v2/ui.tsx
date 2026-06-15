@@ -55,7 +55,7 @@ export function SectionShell({
   return (
     <section
       id={id}
-      className={`scroll-mt-16 px-5 py-20 md:py-28 ${className}`}
+      className={`scroll-mt-16 px-4 md:px-5 py-14 md:py-28 ${className}`}
     >
       <div className={`${maxW} mx-auto`}>
         {divider && (
@@ -91,10 +91,13 @@ export function CtaButton({
   lang,
   children,
   size = "md",
+  className = "",
 }: {
   lang: string;
   children: ReactNode;
   size?: "md" | "lg";
+  // 個別レイアウト調整用（例: SP で全幅寄りにする）。<a> に追加される。
+  className?: string;
 }) {
   const pad = size === "lg" ? "px-12 py-5 text-lg" : "px-10 py-4 text-base";
   return (
@@ -103,7 +106,7 @@ export function CtaButton({
         href={`/${lang}/offer-demo`}
         target="_blank"
         rel="noopener noreferrer"
-        className={`group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-omame-gold font-bold text-white shadow-lg shadow-omame-gold/20 transition-all hover:-translate-y-0.5 hover:bg-omame-gold/90 active:translate-y-0 ${pad}`}
+        className={`group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-omame-gold font-bold text-white shadow-lg shadow-omame-gold/20 transition-all hover:-translate-y-0.5 hover:bg-omame-gold/90 active:translate-y-0 ${pad} ${className}`}
       >
         {children}
         <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

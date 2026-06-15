@@ -76,6 +76,7 @@ export function Section09Course() {
             width={1536}
             height={1024}
             loading="lazy"
+            decoding="async"
             className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
           />
         </div>

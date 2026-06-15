@@ -31,7 +31,7 @@ export function Section11Price({
   showCampaign: boolean;
 }) {
   return (
-    <SectionShell className="bg-white">
+    <SectionShell id="price-section" className="bg-white">
       <Reveal>
         <Eyebrow>The Value</Eyebrow>
         <Heading>{"この講座は、\n47本の動画を販売するものではありません。"}</Heading>
@@ -77,6 +77,7 @@ export function Section11Price({
             width={1536}
             height={1024}
             loading="lazy"
+            decoding="async"
             className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
           />
           <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-loose text-omame-text/60">
