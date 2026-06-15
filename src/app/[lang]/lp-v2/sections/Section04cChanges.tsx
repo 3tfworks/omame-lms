@@ -5,24 +5,35 @@ import { Eyebrow, Heading, Reveal, SectionShell } from "../ui";
 
 // §4c お豆奏法で起こる変化
 // 説明ではなく未来を見せる。文字は最小限、Before/After 画像が主役。
+// width/height は各画像の実寸（比率が異なるとカードごとに変わる）。
 const changes = [
   {
     src: "/images/omame-before-after-performance.png",
+    w: 1672,
+    h: 941,
     alt: "頑張る演奏から自然な演奏への変化",
     title: "頑張る演奏から、自然な演奏へ。",
-    body: "力を抜こうと頑張るのではなく、自然に音楽へ集中できる状態へ。",
+    body: ["力を抜こうと頑張るのではなく、自然に音楽へ集中できる状態へ。"],
   },
   {
     src: "/images/omame-before-after-stage.png",
-    alt: "不安から集中への変化",
-    title: "不安から、音楽へ。",
-    body: "本番で戦うのではなく、音楽そのものに集中できるようになる。",
+    w: 1535,
+    h: 1024,
+    alt: "本番で戦う状態から音楽に集中できる状態への変化",
+    title: "本番で戦うから、音楽へ。",
+    body: [
+      "緊張を消そうとするのではなく、",
+      "良く弾こうと戦うのでもなく、",
+      "音楽そのものに意識を向けられるようになる。",
+    ],
   },
   {
     src: "/images/omame-before-after-teaching.png",
+    w: 1672,
+    h: 941,
     alt: "生徒への伝わり方の変化",
     title: "伝わらないから、伝わるへ。",
-    body: "自分が変わるだけではなく、生徒への伝え方も変わっていく。",
+    body: ["自分が変わるだけではなく、生徒への伝え方も変わっていく。"],
   },
 ];
 
@@ -54,8 +65,8 @@ export function Section04cChanges() {
               <Image
                 src={c.src}
                 alt={c.alt}
-                width={1672}
-                height={941}
+                width={c.w}
+                height={c.h}
                 loading="lazy"
                 className="mx-auto h-auto w-full max-w-[900px] rounded-3xl shadow-md"
               />
@@ -63,7 +74,12 @@ export function Section04cChanges() {
                 {c.title}
               </p>
               <p className="mt-3 text-center text-sm leading-loose text-omame-text/70 md:text-base">
-                {c.body}
+                {c.body.map((line, j) => (
+                  <span key={j}>
+                    {line}
+                    {j < c.body.length - 1 && <br />}
+                  </span>
+                ))}
               </p>
             </div>
           </Reveal>
