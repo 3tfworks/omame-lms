@@ -68,21 +68,17 @@ export function Section09Course() {
       </div>
 
       <Reveal>
-        {/* [IMAGE_会員サイト_スクショ] LMS の動画一覧スクリーンショット */}
-        <div className="mt-12 overflow-hidden rounded-2xl border border-omame-gold/20 shadow-md shadow-omame-deep/10">
+        {/* 講座の総括ビジュアル（画像内に説明を含むためキャプション不要） */}
+        <div className="py-10 md:py-16">
           <Image
-            src="/images/lp-v2/lms-screenshot.jpg"
-            alt="会員サイトの画面"
-            width={768}
-            height={480}
-            className="h-auto w-full object-cover"
+            src="/images/omame-lms-screenshot.png"
+            alt="自宅で学べるお豆奏法 基礎講座 — 動画レッスン・付箋・メモ・カリキュラム"
+            width={1536}
+            height={1024}
+            loading="lazy"
+            className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
           />
         </div>
-        <p className="mt-4 text-center text-xs leading-relaxed text-omame-text/60">
-          会員サイトでは、いつでも・どこでも
-          <br />
-          スマートフォン・PC・タブレットから受講いただけます。
-        </p>
       </Reveal>
     </SectionShell>
   );

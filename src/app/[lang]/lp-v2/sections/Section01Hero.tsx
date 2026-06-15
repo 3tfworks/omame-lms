@@ -11,10 +11,10 @@ export function Section01Hero() {
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* 背景画像 + 暗いオーバーレイ */}
       <div className="absolute inset-0 z-0">
-        {/* [IMAGE_FV_背景] グランドピアノを前にした女性、暗めの色調 */}
+        {/* FV 背景。fill + priority（priority が eager 読み込みを保証） */}
         <Image
-          src="/images/lp-v2/fv-bg.jpg"
-          alt=""
+          src="/images/omame-fv-bg.png"
+          alt="グランドピアノに向かう演奏者の後ろ姿"
           fill
           priority
           className="object-cover"
