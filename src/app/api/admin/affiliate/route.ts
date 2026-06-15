@@ -37,17 +37,22 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch rewards" }, { status: 500 });
     }
 
+    // 報酬率は「通常報酬率（default）」のみを保持する（キャンペーンは campaign_periods が担当）。
     const { data: rateSetting } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("id", "affiliate_reward_rate")
       .single();
 
-    const rewardRateConfig = rateSetting
-      ? JSON.parse(rateSetting.value as string)
-      : { default: 35, campaign: 50, active: "default" };
+    let defaultRate = 35;
+    try {
+      const parsed = rateSetting?.value ? JSON.parse(rateSetting.value as string) : null;
+      if (typeof parsed?.default === "number") defaultRate = parsed.default;
+    } catch {
+      /* フォールバック維持 */
+    }
 
-    return NextResponse.json({ rewards, rewardRateConfig });
+    return NextResponse.json({ rewards, rewardRateConfig: { default: defaultRate } });
   } catch (error) {
     console.error("[Admin Affiliate API] Unhandled Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -76,25 +81,19 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { defaultRate, campaignRate, active } = body;
+    const { defaultRate } = body;
 
-    if (
-      typeof defaultRate !== "number" || defaultRate < 1 || defaultRate > 100 ||
-      typeof campaignRate !== "number" || campaignRate < 1 || campaignRate > 100
-    ) {
+    if (typeof defaultRate !== "number" || defaultRate < 1 || defaultRate > 100) {
       return NextResponse.json({ error: "Rate must be between 1 and 100" }, { status: 400 });
     }
 
-    if (active !== "default" && active !== "campaign") {
-      return NextResponse.json({ error: "active must be 'default' or 'campaign'" }, { status: 400 });
-    }
-
+    // 日付スケジュール方式へ移行済みのため、保持するのは通常報酬率（default）のみ。
     const { error } = await supabaseAdmin
       .from("system_settings")
       .upsert(
         {
           id: "affiliate_reward_rate",
-          value: JSON.stringify({ default: defaultRate, campaign: campaignRate, active }),
+          value: JSON.stringify({ default: defaultRate }),
           updated_at: new Date().toISOString(),
         },
         { onConflict: "id" }

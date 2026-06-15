@@ -23,8 +23,6 @@ type AffiliateReward = {
 
 type RewardRateConfig = {
   default: number;
-  campaign: number;
-  active: "default" | "campaign";
 };
 
 export default function AdminAffiliatePage() {
@@ -32,7 +30,7 @@ export default function AdminAffiliatePage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const [rateConfig, setRateConfig] = useState<RewardRateConfig>({ default: 35, campaign: 50, active: "default" });
+  const [rateConfig, setRateConfig] = useState<RewardRateConfig>({ default: 35 });
   const [savingRate, setSavingRate] = useState(false);
   const [rateSaveMsg, setRateSaveMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -44,11 +42,7 @@ export default function AdminAffiliatePage() {
         const data = await res.json();
         setRewards(data.rewards || []);
         if (data.rewardRateConfig) {
-          setRateConfig({
-            default: data.rewardRateConfig.default ?? 35,
-            campaign: data.rewardRateConfig.campaign ?? 50,
-            active: data.rewardRateConfig.active ?? "default",
-          });
+          setRateConfig({ default: data.rewardRateConfig.default ?? 35 });
         }
       }
     } catch (e) {
@@ -64,11 +58,7 @@ export default function AdminAffiliatePage() {
       const res = await fetch("/api/admin/affiliate", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          defaultRate: rateConfig.default,
-          campaignRate: rateConfig.campaign,
-          active: rateConfig.active,
-        }),
+        body: JSON.stringify({ defaultRate: rateConfig.default }),
       });
       if (res.ok) {
         setRateSaveMsg({ text: "保存しました", ok: true });
@@ -191,53 +181,26 @@ export default function AdminAffiliatePage() {
           <h3 className="font-bold text-omame-deep">報酬率の設定</h3>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-            {(["default", "campaign"] as const).map((key) => {
-              const isActive = rateConfig.active === key;
-              const label = key === "default" ? "通常報酬率" : "キャンペーン報酬率";
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setRateConfig(prev => ({ ...prev, active: key }))}
-                  className={`text-left rounded-xl border-2 p-5 transition-all ${
-                    isActive
-                      ? "border-amber-400 bg-amber-50"
-                      : "border-stone-200 bg-stone-50 hover:border-stone-300"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-stone-700">{label}</span>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        isActive
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-stone-200 text-stone-500"
-                      }`}
-                    >
-                      {isActive ? "● 適用中" : "○ 切り替える"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                    <Percent className="w-4 h-4 text-stone-400 shrink-0" />
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={rateConfig[key]}
-                      onChange={e =>
-                        setRateConfig(prev => ({
-                          ...prev,
-                          [key]: Math.min(100, Math.max(1, parseInt(e.target.value) || 1)),
-                        }))
-                      }
-                      className="w-20 border border-stone-300 rounded-lg px-3 py-1.5 text-lg font-bold text-omame-deep focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 bg-white"
-                    />
-                    <span className="text-stone-600 font-bold">%</span>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="mb-5">
+            <label className="block text-sm font-bold text-stone-700 mb-2">通常報酬率（デフォルト）</label>
+            <p className="text-xs text-stone-400 mb-3">
+              キャンペーン期間外に適用される報酬率です。期間限定の特別レートは
+              「キャンペーン設定」で管理します。
+            </p>
+            <div className="flex items-center gap-2">
+              <Percent className="w-4 h-4 text-stone-400 shrink-0" />
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={rateConfig.default}
+                onChange={e =>
+                  setRateConfig({ default: Math.min(100, Math.max(1, parseInt(e.target.value) || 1)) })
+                }
+                className="w-24 border border-stone-300 rounded-lg px-3 py-1.5 text-lg font-bold text-omame-deep focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 bg-white"
+              />
+              <span className="text-stone-600 font-bold">%</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
