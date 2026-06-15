@@ -25,24 +25,22 @@ export function Section14FinalCta({
     <SectionShell>
       <Reveal>
         <Eyebrow>One Last Thing</Eyebrow>
-        <Heading>{"もし今、\n「何か違う」と\n感じているなら。"}</Heading>
+        <Heading>{"もし今、\n頑張っているのに変わらない、\nそう感じているなら。"}</Heading>
 
         <p className="mt-10 text-center text-base leading-loose text-omame-text md:text-lg">
-          その感覚は、
+          その原因は、才能ではなく、
           <br />
-          間違っていないかもしれません。
+          前提そのものかもしれません。
           <br />
           <br />
           「もっと頑張らなきゃ」ではなく、
           <br />
-          「何かを手放す」ことが
-          <br />
-          答えかもしれません。
+          「何かを手放す」こと。
           <br />
           <br />
           その入り口を、
           <br />
-          お豆奏法 基礎講座でご用意しています。
+          ここにご用意しています。
         </p>
 
         <div className="mx-auto mt-12 max-w-md rounded-2xl border border-omame-gold/50 bg-white p-8 text-center shadow-sm shadow-omame-gold/10">

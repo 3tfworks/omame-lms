@@ -37,9 +37,9 @@ export function Section01Hero() {
           <br />
           弾けなくなる。
           <br />
-          <span className="mt-4 inline-block">その理由を、</span>
+          <span className="mt-4 inline-block">それは、才能不足でも、</span>
           <br />
-          知っていますか？
+          努力不足でもありません。
         </h1>
 
         <p className="mt-10 text-base leading-[2.2] text-white/90 md:text-lg">
