@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 
 // 振込先口座情報のサーバ側バリデーション。
 // クライアントの HTML5 検証は API 直叩きで回避できるため、保存前にサーバでも必ず検査する。
@@ -112,6 +113,9 @@ export async function GET() {
       ? rewards.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0)
       : 0;
 
+    // 現在の報酬率（紹介者ダッシュボードの動的表示用）。
+    const currentRate = await getAffiliateRewardRate();
+
     return NextResponse.json({
       userId: user.id,
       bankInfo: profile.bank_info || null,
@@ -121,6 +125,17 @@ export async function GET() {
         totalReferrals,
         totalEarned,
         unpaidAmount
+      },
+      currentRate: {
+        rate: currentRate.rate,
+        source: currentRate.source,
+        campaign: currentRate.campaign
+          ? {
+              id: currentRate.campaign.id,
+              name: currentRate.campaign.name,
+              endAt: currentRate.campaign.endAt.toISOString(),
+            }
+          : null,
       }
     });
   } catch (error) {

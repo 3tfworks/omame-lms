@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
@@ -117,17 +118,11 @@ export async function POST(request: Request) {
           .maybeSingle();
 
         if (lead) {
-          const { data: setting } = await supabaseAdmin
-            .from("system_settings")
-            .select("value")
-            .eq("id", "affiliate_reward_rate")
-            .single();
-
-          const rateConfig = setting
-            ? JSON.parse(setting.value as string)
-            : { default: 35, campaign: 50, active: "default" };
-          const activeKey: "default" | "campaign" = rateConfig.active === "campaign" ? "campaign" : "default";
-          const rewardRate: number = rateConfig[activeKey] ?? rateConfig.default ?? 35;
+          // 会費ペイの payload に確実な決済日時が無いため、webhook 受信時刻を基準に判定する。
+          const { rate: rewardRate } = await getAffiliateRewardRate(
+            new Date(),
+            supabaseAdmin,
+          );
           const rewardAmount = Math.floor((paymentAmount * rewardRate) / 100);
 
           const { error: rewardError } = await supabaseAdmin
@@ -177,7 +172,7 @@ export async function POST(request: Request) {
     // 8. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
     return NextResponse.json({ message: "Webhook processed successfully" }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("[Kaihipay Webhook] Unhandled Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },

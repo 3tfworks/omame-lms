@@ -10,6 +10,12 @@ type AffiliateStats = {
   unpaidAmount: number;
 };
 
+type CurrentRate = {
+  rate: number;
+  source: "campaign" | "default";
+  campaign: { id: string; name: string; endAt: string } | null;
+};
+
 type BankInfo = {
   bankName: string;
   branchName: string;
@@ -22,6 +28,7 @@ export default function AffiliatePage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
   const [stats, setStats] = useState<AffiliateStats | null>(null);
+  const [currentRate, setCurrentRate] = useState<CurrentRate | null>(null);
   const [bankInfo, setBankInfo] = useState<BankInfo>({
     bankName: "", branchName: "", accountType: "普通", accountNumber: "", accountName: ""
   });
@@ -44,6 +51,7 @@ export default function AffiliatePage() {
           const data = await res.json();
           setUserId(data.userId);
           setStats(data.stats);
+          setCurrentRate(data.currentRate ?? null);
           if (data.bankInfo) {
             setBankInfo(data.bankInfo);
           }
@@ -171,8 +179,25 @@ export default function AffiliatePage() {
             <p>そして、その感謝の気持ちを、形にしてお返ししたいと考えました。</p>
             <p>今回、動画コンテンツを購入してくださったサロンメンバーの方お一人おひとりに、<strong>「お豆奏法・おすそ分けリンク」</strong>を発行させていただきます。</p>
             <p className="bg-amber-50/50 p-4 rounded-xl border-l-4 border-amber-300">
-              あなた専用のリンクから動画が売れると、販売額の35％を感謝の気持ちとしてお返しします。<br/>
-              キャンペーン期間など、特別なときには、50％をお返しさせていただきます。
+              {currentRate && currentRate.source === "campaign" && currentRate.campaign ? (
+                <>
+                  ただいま<strong>{currentRate.campaign.name}</strong>を実施中です。<br/>
+                  あなた専用のリンクから動画が売れると、販売額の<strong>{currentRate.rate}％</strong>を感謝の気持ちとしてお返しします（
+                  {new Date(currentRate.campaign.endAt).toLocaleDateString("ja-JP", {
+                    timeZone: "Asia/Tokyo",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                  まで）。
+                </>
+              ) : (
+                <>
+                  あなた専用のリンクから動画が売れると、販売額の
+                  <strong>{currentRate ? `${currentRate.rate}％` : "一定割合"}</strong>
+                  を感謝の気持ちとしてお返しします。
+                </>
+              )}
             </p>
             <p>これは「宣伝」ではありません。<br/>
             みなさんがお豆奏法を広めてくださることで、より多くの人がピアノと心地よい関係を築けるようになる。それに対する、私からの<strong>「ありがとう」のギフト（還元）</strong>だと思って受け取っていただけたら嬉しいです。</p>

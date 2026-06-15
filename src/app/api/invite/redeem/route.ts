@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -63,17 +64,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "すでに紹介コードが適用されています" }, { status: 409 });
   }
 
-  const { data: setting } = await adminClient
-    .from("system_settings")
-    .select("value")
-    .eq("id", "affiliate_reward_rate")
-    .single();
-
-  const rateConfig = setting
-    ? JSON.parse(setting.value as string)
-    : { default: 35, campaign: 50, active: "default" };
-  const activeKey: "default" | "campaign" = rateConfig.active === "campaign" ? "campaign" : "default";
-  const rewardRate: number = rateConfig[activeKey] ?? rateConfig.default ?? 35;
+  // 紐付け時点（現在時刻）の報酬率をスナップショット保存する。amount は購入時に確定するため 0。
+  const { rate: rewardRate } = await getAffiliateRewardRate(new Date(), adminClient);
 
   const { error: rewardError } = await adminClient
     .from("affiliate_rewards")

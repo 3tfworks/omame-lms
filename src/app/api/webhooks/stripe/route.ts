@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -160,17 +161,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
 
     if (referrerId && paymentAmount > 0) {
-      const { data: setting } = await supabaseAdmin
-        .from("system_settings")
-        .select("value")
-        .eq("id", "affiliate_reward_rate")
-        .single();
-
-      const rateConfig = setting
-        ? JSON.parse(setting.value as string)
-        : { default: 35, campaign: 50, active: "default" };
-      const activeKey: "default" | "campaign" = rateConfig.active === "campaign" ? "campaign" : "default";
-      const rewardRate: number = rateConfig[activeKey] ?? rateConfig.default ?? 35;
+      // 報酬率は決済成立日時（Checkout Session の作成時刻＝unix秒）を基準に判定する。
+      const { rate: rewardRate } = await getAffiliateRewardRate(
+        new Date(session.created * 1000),
+        supabaseAdmin,
+      );
       const rewardAmount = Math.floor((paymentAmount * rewardRate) / 100);
 
       const { error: rewardError } = await supabaseAdmin.from("affiliate_rewards").insert({
