@@ -74,8 +74,8 @@ export function Section11Price({
           <Image
             src="/images/omame-shortcut-road.png"
             alt="遠回りの学び方とお豆奏法の学び方を比較した図解"
-            width={1402}
-            height={1122}
+            width={1536}
+            height={1024}
             loading="lazy"
             className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
           />
