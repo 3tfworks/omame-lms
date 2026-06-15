@@ -285,7 +285,7 @@ export default function InviteClient({
 
               {/* LINE友達追加ボタン */}
               <a
-                href="https://lin.ee/XXXXXXXX"
+                href="https://lin.ee/RmeCAtQ"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 w-full py-5 rounded-full text-white font-bold text-lg font-sans transition-all shadow-xl hover:shadow-2xl hover:scale-105 duration-300 mb-8 md:mb-10"

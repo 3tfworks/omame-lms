@@ -431,7 +431,9 @@ export default function OfferPage() {
 
                 {/* LINEボタン */}
                 <a
-                  href="https://www.kaihipay.jp/forms?form_code=3006074313979285"
+                  href="https://lin.ee/RmeCAtQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-[#06C755] text-white font-bold py-5 px-10 rounded-full text-lg hover:bg-[#05b34d] transition-all shadow-xl hover:shadow-2xl hover:scale-105 transform"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">

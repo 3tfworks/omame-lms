@@ -92,7 +92,7 @@ export default function ThanksPage({
                 body: "まだの方は、えりな先生の公式LINEを友達追加してください。最新情報をいち早くお届けします。",
                 action: {
                   label: "LINE 公式を友達追加する",
-                  href: "https://lin.ee/XXXXXXXX",
+                  href: "https://lin.ee/RmeCAtQ",
                   color: "#06C755",
                 },
               },

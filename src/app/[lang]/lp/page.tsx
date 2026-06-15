@@ -448,7 +448,9 @@ export default function OptinLP({ params }: { params: Promise<{ lang: string }> 
           className="fixed bottom-6 left-4 right-4 z-50 md:left-auto md:right-8 md:max-w-sm"
         >
           <a
-            href="#"
+            href="https://lin.ee/RmeCAtQ"
+            target="_blank"
+            rel="noopener noreferrer"
             className="block w-full py-4 px-6 bg-[#00B900] hover:bg-[#00A000] text-white text-center font-bold rounded-full text-base shadow-2xl shadow-black/30 transition-all hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2 group"
           >
             {t.cta.button}
