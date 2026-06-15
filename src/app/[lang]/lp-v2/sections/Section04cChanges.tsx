@@ -17,8 +17,8 @@ const changes = [
   },
   {
     src: "/images/omame-before-after-stage.png",
-    w: 1535,
-    h: 1024,
+    w: 1672,
+    h: 941,
     alt: "本番で戦う状態から音楽に集中できる状態への変化",
     title: "本番で戦うから、音楽へ。",
     body: [
