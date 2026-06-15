@@ -118,9 +118,12 @@ export function CtaButton({
 export function VimeoEmbed({
   videoId,
   title,
+  hash,
 }: {
   videoId: string;
   title: string;
+  // パスワード（プライバシー）付き動画の埋め込みハッシュ。?h=<hash> として付与する。
+  hash?: string;
 }) {
   if (!videoId || videoId === "PLACEHOLDER") {
     return (
@@ -133,10 +136,13 @@ export function VimeoEmbed({
       </div>
     );
   }
+  const src = hash
+    ? `https://player.vimeo.com/video/${videoId}?h=${hash}`
+    : `https://player.vimeo.com/video/${videoId}`;
   return (
     <div className="aspect-video w-full overflow-hidden rounded-lg shadow-md shadow-omame-deep/10">
       <iframe
-        src={`https://player.vimeo.com/video/${videoId}`}
+        src={src}
         title={title}
         className="h-full w-full"
         allow="autoplay; fullscreen; picture-in-picture"

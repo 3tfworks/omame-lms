@@ -2,33 +2,13 @@
 
 import { Eyebrow, Heading, Reveal, SectionShell, VimeoEmbed } from "../ui";
 
-// §7 受講者の声（最重要セクション）
-// インタビュー動画 4 本を一気に投入。LP 全体で最も CV を押し上げる。
+// §7 受講者の声
+// 柴田先生は §4b へ前倒し、Y先生は動画なしのため除外。
+// 金子先生・才賀崎先生の2本構成。各カードは「結果テキスト → 動画」の順に見せる。
 const voices = [
   {
-    // [VIMEO_ID_柴田先生インタビュー]
-    videoId: "PLACEHOLDER",
-    name: "Shibata-sensei / ピアノ講師",
-    title: "50年悩み続けた痛みが、消えた。",
-    body: [
-      "長年ピアノ講師として活動されてきた柴田先生。",
-      "手の痛みと音色への悩みが、半世紀ものあいだ解消されないまま続いていました。",
-      "お豆奏法と出会い、ご自身が変わり、そして指導する生徒さんたちも変わっていく —— その全過程をお話しいただきました。",
-    ],
-  },
-  {
-    // [VIMEO_ID_Y先生インタビュー]
-    videoId: "PLACEHOLDER",
-    name: "Y-sensei / ピアニスト",
-    title: "本番が怖かった私が、ソロ活動を始められた。",
-    body: [
-      "プロとして活動しながらも、本番のたびに不安に襲われていたY先生。",
-      "お豆奏法を通じて、「本番で崩れる原因」が技術ではなく構造にあったと気づき、今では年に何度もの本番をこなされています。",
-    ],
-  },
-  {
-    // [VIMEO_ID_金子先生インタビュー]
-    videoId: "PLACEHOLDER",
+    videoId: "1188098330", // 金子先生インタビュー
+    hash: "4b39d0cd81",
     name: "Kaneko-sensei / ピアニスト",
     title: "ジストニアと診断された指が、もう一度動き始めた。",
     body: [
@@ -37,8 +17,8 @@ const voices = [
     ],
   },
   {
-    // [VIMEO_ID_才賀崎先生インタビュー]
-    videoId: "PLACEHOLDER",
+    videoId: "1188098243", // 才賀崎先生インタビュー
+    hash: "6cc4450180",
     name: "Saigasaki-sensei / ピアノ教室主宰",
     title: "私が変わったら、生徒たちが変わり始めた。",
     body: [
@@ -52,13 +32,13 @@ export function Section07Voices() {
   return (
     <SectionShell width="3xl">
       <Reveal>
-        <Eyebrow>Voices</Eyebrow>
-        <Heading>受講者の、変化。</Heading>
+        <Eyebrow>More Voices</Eyebrow>
+        <Heading>{"柴田先生だけでは、ありません。"}</Heading>
 
         <p className="mt-8 text-center text-base leading-loose text-omame-text md:text-lg">
           お豆奏法を学ばれた方々が、
           <br />
-          ご自身の言葉で語ってくださいました。
+          それぞれの言葉で、変化を語ってくださいました。
           <br />
           <br />
           技法の話ではなく、
@@ -70,11 +50,9 @@ export function Section07Voices() {
       <div className="mt-14 space-y-14">
         {voices.map((v, i) => (
           <Reveal key={v.name}>
-            <article
-              className={`${i > 0 ? "border-t border-omame-gold/20 pt-14" : ""}`}
-            >
-              <VimeoEmbed videoId={v.videoId} title={v.name} />
-              <p className="mt-6 font-sans text-xs uppercase tracking-[0.15em] text-omame-text/60">
+            <article className={`${i > 0 ? "border-t border-omame-gold/20 pt-14" : ""}`}>
+              {/* 結果テキストを先に見せる */}
+              <p className="font-sans text-xs uppercase tracking-[0.15em] text-omame-text/60">
                 {v.name}
               </p>
               <p className="mt-3 text-xl font-bold leading-relaxed text-omame-gold md:text-2xl">
@@ -84,6 +62,10 @@ export function Section07Voices() {
                 {v.body.map((line, j) => (
                   <p key={j}>{line}</p>
                 ))}
+              </div>
+              {/* 動画は結果テキストの後に */}
+              <div className="mt-6">
+                <VimeoEmbed videoId={v.videoId} hash={v.hash} title={v.name} />
               </div>
             </article>
           </Reveal>

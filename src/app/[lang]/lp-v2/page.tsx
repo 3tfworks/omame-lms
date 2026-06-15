@@ -4,6 +4,7 @@ import { Section01Hero } from "./sections/Section01Hero";
 import { Section02Empathy } from "./sections/Section02Empathy";
 import { Section03Problem } from "./sections/Section03Problem";
 import { Section04Story } from "./sections/Section04Story";
+import { Section04bBridge } from "./sections/Section04bBridge";
 import { Section05WhatItIs } from "./sections/Section05WhatItIs";
 import { Section06Changes } from "./sections/Section06Changes";
 import { Section07Voices } from "./sections/Section07Voices";
@@ -34,6 +35,7 @@ export default async function LpV2Page({
       <Section02Empathy />
       <Section03Problem />
       <Section04Story />
+      <Section04bBridge />
       <Section05WhatItIs />
       <Section06Changes />
       <Section07Voices />
