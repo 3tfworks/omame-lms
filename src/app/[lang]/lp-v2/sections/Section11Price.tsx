@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { CtaButton, Eyebrow, Heading, Reveal, SectionShell } from "../ui";
-import { PathToTheAnswer } from "../figures/PathToTheAnswer";
 
 // §11 価格
 // 価格競争の商品ではなく「数十年の研究の末に辿り着いた原理＝答えへの地図」を渡す講座として位置づける。
@@ -68,10 +68,21 @@ export function Section11Price({
         </div>
       </Reveal>
 
-      {/* 図解：従来の学び方（迷走） vs お豆奏法（最短距離） */}
+      {/* 図解：遠回りの学び方 vs お豆奏法（最短距離） */}
       <Reveal>
-        <div className="mt-14">
-          <PathToTheAnswer />
+        <div className="py-10 md:py-16">
+          <Image
+            src="/images/omame-shortcut-road.png"
+            alt="遠回りの学び方とお豆奏法の学び方を比較した図解"
+            width={1402}
+            height={1122}
+            loading="lazy"
+            className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
+          />
+          <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-loose text-omame-text/60">
+            本やセミナー、レッスンを重ねても、答えに辿り着けるとは限りません。
+            本講座は、えりな先生が長年の試行錯誤の末に見つけた“原理”から学ぶための講座です。
+          </p>
         </div>
       </Reveal>
 

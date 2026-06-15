@@ -42,15 +42,19 @@ export function Section04Story() {
           </p>
         </div>
 
-        {/* [IMAGE_研究ノート] 手書きメモが大量に写った写真 */}
-        <div className="my-12 overflow-hidden rounded-2xl shadow-md shadow-omame-deep/10">
+        {/* [IMAGE_研究ノート] → omame-research-notes.png */}
+        <div className="mb-8 mt-12">
           <Image
-            src="/images/lp-v2/research-notes.jpg"
-            alt="えりな先生の研究ノート"
-            width={768}
-            height={512}
-            className="h-auto w-full object-cover"
+            src="/images/omame-research-notes.png"
+            alt="お豆奏法に辿り着くまでの長年の研究ノート"
+            width={1536}
+            height={1024}
+            loading="lazy"
+            className="mx-auto h-auto w-full max-w-[860px] rounded-2xl shadow-md"
           />
+          <p className="mt-4 text-center text-sm text-omame-text/60">
+            この原理は、短期間で思いついたものではありません。長年の研究と試行錯誤の先に見つかった答えです。
+          </p>
         </div>
 
         <div className="space-y-8 text-base leading-loose text-omame-text md:text-lg">

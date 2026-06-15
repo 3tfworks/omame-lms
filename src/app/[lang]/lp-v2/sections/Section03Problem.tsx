@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Eyebrow, Heading, Reveal, SectionShell } from "../ui";
 import { InfoOverflow } from "../figures/InfoOverflow";
 
@@ -59,6 +60,21 @@ export function Section03Problem() {
             ——
             <br />
             それが、本当の問題かもしれません。
+          </p>
+        </div>
+
+        {/* 足し算 vs お豆奏法の比較図解（§5 の AddVsSubtract とは役割が異なるため併存） */}
+        <div className="py-10 md:py-16">
+          <Image
+            src="/images/omame-add-vs-subtract.png"
+            alt="足し算の奏法とお豆奏法の違いを示す比較図解"
+            width={1536}
+            height={1024}
+            loading="lazy"
+            className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
+          />
+          <p className="mt-4 text-center text-sm text-omame-text/60">
+            答えは、足すことではなく、本当に必要な原理に戻ることでした。
           </p>
         </div>
       </Reveal>

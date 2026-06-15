@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Eyebrow, Heading, Reveal, SectionShell, VimeoEmbed } from "../ui";
 
 // §4b 変化の予告（柴田先生独立）
@@ -20,6 +21,21 @@ export function Section04bBridge() {
           <br />
           ある一人のピアノ講師の物語。
         </p>
+
+        {/* 50年間の悩みが変化するストーリー図解（動画への橋渡し） */}
+        <div className="py-10 md:py-16">
+          <Image
+            src="/images/omame-50years-story.png"
+            alt="50年間解決しなかったピアノの悩みが変化するストーリー図解"
+            width={1402}
+            height={1122}
+            loading="lazy"
+            className="mx-auto h-auto w-full max-w-[1000px] rounded-2xl shadow-md"
+          />
+          <p className="mt-4 text-center text-sm leading-loose text-omame-text/60">
+            動画では、50年近く探し続けてきた悩みが、お豆奏法によってどのように変化したのかをお話しいただいています。
+          </p>
+        </div>
 
         {/* 柴田先生インタビュー（大きめ表示） */}
         <div className="mt-12">
