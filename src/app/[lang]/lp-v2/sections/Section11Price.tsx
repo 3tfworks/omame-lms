@@ -33,7 +33,7 @@ export function Section11Price({
     <SectionShell className="bg-white">
       <Reveal>
         <Eyebrow>Investment</Eyebrow>
-        <Heading>{`この講座を、\n${salePrice.toLocaleString("ja-JP")}円でお届けします。`}</Heading>
+        <Heading>{`この講座を、\n${(showCampaign ? salePrice : regularPrice).toLocaleString("ja-JP")}円でお届けします。`}</Heading>
 
         <p className="mt-8 text-center text-base leading-loose text-omame-text md:text-lg">
           通常、これだけのコンテンツと
@@ -69,22 +69,33 @@ export function Section11Price({
           </div>
         </div>
 
-        {/* 特別価格 */}
+        {/* 価格表示。キャンペーン ON/OFF で表示ロジックを切り替える。 */}
         <div className="mx-auto mt-10 max-w-md rounded-2xl border border-omame-gold/50 bg-omame-bg p-8 text-center shadow-sm shadow-omame-gold/10">
-          {showCampaign && (
-            <p className="font-sans text-xs uppercase tracking-[0.2em] text-omame-gold">
-              {campaignLabel || "発売記念価格"}
-            </p>
-          )}
-          <p className="mt-4 text-4xl font-bold text-omame-deep md:text-5xl">
-            {yen(salePrice)}
-            <span className="ml-1 text-base font-normal text-omame-text/70">（税込）</span>
-          </p>
-          {showCampaign && regularPrice > salePrice && (
-            <p className="mt-4 text-sm leading-relaxed text-omame-text/70">
-              —— 通常価格 <span className="line-through">{yen(regularPrice)}</span> から
-              <br />
-              発売を記念して特別価格でご提供 ——
+          {showCampaign ? (
+            <>
+              {/* キャンペーン文言（campaignLabel をそのまま表示） */}
+              {campaignLabel && (
+                <p className="font-sans text-xs uppercase tracking-[0.2em] text-omame-gold">
+                  {campaignLabel}
+                </p>
+              )}
+              {/* 通常価格は控えめに取り消し線で */}
+              <p className="mt-3 text-sm text-omame-text/60">
+                通常価格 <span className="line-through">{yen(regularPrice)}</span>
+              </p>
+              {/* 販売価格を gold アクセントで強調 */}
+              <p className="mt-2 text-4xl font-bold text-omame-deep md:text-5xl">
+                <span className="bg-gradient-to-b from-transparent to-omame-gold/20 px-1">
+                  {yen(salePrice)}
+                </span>
+                <span className="ml-1 text-base font-normal text-omame-text/70">（税込）</span>
+              </p>
+            </>
+          ) : (
+            // キャンペーン OFF：通常価格のみ通常表示
+            <p className="text-4xl font-bold text-omame-deep md:text-5xl">
+              {yen(regularPrice)}
+              <span className="ml-1 text-base font-normal text-omame-text/70">（税込）</span>
             </p>
           )}
         </div>

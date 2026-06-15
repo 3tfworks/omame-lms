@@ -5,12 +5,21 @@ import { CtaButton, Eyebrow, Heading, Reveal, SectionShell } from "../ui";
 
 // §14 最終 CTA
 // 最後のひと押し。すべての要素を凝縮した申込導線。
+// 価格は §11 と同じく getProductPricing 由来。コンパクト表示版。
+const yen = (n: number) => `¥${n.toLocaleString("ja-JP")}`;
+
 export function Section14FinalCta({
   lang,
+  regularPrice,
   salePrice,
+  campaignLabel,
+  showCampaign,
 }: {
   lang: string;
+  regularPrice: number;
   salePrice: number;
+  campaignLabel: string;
+  showCampaign: boolean;
 }) {
   return (
     <SectionShell>
@@ -38,10 +47,26 @@ export function Section14FinalCta({
 
         <div className="mx-auto mt-12 max-w-md rounded-2xl border border-omame-gold/50 bg-white p-8 text-center shadow-sm shadow-omame-gold/10">
           <p className="text-sm tracking-wide text-omame-deep">お豆奏法 基礎講座</p>
-          <p className="mt-3 text-3xl font-bold text-omame-deep md:text-4xl">
-            ¥{salePrice.toLocaleString("ja-JP")}
-          </p>
-          <p className="mt-1 text-xs text-omame-text/70">税込・発売記念価格</p>
+          {showCampaign ? (
+            <>
+              <p className="mt-3 text-3xl font-bold text-omame-deep md:text-4xl">
+                <span className="mr-2 align-middle text-lg font-normal text-omame-text/50 line-through">
+                  {yen(regularPrice)}
+                </span>
+                {yen(salePrice)}
+              </p>
+              <p className="mt-1 text-xs text-omame-text/70">
+                税込{campaignLabel ? `・${campaignLabel}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-3xl font-bold text-omame-deep md:text-4xl">
+                {yen(regularPrice)}
+              </p>
+              <p className="mt-1 text-xs text-omame-text/70">税込</p>
+            </>
+          )}
         </div>
 
         <div className="mt-10">

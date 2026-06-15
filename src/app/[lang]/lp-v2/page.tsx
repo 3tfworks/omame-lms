@@ -49,7 +49,13 @@ export default async function LpV2Page({
       />
       <Section12Faq />
       <Section13Message />
-      <Section14FinalCta lang={lang} salePrice={pricing.salePrice} />
+      <Section14FinalCta
+        lang={lang}
+        regularPrice={pricing.regularPrice}
+        salePrice={pricing.salePrice}
+        campaignLabel={pricing.campaignLabel}
+        showCampaign={pricing.showCampaign}
+      />
     </main>
   );
 }

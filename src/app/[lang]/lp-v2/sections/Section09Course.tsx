@@ -5,31 +5,19 @@ import { Eyebrow, Heading, Reveal, SectionShell } from "../ui";
 
 // §9 講座内容
 // ここで初めて商品の中身を見せる。具体性と「ボリューム感」を両立。
+// 章タイトル自体が情報量を持つため、サブテキストは付けず番号＋タイトルで端的に。
+// 「総まとめ」は章番号ではなく別カテゴリ（summary フラグで見せ方を変える）。
 const chapters = [
+  { no: "第 1 章", title: "「ピアノの常識を、根底から覆します」―お豆奏法の原点と核心" },
+  { no: "第 2 章", title: "音の鳴る仕組みと、鍵盤の「本当の扱い方」" },
+  { no: "第 3 章", title: "身体の本当の使い方 〜\"自然体\"とは" },
+  { no: "第 4 章", title: "「たて読み」で譜読みが超楽になる💕" },
+  { no: "第 5 章", title: "「ズレ」の最終調整" },
+  { no: "第 6 章", title: "お豆奏法・実践テクニック集" },
   {
-    no: "第 1 章",
-    title: "お豆奏法の原理",
-    body: "「足し算ではなく引き算」その思想の根本を、具体的な事例とともに学びます。",
-  },
-  {
-    no: "第 2 章",
-    title: "身体との向き合い方",
-    body: "力みの正体、痛みの原因、無意識のクセに気づき、身体本来の感覚を取り戻します。",
-  },
-  {
-    no: "第 3 章",
-    title: "演奏への応用",
-    body: "タッチ、音色、ペダリング、表現の幅をどう広げるか。具体的な楽曲を題材に解説します。",
-  },
-  {
-    no: "第 4 章",
-    title: "読譜",
-    body: "楽譜の読み方が変わると、演奏も変わります。お豆奏法の視点での読譜法。",
-  },
-  {
-    no: "第 5 章",
-    title: "練習法",
-    body: "「うまくなるための練習」と「自分を苦しめる練習」の違い。日々の練習を再設計します。",
+    no: "総まとめ",
+    title: "「\"頑張るピアノ\"に戻らないために」―お豆奏法の総仕上げ―",
+    summary: true,
   },
 ];
 
@@ -41,7 +29,7 @@ export function Section09Course() {
         <Heading>{"お豆奏法 基礎講座で、\n学べること。"}</Heading>
 
         <p className="mt-8 text-center text-base leading-loose text-omame-text md:text-lg">
-          全 5 章・動画 47 本。
+          全 6 章＋総まとめ・動画 47 本。
           <br />
           お豆奏法の根本から、
           <br />
@@ -54,17 +42,26 @@ export function Section09Course() {
       <div className="mt-12 space-y-5">
         {chapters.map((c) => (
           <Reveal key={c.no}>
-            <div className="rounded-xl border border-omame-gold/20 bg-white p-6 shadow-sm">
+            <div
+              className={
+                c.summary
+                  ? "rounded-xl border-2 border-omame-gold/50 bg-omame-bg p-6 shadow-sm shadow-omame-gold/10"
+                  : "rounded-xl border border-omame-gold/20 bg-white p-6 shadow-sm"
+              }
+            >
               <div className="mb-3 flex items-center gap-3">
-                <span className="font-sans text-sm font-bold tracking-wide text-omame-gold">
+                <span
+                  className={`font-sans text-sm font-bold tracking-wide ${
+                    c.summary ? "text-omame-deep" : "text-omame-gold"
+                  }`}
+                >
                   {c.no}
                 </span>
-                <span className="h-px flex-1 bg-omame-gold/20" />
+                <span
+                  className={`h-px flex-1 ${c.summary ? "bg-omame-gold/50" : "bg-omame-gold/20"}`}
+                />
               </div>
-              <h3 className="text-lg font-bold text-omame-deep">{c.title}</h3>
-              <p className="mt-2 text-sm leading-loose text-omame-text/80 md:text-base">
-                {c.body}
-              </p>
+              <h3 className="text-lg font-bold leading-relaxed text-omame-deep">{c.title}</h3>
             </div>
           </Reveal>
         ))}
