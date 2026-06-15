@@ -1,13 +1,13 @@
-import { PlayCircle, FileText, NotebookPen, MessagesSquare } from "lucide-react";
+import { PlayCircle, FileText, NotebookPen, Infinity as InfinityIcon } from "lucide-react";
 
 // FIGURE_学習システム
-// 中央に受講生、周囲を「動画／レバメモ／マイノート／質問・相談」が囲む。
+// 中央に受講生、周囲を「動画／レバメモ／マイノート／視聴期限なし」が囲む。
 const elements = [
   {
     icon: PlayCircle,
     no: "①",
     title: "動画講座",
-    sub: "全 5 章 47 本。スマホ・PC で何度でも視聴可能。",
+    sub: "全 6 章 + 総まとめ・47 本。スマホ・PC で何度でも視聴可能。",
   },
   {
     icon: FileText,
@@ -22,10 +22,10 @@ const elements = [
     sub: "各動画ごとに、自分の気づきを記録できるパーソナル学習ノート機能。",
   },
   {
-    icon: MessagesSquare,
+    icon: InfinityIcon,
     no: "④",
-    title: "質問・相談",
-    sub: "分からないこと、迷っていることをいつでも投げかけられる仕組みがあります。",
+    title: "視聴期限なし",
+    sub: "受講開始から無期限。いつでも、何度でも、立ち返って学べます。",
   },
 ];
 
