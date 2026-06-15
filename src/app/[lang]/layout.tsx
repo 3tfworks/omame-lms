@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Shippori_Mincho, Outfit } from "next/font/google";
 import "../globals.css";
 import { getDictionary, isValidLocale, locales, type Locale } from "@/lib/i18n";
@@ -15,6 +15,14 @@ const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400"],
 });
+
+// viewport を明示的に宣言（Next のデフォルトと同等だが、こちらで所有して確実に出力する）。
+// viewportFit: "cover" は FV の全面背景がノッチ端末でも端まで届くようにするため。
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 // 各言語のページを事前に生成
 export async function generateStaticParams() {
@@ -50,7 +58,7 @@ export default async function LangLayout({
 
   return (
     <html lang={lang} className={`${shipporiMincho.variable} ${outfit.variable} scroll-smooth`}>
-      <body className="min-h-full flex flex-col font-serif antialiased bg-omame-bg text-omame-text">
+      <body className="min-h-full flex flex-col font-serif antialiased bg-omame-bg text-omame-text overflow-x-hidden">
         {children}
       </body>
     </html>
