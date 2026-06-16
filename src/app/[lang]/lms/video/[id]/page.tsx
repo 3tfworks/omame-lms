@@ -414,6 +414,14 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         if (pointMatch) {
           // 見出し直後の最初のポイントは詰め、2つ目以降はグループ区切りとして大きく空ける。
           const pointMt = lastType === 'section' ? 'mt-3' : 'mt-8';
+          // 「NN タイトル：説明」のように全角コロンを含む見出しは、タイトル（太字）と
+          // 説明（通常ウェイト）に分割して、長文がまるごと太字になる重さを避ける。
+          // 分割は最初の全角「：」のみ。半角「:」やコロン無しの短い見出しは従来どおり。
+          const full = pointMatch[2];
+          const ci = full.indexOf('：');
+          const hasSplit = ci > 0 && ci < full.length - 1;
+          const title = hasSplit ? full.slice(0, ci).trim() : full;
+          const desc = hasSplit ? full.slice(ci + 1).trim() : '';
           parsedElements.push(
             <div key={i} className={`flex items-start gap-3 ${isFirst() ? '' : pointMt}`}>
               <span
@@ -422,12 +430,27 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               >
                 {pointMatch[1]}
               </span>
-              <div className="font-bold text-stone-800 leading-snug pt-1.5">{pointMatch[2]}</div>
+              <div className="pt-1.5">
+                <div className="font-bold text-stone-800 leading-snug">{title}</div>
+                {desc && <div className="mt-1 font-normal text-stone-600 leading-relaxed">{desc}</div>}
+              </div>
             </div>
           );
           lastType = 'point';
           continue;
         }
+      }
+
+      // 行動リスト内の「※…」注記は、直前の行動カードに視覚的に併合する小さなインセットとして描画。
+      // （他セクションの ※ — 例: 全体要約の補足 — は対象外。通常段落のまま。）
+      if (currentSection === 'action' && /^※/.test(line)) {
+        parsedElements.push(
+          <div key={i} className="ml-4 -mt-1 mb-1 pl-3 border-l-2 border-omame-gold/50 text-sm text-omame-deep leading-relaxed">
+            {line}
+          </div>
+        );
+        lastType = 'note';
+        continue;
       }
 
       // 通常テキスト（全体要約の本文や、bullet/ポイントの折り返し継続行など）
