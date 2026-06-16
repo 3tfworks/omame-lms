@@ -32,8 +32,36 @@ const SQUARE_HEADING = /^(?:[\s　*-]+)?[◾◼■▪▫◻]️?\s*(.+)$/;
 const FLOW_HEADER = 'タイムライン別の重要ポイント';
 const FLOW_HEADER_NEW = '動画のながれ';
 
+// テンプレ雛形の括弧注記（文字数・個数・版表記）を1行から除去する。全動画に適用。
+// 例: 「全体要約（200〜400文字）」→「全体要約」、「まとめポイント3つ（強化版）」→「まとめポイント3つ」
+function stripTemplateArtifacts(line) {
+  return line
+    .replace(/[（(]\s*\d+\s*[〜～~]\s*\d+\s*文字\s*[）)]/g, '')
+    .replace(/[（(]\s*\d+\s*[〜～~]\s*\d+\s*個\s*[）)]/g, '')
+    .replace(/[（(]\s*(?:修正版|強化版|整理版)\s*[）)]/g, '')
+    .replace(/[ 　]+$/, '');
+}
+
 export function cleanMemoText(text) {
-  const lines = text.split('\n');
+  let lines = text.split('\n');
+
+  // A-1: ソースDocが全体箇条書きリスト由来で各行に `* ` `* * ` が混入した破損ケース（例: #18 / video-1188100570）。
+  // 「二重スター(`* *`)で始まる行が1つでも存在する」ことを破損シグネチャとし、その動画にだけ行頭スター接頭辞を除去する。
+  // 通常 `* ` を箇条書きマーカーとして使う動画（#2/#11/#14/#45 等）には二重スターが無いため一切触れない。
+  const starCorrupted = lines.some((l) => /^\s*\*\s+\*\s/.test(l));
+  if (starCorrupted) {
+    lines = lines
+      .map((l) => l.replace(/^\s*(?:\*\s+)+/, ''))               // 行頭の `* ` 繰り返しを除去（`* * ・` → `・`）
+      .filter((l, idx) => !(idx === 0 && /レバメモ$/.test(l.trim()))) // 先頭のDocタイトルJunk行（"６−345 レバメモ" 等）を除去
+      .map((l) => (l.trim() === '*' ? '' : l));                  // 単独 `*` 残骸 → 空行化
+  }
+
+  // A-2: テンプレ雛形の括弧注記を全行から除去。
+  lines = lines.map(stripTemplateArtifacts);
+
+  // A-3: `**bold**` 記法は廃止（コース全体で1箇所のみ＝正本フォーマットではない）。装飾を外して素のテキストにする。
+  lines = lines.map((l) => l.replace(/\*\*([^*\n]+)\*\*/g, '$1'));
+
   const out = [];
   let inFlow = false;
   let counter = 0;
