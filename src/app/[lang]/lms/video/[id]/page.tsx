@@ -23,7 +23,7 @@ function ActionCheckbox({ text, checked, onToggle }: { text: string, checked: bo
 
   return (
     <div 
-      className="relative flex items-start gap-4 p-4 my-3 bg-white rounded-xl border border-stone-200 shadow-sm hover:border-amber-400 hover:shadow-md transition-all cursor-pointer group" 
+      className="relative flex items-start gap-4 p-4 my-2 bg-white rounded-xl border border-stone-200 shadow-sm hover:border-amber-400 hover:shadow-md transition-all cursor-pointer group"
       onClick={handleClick}
     >
       <div className={`mt-0.5 w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-300 bg-white group-hover:border-amber-400'}`}>
@@ -288,51 +288,91 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   };
 
   // memoContentのパースロジック
+  //
+  // 縦リズムの設計（video #8 を基準に全47本を統一）:
+  // ・レイアウトの責任はレンダラが完全に持つ。ソースの空行には依存しない（空行はスキップ）。
+  // ・親に space-y-* は付けず、各要素の種別と「直前要素の種別(lastType)」から mt を構造的に決める。
+  //   → 番号見出しの前は大きく空け、見出し直下の bullet と bullet 同士は詰める＝グループ感を出す。
   const renderMemoContent = () => {
     if (!videoData.memoContent) return null;
 
     const parsedElements = [];
     let currentSection = ''; // 'action' | 'summary' | 'flow' | ''
     let actionIndex = 0; // 行動リスト内の項目連番（item_key の採番に使用）
+    // 直前に積んだ要素の種別。間隔（mt）を文脈に応じて決めるために使う。
+    let lastType = ''; // '' | 'section' | 'point' | 'bullet' | 'action' | 'para' | 'hr'
     const lines = videoData.memoContent.split('\n');
+
+    const isFirst = () => parsedElements.length === 0;
+    // セクション見出し（全体要約 / 動画のながれ / 行動リスト / まとめポイント）の前余白。
+    // 先頭は 0、区切り線(hr)直後は控えめ、それ以外は大きく空ける。
+    const headerMt = () => (isFirst() ? '' : lastType === 'hr' ? 'mt-4' : 'mt-10');
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) {
-        parsedElements.push(<div key={i} className="h-4"></div>);
+
+      // 空行はレイアウトに使わない（間隔は要素種別ごとに付与する）
+      if (!line) continue;
+
+      // 中身のない箇条書きマーカー単独行（"*" など）はスキップ
+      if (/^[*＊•・●·]+$/.test(line)) continue;
+
+      // セクション区切り線（____ / --- / ⸻ など）。⸻(U+2E3B)は単独1文字でも区切り。
+      if (/^(?:[-_–—]{3,}|⸻+)$/.test(line)) {
+        parsedElements.push(<hr key={i} className="my-6 border-stone-200 border-dashed" />);
+        lastType = 'hr';
         continue;
       }
       
+      // === セクション見出し（既知の名称のみを構造的に検出。長さヒューリスティックは廃止） ===
+      // 行動リスト
       if (line.includes('行動リスト')) {
         currentSection = 'action';
+        actionIndex = 0;
         parsedElements.push(
-          <div key={i} className="flex items-center gap-2 mt-8 mb-4 border-b border-stone-200 pb-2">
+          <div key={i} className={`flex items-center gap-2 ${headerMt()} mb-4 border-b border-stone-200 pb-2`}>
             <span className="text-xl">🎯</span>
-            <h4 className="text-lg font-bold text-amber-800">{line}</h4>
+            <h4 className="text-lg font-bold text-amber-800">行動リスト</h4>
           </div>
         );
+        lastType = 'section';
         continue;
       }
 
-      if (line.includes('まとめポイント')) {
-        currentSection = 'summary';
-      }
-
-      // 「動画のながれ」（旧タイムライン）セクションの見出し。【】や箇条書き接頭辞付きでも検出する。
+      // 動画のながれ（旧タイムライン）。【】や箇条書き接頭辞付きでも検出する。
       if (line.includes('動画のながれ') || line.includes('タイムライン別の重要ポイント')) {
         currentSection = 'flow';
         parsedElements.push(
-          <div key={i} className="flex items-center gap-2 mt-8 mb-4 border-b border-stone-200 pb-2">
+          <div key={i} className={`flex items-center gap-2 ${headerMt()} mb-4 border-b border-stone-200 pb-2`}>
             <span className="text-xl">🎬</span>
             <h4 className="text-lg font-bold text-amber-800">動画のながれ</h4>
           </div>
         );
+        lastType = 'section';
         continue;
       }
 
-      // 区切り線（---など）は無視
-      if (line.match(/^[-_]{3,}$/)) {
-        parsedElements.push(<hr key={i} className="my-6 border-stone-200 border-dashed" />);
+      // まとめポイント
+      if (line.includes('まとめポイント')) {
+        currentSection = 'summary';
+        parsedElements.push(
+          <h4 key={i} className={`text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 ${headerMt()} mb-4`}>
+            {line.replace(/^[【]/, '').replace(/[】]$/, '')}
+          </h4>
+        );
+        lastType = 'section';
+        continue;
+      }
+
+      // 全体要約
+      if (line.includes('全体要約')) {
+        currentSection = '';
+        parsedElements.push(
+          <h4 key={i} className={`text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 ${headerMt()} mb-4`}>
+            {line.replace(/^[【]/, '').replace(/[】]$/, '')}
+          </h4>
+        );
+        lastType = 'section';
         continue;
       }
 
@@ -354,9 +394,15 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               onToggle={() => toggleActionItem(itemKey, text)}
             />
           );
+          lastType = 'action';
         } else {
-          // それ以外のセクション（タイムライン、まとめ等）のものは普通のリスト
-          parsedElements.push(<li key={i} className="ml-4 list-disc marker:text-amber-600 my-2 leading-relaxed">{text}</li>);
+          // それ以外（動画のながれ・まとめ）は通常リスト。
+          // 見出し直下は詰め、bullet 同士も詰める。marker はお豆ゴールドで統一。
+          const bulletMt = lastType === 'point' ? 'mt-2' : lastType === 'bullet' ? 'mt-1.5' : 'mt-3';
+          parsedElements.push(
+            <li key={i} className={`ml-4 list-disc marker:text-omame-gold ${isFirst() ? '' : bulletMt} leading-relaxed`}>{text}</li>
+          );
+          lastType = 'bullet';
         }
         continue;
       }
@@ -366,8 +412,10 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       if (currentSection === 'flow') {
         const pointMatch = line.match(/^(\d{2})[ 　]+(.+)$/);
         if (pointMatch) {
+          // 見出し直後の最初のポイントは詰め、2つ目以降はグループ区切りとして大きく空ける。
+          const pointMt = lastType === 'section' ? 'mt-3' : 'mt-8';
           parsedElements.push(
-            <div key={i} className="flex items-start gap-3 my-4">
+            <div key={i} className={`flex items-start gap-3 ${isFirst() ? '' : pointMt}`}>
               <span
                 className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold"
                 style={{ backgroundColor: "rgba(203,163,101,0.15)", color: "#cba365" }}
@@ -377,18 +425,21 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               <div className="font-bold text-stone-800 leading-snug pt-1.5">{pointMatch[2]}</div>
             </div>
           );
+          lastType = 'point';
           continue;
         }
       }
 
-      // 見出し（全体要約、まとめポイントなど短い強調行）
-      if ((line.length < 30 && !line.includes('。')) || line.startsWith('【') || line.endsWith('】')) {
-        parsedElements.push(<h4 key={i} className="text-lg font-bold text-stone-800 border-b border-stone-200 pb-2 mt-8 mb-4">{line.replace(/^[【]/, '').replace(/[】]$/, '')}</h4>);
-        continue;
-      }
-      
-      // 通常テキスト
-      parsedElements.push(<p key={i} className="mb-2">{line}</p>);
+      // 通常テキスト（全体要約の本文や、bullet/ポイントの折り返し継続行など）
+      // bullet/ポイント直後は継続行として字下げして寄せる。見出し直後は本文段落として扱う。
+      let paraCls;
+      if (lastType === 'point' || lastType === 'bullet') paraCls = 'mt-1 ml-4';
+      else if (lastType === 'para') paraCls = 'mt-1';
+      else paraCls = 'mt-3';
+      parsedElements.push(
+        <p key={i} className={isFirst() ? '' : paraCls}>{line}</p>
+      );
+      lastType = 'para';
     }
 
     return parsedElements;
@@ -577,7 +628,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               
               <div className="bg-white p-6 lg:p-10 rounded-xl border border-stone-200 shadow-sm">
                 {videoData.memoContent ? (
-                  <div className="space-y-6 text-stone-700 leading-relaxed mb-12">
+                  <div className="text-stone-700 leading-relaxed mb-12">
                     {renderMemoContent()}
                   </div>
                 ) : (

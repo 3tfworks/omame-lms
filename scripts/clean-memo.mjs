@@ -25,6 +25,10 @@ import { dirname, join } from 'node:path';
 //     "00:00〜00:40"（時刻だけで見出しは次行）も捕捉する（その場合 group1 は空）。
 const POINT_LINE = /^(?:[\s　*・●＊•-]+)?\d{1,2}:\d{2}(?:\s*[〜~]\s*(?:\d{1,2}:\d{2}|終わり))?\s*[｜|]?\s*(.*)$/;
 
+// 時刻ではなく ◾️/■ 等の記号で「動画のながれ」のポイントを区切る記法（例: video #15）。
+// 記号見出しも並び順から連番化する。先頭の空白・装飾記号は許容。
+const SQUARE_HEADING = /^(?:[\s　*-]+)?[◾◼■▪▫◻]️?\s*(.+)$/;
+
 const FLOW_HEADER = 'タイムライン別の重要ポイント';
 const FLOW_HEADER_NEW = '動画のながれ';
 
@@ -38,8 +42,9 @@ export function cleanMemoText(text) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // セクション見出し「タイムライン別の重要ポイント」→「動画のながれ」（【】・接尾辞・箇条書き付きも許容）
-    if (trimmed.includes(FLOW_HEADER)) {
+    // セクション見出し「タイムライン別の重要ポイント」→「動画のながれ」（【】・接尾辞・箇条書き付きも許容）。
+    // 旧表記だけでなく、既に「動画のながれ」へ移行済みの動画（例: video #15）でもフロー区間に入る。
+    if (trimmed.includes(FLOW_HEADER) || trimmed.includes(FLOW_HEADER_NEW)) {
       out.push(line.replace(FLOW_HEADER, FLOW_HEADER_NEW));
       inFlow = true;
       counter = 0;
@@ -69,6 +74,14 @@ export function cleanMemoText(text) {
           }
         }
         out.push(`${String(counter).padStart(2, '0')} ${heading}`.trimEnd());
+        continue;
+      }
+      // 記号見出し（◾️/■ 等）も並び順から連番見出しへ正規化する。
+      // 既に "NN 見出し" 済みの行は POINT_LINE にも SQUARE_HEADING にもマッチせず素通りする（冪等）。
+      const sq = trimmed.match(SQUARE_HEADING);
+      if (sq) {
+        counter += 1;
+        out.push(`${String(counter).padStart(2, '0')} ${sq[1].trim()}`.trimEnd());
         continue;
       }
     }
