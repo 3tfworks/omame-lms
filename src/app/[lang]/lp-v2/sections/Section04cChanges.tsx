@@ -54,7 +54,7 @@ export function Section04cChanges() {
           そして、生徒との向き合い方まで。
           <br />
           <br />
-          少しずつ、しかし確かに変化が広がっていきます。
+          確実に変化が広がっていきます。
         </p>
       </Reveal>
 
