@@ -39,18 +39,10 @@ export function Section02Empathy() {
                 className={`flex items-start gap-3 ${isClimax ? "mt-6" : ""}`}
               >
                 <Square
-                  className={`mt-1 h-5 w-5 shrink-0 ${
-                    isClimax ? "text-omame-gold" : "text-omame-gold/70"
-                  }`}
+                  className="mt-1 h-5 w-5 shrink-0 text-omame-gold/70"
                   strokeWidth={1.5}
                 />
-                <span
-                  className={`leading-relaxed md:text-lg ${
-                    isClimax
-                      ? "text-base italic text-omame-deep"
-                      : "text-base text-omame-text"
-                  }`}
-                >
+                <span className="text-base leading-relaxed text-omame-text md:text-lg">
                   {p}
                 </span>
               </li>

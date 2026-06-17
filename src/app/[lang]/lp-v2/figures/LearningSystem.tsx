@@ -7,7 +7,7 @@ const elements = [
     icon: PlayCircle,
     no: "①",
     title: "動画講座",
-    sub: "全 6 章 + 総まとめ・47 本。スマホ・PC で何度でも視聴可能。",
+    sub: "全 6 章 + 総まとめ（47 本）。スマホ・PC で何度でも視聴可能。",
   },
   {
     icon: FileText,

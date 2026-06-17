@@ -57,7 +57,7 @@ export function Section01Hero() {
             お豆奏法 基礎講座
           </p>
           <p className="mt-4 text-sm leading-[2] text-white/90">
-            音色・脱力・読譜・本番力。
+            音色・脱力・テクニック・音楽性・読譜・本番力。
             <br />
             すべての土台を変える、
             <br />

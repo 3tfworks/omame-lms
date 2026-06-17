@@ -12,16 +12,16 @@ export function Section13Message() {
         <Eyebrow>A Letter from Erina</Eyebrow>
         <Heading>最後に、ひとつだけ。</Heading>
 
-        {/* [IMAGE_えりな先生] → omame-erina-message.png（横長カード） */}
+        {/* [IMAGE_えりな先生] → omame-erina-message.jpg（縦長ポートレート） */}
         <div className="mt-12">
           <Image
-            src="/images/omame-erina-message.png"
-            alt="グランドピアノのそばで微笑む女性ピアノ講師"
-            width={1536}
-            height={1024}
+            src="/images/omame-erina-message.jpg"
+            alt="グランドピアノの前でマイクを手に微笑む女性ピアノ講師"
+            width={910}
+            height={1291}
             loading="lazy"
             decoding="async"
-            className="mx-auto h-auto w-full max-w-[400px] rounded-2xl shadow-md md:max-w-[760px]"
+            className="mx-auto h-auto w-full max-w-[320px] rounded-2xl shadow-md md:max-w-[460px]"
           />
         </div>
 

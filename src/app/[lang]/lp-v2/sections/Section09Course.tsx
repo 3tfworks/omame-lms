@@ -29,7 +29,9 @@ export function Section09Course() {
         <Heading>{"お豆奏法 基礎講座で、\n学べること。"}</Heading>
 
         <p className="mt-8 text-center text-base leading-loose text-omame-text md:text-lg">
-          全 6 章＋総まとめ・動画 47 本。
+          全 6 章・総まとめを含む 47 本の動画
+          <br />
+          （1 本 3〜5 分の短い動画で、スキマ時間でも学べます）
           <br />
           お豆奏法の根本から、
           <br />

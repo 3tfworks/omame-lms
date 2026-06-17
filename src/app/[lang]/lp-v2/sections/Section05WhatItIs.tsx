@@ -20,7 +20,7 @@ export function Section05WhatItIs() {
         <p className="mt-6 text-center text-base leading-loose text-omame-text md:text-lg">
           何かを身につけるのではなく、
           <br />
-          本来そなわっている感覚を
+          本来備わっている感覚を
           <br />
           取り戻すための「考え方」です。
         </p>
@@ -30,11 +30,13 @@ export function Section05WhatItIs() {
         </div>
 
         <p className="mt-12 text-center text-sm leading-loose text-omame-text/70">
-          「 だから、お豆奏法は
+          だから
           <br />
-          『奏法』というより、
+          お豆奏法は
           <br />
-          『気付き』に近いものです。 」
+          『奏法』というより
+          <br />
+          『気付き』そのものです。
         </p>
       </Reveal>
     </SectionShell>
