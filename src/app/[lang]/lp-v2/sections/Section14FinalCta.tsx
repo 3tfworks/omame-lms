@@ -69,7 +69,6 @@ export function Section14FinalCta({
 
         <div className="mt-8 md:mt-10">
           <CtaButton
-            lang={lang}
             size="lg"
             className="h-14 w-[85%] max-w-[320px] md:h-auto md:w-auto md:max-w-none"
           >

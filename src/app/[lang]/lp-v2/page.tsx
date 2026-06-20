@@ -45,7 +45,6 @@ export default async function LpV2Page({
       <Section09Course />
       <Section10System />
       <Section11Price
-        lang={lang}
         regularPrice={pricing.regularPrice}
         salePrice={pricing.salePrice}
         campaignLabel={pricing.campaignLabel}

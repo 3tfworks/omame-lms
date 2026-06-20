@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 // LP v2 共通プリミティブ。
 // 既存 LP（/lp）の世界観トークンを踏襲しつつ、v2 用に再構築したもの。
@@ -86,31 +86,58 @@ export function Heading({ children }: { children: ReactNode }) {
 }
 
 // ── CTA ボタン ───────────────────────────────────────
-// 受講申込導線。Stripe Checkout への入り口（/[lang]/offer-demo）。
+// 受講申込導線。Stripe Checkout を直接呼び出して同タブで遷移する（offer-demo を経由しない）。
+// 紹介者(referrer_id)は body では渡さず、サーバ側(/api/checkout/stripe)が
+// proxy.ts 発行の httpOnly cookie `referrer_id` を解決する（?ref=xxx 経路）。
 export function CtaButton({
-  lang,
   children,
   size = "md",
   className = "",
 }: {
-  lang: string;
   children: ReactNode;
   size?: "md" | "lg";
-  // 個別レイアウト調整用（例: SP で全幅寄りにする）。<a> に追加される。
+  // 個別レイアウト調整用（例: SP で全幅寄りにする）。<button> に追加される。
   className?: string;
 }) {
   const pad = size === "lg" ? "px-12 py-5 text-lg" : "px-10 py-4 text-base";
+  // fetch 中の二度押しで Checkout セッションが2つ作られる事故を防ぐ。
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.url) {
+        // 遷移するので disabled は解除しない（多重遷移防止）。
+        window.location.href = data.url;
+        return;
+      }
+      console.error("[lp-v2] checkout failed:", data);
+      setLoading(false);
+    } catch (err) {
+      console.error("[lp-v2] checkout error:", err);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex justify-center">
-      <a
-        href={`/${lang}/offer-demo`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-omame-gold font-bold text-white shadow-lg shadow-omame-gold/20 transition-all hover:-translate-y-0.5 hover:bg-omame-gold/90 active:translate-y-0 ${pad} ${className}`}
+      <button
+        type="button"
+        onClick={handleCheckout}
+        disabled={loading}
+        aria-busy={loading}
+        className={`group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-omame-gold font-bold text-white shadow-lg shadow-omame-gold/20 transition-all hover:-translate-y-0.5 hover:bg-omame-gold/90 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 ${pad} ${className}`}
       >
-        {children}
+        {loading ? "処理中…" : children}
         <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-      </a>
+      </button>
     </div>
   );
 }

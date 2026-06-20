@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { getProductPricing } from "@/lib/pricing";
 
@@ -18,10 +19,23 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const referrerId: string | undefined =
+
+    // 紹介者(referrer_id)の解決優先順位（金銭リスクP1: アフィリエイト紐付け）:
+    //   1. body.referrerId      … 明示指定（招待フロー /invite/[userId]/thanks）
+    //   2. cookie `referrer_id` … LP の ?ref=xxx 経路。proxy.ts が発行する httpOnly cookie の
+    //                             server-side consumer（proxy.ts の cookie 発行と対になる）。
+    //                             httpOnly のためクライアントJSからは読めず、ここで解決する。
+    //   3. なし                  … metadata 未設定 → webhook 側の email→invite_leads フォールバックに委譲
+    let referrerId: string | undefined =
       typeof body.referrerId === "string" && body.referrerId.trim()
         ? body.referrerId.trim()
         : undefined;
+
+    if (!referrerId) {
+      const cookieStore = await cookies();
+      const fromCookie = cookieStore.get("referrer_id")?.value?.trim();
+      if (fromCookie) referrerId = fromCookie;
+    }
 
     // リダイレクト先のベースURL（Vercel/本番では NEXT_PUBLIC_SITE_URL を設定）
     const siteUrl =
@@ -40,7 +54,7 @@ export async function POST(request: Request) {
       // アフィリエイト紐付け用。referrer_id があれば metadata に入れる。
       metadata: referrerId ? { referrer_id: referrerId } : {},
       success_url: `${siteUrl}/ja/lms?checkout=success`,
-      cancel_url: `${siteUrl}/ja/offer?checkout=cancel`,
+      cancel_url: `${siteUrl}/ja/lp?checkout=cancel`,
     });
 
     if (!session.url) {

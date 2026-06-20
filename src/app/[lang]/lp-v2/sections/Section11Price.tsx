@@ -18,13 +18,11 @@ const career = [
 ];
 
 export function Section11Price({
-  lang,
   regularPrice,
   salePrice,
   campaignLabel,
   showCampaign,
 }: {
-  lang: string;
   regularPrice: number;
   salePrice: number;
   campaignLabel: string;
@@ -138,7 +136,7 @@ export function Section11Price({
         </div>
 
         <div className="mt-10">
-          <CtaButton lang={lang}>今すぐ受講する</CtaButton>
+          <CtaButton>今すぐ受講する</CtaButton>
         </div>
       </Reveal>
     </SectionShell>
