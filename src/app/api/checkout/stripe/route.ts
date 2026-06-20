@@ -1,24 +1,41 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
-import { getProductPricing } from "@/lib/pricing";
+import { getProductPricing, type PriceType } from "@/lib/pricing";
 
 // Stripe Checkout Session を作成する API。
-// POST { referrerId?: string } を受け取り、単発購入(mode: "payment")の Session を作成して URL を返す。
+// POST { priceType?: "general" | "salon", referrerId?: string } を受け取り、
+// 単発購入(mode: "payment")の Session を作成して URL を返す。
 //
 // 将来サブスク対応する場合は、price をサブスク用 price に切り替えて mode: "subscription" を渡せるよう拡張する。
 
 export async function POST(request: Request) {
   try {
-    // 価格は DB(system_settings.product_pricing)の stripePriceId を使用する。
-    // DB に値が無い場合は環境変数 STRIPE_PRICE_ID_OMAME_BASIC へフォールバックする。
-    const { stripePriceId: priceId } = await getProductPricing();
-    if (!priceId) {
-      console.error("[checkout/stripe] Missing Stripe Price ID (DB and STRIPE_PRICE_ID_OMAME_BASIC)");
-      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    const body = await request.json().catch(() => ({}));
+
+    // priceType の決定（フェーズ2）。未指定/null は "general"（後方互換）。
+    // 既知の値("general"|"salon")以外は 400 で拒否し、許可値を明示する。
+    let priceType: PriceType = "general";
+    const rawPriceType: unknown = body.priceType;
+    if (rawPriceType !== undefined && rawPriceType !== null) {
+      if (rawPriceType === "general" || rawPriceType === "salon") {
+        priceType = rawPriceType;
+      } else {
+        return NextResponse.json(
+          { error: 'priceType は "general" または "salon" のいずれかを指定してください' },
+          { status: 400 },
+        );
+      }
     }
 
-    const body = await request.json().catch(() => ({}));
+    // 価格は DB(system_settings.product_pricing)の Price ID を使用（priceType で general/salon を切替）。
+    // DB 欠落時は general→STRIPE_PRICE_ID_OMAME_BASIC / salon→STRIPE_PRICE_ID_SALON へフォールバック。
+    // salon で Price ID が解決できない場合は空 ID → ここで 500（fail-closed）。詳細は pricing.ts がログ出力。
+    const { stripePriceId: priceId } = await getProductPricing(priceType);
+    if (!priceId) {
+      console.error(`[checkout/stripe] Missing Stripe Price ID for priceType="${priceType}"`);
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    }
 
     // 紹介者(referrer_id)の解決優先順位（金銭リスクP1: アフィリエイト紐付け）:
     //   1. body.referrerId      … 明示指定（招待フロー /invite/[userId]/thanks）
@@ -43,6 +60,11 @@ export async function POST(request: Request) {
       new URL(request.url).origin ||
       "https://omamepiano.com";
 
+    // metadata: price_type は常に付与（webhook が salon 報酬スキップ判定に使用）。
+    // referrer_id はアフィリエイト紐付け用で、存在する場合のみ付与する。
+    const metadata: Record<string, string> = { price_type: priceType };
+    if (referrerId) metadata.referrer_id = referrerId;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment", // 単発購入
       line_items: [
@@ -51,8 +73,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      // アフィリエイト紐付け用。referrer_id があれば metadata に入れる。
-      metadata: referrerId ? { referrer_id: referrerId } : {},
+      metadata,
       success_url: `${siteUrl}/ja/lms?checkout=success`,
       cancel_url: `${siteUrl}/ja/lp?checkout=cancel`,
     });

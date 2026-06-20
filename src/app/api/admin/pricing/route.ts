@@ -124,10 +124,38 @@ export async function PUT(request: Request) {
       showCampaign,
     };
 
+    // フェーズ2で追加。salon 2キー（salonPrice / salonStripePriceId）は管理画面では編集しないが、
+    // upsert は value を丸ごと置換するため、ここで現値を読み取り passthrough しないと
+    // 価格保存のたびに salon 設定が消える（データ破壊）。これを防ぐ（甲斐さん 2026-06-20 合意）。
+    // DB に salon キーが無い場合は何も足さない（fail-safe）。GET レスポンス/UI は general 5キーのみで不変。
+    const salonPassthrough: { salonPrice?: number; salonStripePriceId?: string } = {};
+    {
+      const { data: rawRow } = await supabaseAdmin
+        .from("system_settings")
+        .select("value")
+        .eq("id", PRODUCT_PRICING_SETTINGS_ID)
+        .single();
+      if (rawRow?.value) {
+        try {
+          const raw = JSON.parse(rawRow.value as string) as {
+            salonPrice?: unknown;
+            salonStripePriceId?: unknown;
+          };
+          if (typeof raw.salonPrice === "number") salonPassthrough.salonPrice = raw.salonPrice;
+          if (typeof raw.salonStripePriceId === "string" && raw.salonStripePriceId)
+            salonPassthrough.salonStripePriceId = raw.salonStripePriceId;
+        } catch {
+          /* salon キー無し / パース失敗 → 何も持ち越さない（fail-safe） */
+        }
+      }
+    }
+
+    const valueToStore = { ...updated, ...salonPassthrough };
+
     const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
         id: PRODUCT_PRICING_SETTINGS_ID,
-        value: JSON.stringify(updated),
+        value: JSON.stringify(valueToStore),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" }

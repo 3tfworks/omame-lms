@@ -127,7 +127,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
-  try {
+  // サロン経由は紹介者報酬対象外（甲斐さん 2026-06-20 確定）。price_type==="salon" の場合は
+  // ① referrer_id 経由の報酬計算 ② email→invite_leads 逆引きフォールバック
+  // ③ affiliate_rewards への INSERT を一切スキップする（受講登録 / Magic Link 等は通常実行）。
+  if (session.metadata?.price_type === "salon") {
+    console.log(
+      `[Stripe Webhook] Salon purchase: affiliate reward skipped (salon は報酬対象外). session=${session.id}`,
+    );
+  } else try {
     let referrerId = referrerIdFromMeta;
     let leadId: string | null = null;
 
