@@ -93,11 +93,14 @@ export function CtaButton({
   children,
   size = "md",
   className = "",
+  priceType = "general",
 }: {
   children: ReactNode;
   size?: "md" | "lg";
   // 個別レイアウト調整用（例: SP で全幅寄りにする）。<button> に追加される。
   className?: string;
+  // 価格種別（フェーズ2）。Checkout に渡して general/salon の Price を切り替える。
+  priceType?: "general" | "salon";
 }) {
   const pad = size === "lg" ? "px-12 py-5 text-lg" : "px-10 py-4 text-base";
   // fetch 中の二度押しで Checkout セッションが2つ作られる事故を防ぐ。
@@ -110,7 +113,7 @@ export function CtaButton({
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ priceType: priceType ?? "general" }),
       });
       const data = await res.json().catch(() => ({}));
       if (data.url) {

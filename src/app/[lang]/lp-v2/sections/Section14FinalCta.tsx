@@ -14,12 +14,14 @@ export function Section14FinalCta({
   salePrice,
   campaignLabel,
   showCampaign,
+  priceType = "general",
 }: {
   lang: string;
   regularPrice: number;
   salePrice: number;
   campaignLabel: string;
   showCampaign: boolean;
+  priceType?: "general" | "salon";
 }) {
   return (
     <SectionShell>
@@ -45,6 +47,12 @@ export function Section14FinalCta({
 
         <div className="mx-auto mt-8 max-w-[340px] rounded-2xl border border-omame-gold/50 bg-white px-5 py-7 text-center shadow-sm shadow-omame-gold/10 md:mt-12 md:max-w-md md:p-8">
           <p className="text-sm tracking-wide text-omame-deep">お豆奏法 基礎講座</p>
+          {/* サロン専用バッジ（salon 時のみ・¥価格表示の直上） */}
+          {priceType === "salon" && (
+            <p className="mt-3 mb-3 inline-block rounded-full border border-omame-gold/50 px-4 py-1 text-sm text-omame-deep">
+              サロンメンバー特別価格
+            </p>
+          )}
           {showCampaign ? (
             <>
               <p className="mt-3 text-4xl font-bold text-omame-deep">
@@ -70,6 +78,7 @@ export function Section14FinalCta({
         <div className="mt-8 md:mt-10">
           <CtaButton
             size="lg"
+            priceType={priceType}
             className="h-14 w-[85%] max-w-[320px] md:h-auto md:w-auto md:max-w-none"
           >
             今すぐ受講する

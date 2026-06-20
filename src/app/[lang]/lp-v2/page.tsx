@@ -1,4 +1,4 @@
-import { getProductPricing } from "@/lib/pricing";
+import { getProductPricing, type PriceType } from "@/lib/pricing";
 
 import { Section01Hero } from "./sections/Section01Hero";
 import { Section02Empathy } from "./sections/Section02Empathy";
@@ -22,17 +22,21 @@ import { Section14FinalCta } from "./sections/Section14FinalCta";
 // 最新の価格設定を反映するため動的レンダリングにする。
 export const dynamic = "force-dynamic";
 
+// priceType="salon" 時は salon 価格・表示で描画する（/[lang]/lp-salon から渡る）。
+// /[lang]/lp は無引数の再エクスポートのため priceType は未指定＝"general"（後方互換）。
 export default async function LpV2Page({
   params,
+  priceType = "general",
 }: {
   params: Promise<{ lang: string }>;
+  priceType?: PriceType;
 }) {
   const { lang } = await params;
-  const pricing = await getProductPricing();
+  const pricing = await getProductPricing(priceType);
 
   return (
     <main className="w-full overflow-x-hidden bg-omame-bg text-omame-text">
-      <Section01Hero />
+      <Section01Hero priceType={priceType} />
       <Section02Empathy />
       <Section03Problem />
       <Section04Story />
@@ -45,6 +49,7 @@ export default async function LpV2Page({
       <Section09Course />
       <Section10System />
       <Section11Price
+        priceType={priceType}
         regularPrice={pricing.regularPrice}
         salePrice={pricing.salePrice}
         campaignLabel={pricing.campaignLabel}
@@ -54,6 +59,7 @@ export default async function LpV2Page({
       <Section13Message />
       <Section14FinalCta
         lang={lang}
+        priceType={priceType}
         regularPrice={pricing.regularPrice}
         salePrice={pricing.salePrice}
         campaignLabel={pricing.campaignLabel}

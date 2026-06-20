@@ -6,7 +6,12 @@ import { ChevronDown } from "lucide-react";
 
 // §1 ファーストビュー
 // LINE から流入したユーザーに「あなたのための場所だ」と即座に伝える。
-export function Section01Hero() {
+// salon 時は eyebrow を「FOR SALON MEMBERS」に置換する（フェーズ2・甲斐さん 2026-06-20 確定）。
+export function Section01Hero({
+  priceType = "general",
+}: {
+  priceType?: "general" | "salon";
+}) {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* 背景画像 + 暗いオーバーレイ */}
@@ -28,9 +33,15 @@ export function Section01Hero() {
         transition={{ duration: 1, ease: "easeOut" }}
         className="relative z-10 mx-auto max-w-2xl px-6 py-24 text-center text-white"
       >
-        <p className="mb-8 font-sans text-[0.7rem] uppercase tracking-[0.4em] text-white/80">
-          A New Way of Playing
-        </p>
+        {priceType === "salon" ? (
+          <p className="mb-4 font-sans text-xs uppercase tracking-[0.3em] text-omame-gold">
+            For Salon Members
+          </p>
+        ) : (
+          <p className="mb-8 font-sans text-[0.7rem] uppercase tracking-[0.4em] text-white/80">
+            A New Way of Playing
+          </p>
+        )}
 
         <h1 className="text-3xl font-bold leading-[1.7] md:text-5xl md:leading-[1.7]">
           頑張るほど

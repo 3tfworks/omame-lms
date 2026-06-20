@@ -22,11 +22,13 @@ export function Section11Price({
   salePrice,
   campaignLabel,
   showCampaign,
+  priceType = "general",
 }: {
   regularPrice: number;
   salePrice: number;
   campaignLabel: string;
   showCampaign: boolean;
+  priceType?: "general" | "salon";
 }) {
   return (
     <SectionShell id="price-section" className="bg-white">
@@ -106,6 +108,12 @@ export function Section11Price({
       {/* 価格表示。キャンペーン ON/OFF で表示ロジックを切り替える。 */}
       <Reveal>
         <div className="mx-auto max-w-md rounded-2xl border border-omame-gold/50 bg-omame-bg p-8 text-center shadow-sm shadow-omame-gold/10">
+          {/* サロン専用バッジ（salon 時のみ・¥価格表示の直上） */}
+          {priceType === "salon" && (
+            <p className="mb-3 inline-block rounded-full border border-omame-gold/50 px-4 py-1 text-sm text-omame-deep">
+              サロンメンバー特別価格
+            </p>
+          )}
           {showCampaign ? (
             <>
               {/* キャンペーン文言（campaignLabel をそのまま表示） */}
@@ -136,7 +144,7 @@ export function Section11Price({
         </div>
 
         <div className="mt-10">
-          <CtaButton>今すぐ受講する</CtaButton>
+          <CtaButton priceType={priceType}>今すぐ受講する</CtaButton>
         </div>
       </Reveal>
     </SectionShell>
