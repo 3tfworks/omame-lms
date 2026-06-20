@@ -21,7 +21,7 @@ export function Section13Message() {
             height={600}
             loading="lazy"
             decoding="async"
-            className="mx-auto h-auto w-full max-w-[320px] rounded-2xl shadow-md md:max-w-[460px]"
+            className="mx-auto h-auto w-full max-w-[280px] rounded-2xl shadow-md md:max-w-[400px]"
           />
         </div>
 
