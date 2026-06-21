@@ -77,16 +77,19 @@ export function Section04Story() {
         </div>
 
         {/* [VIMEO_ID_えりな先生自己紹介] */}
-        <div className="mt-14">
-          <VimeoEmbed videoId={VIMEO_ID_ERINA_INTRO} title="お豆奏法が生まれるまで" />
-          <p className="mt-4 text-center text-xs leading-relaxed text-omame-text/60">
-            3〜5分のえりな先生自己紹介。
-            <br />
-            留学・コンクール・研究ノート・気付きの瞬間まで、
-            <br />
-            LINEで語った物語を、声と表情でもう一度。
-          </p>
-        </div>
+        {/* 撮影完了まで非表示。VIMEO_ID_ERINA_INTRO を実 ID に差し替えると自動で表示復活する。 */}
+        {VIMEO_ID_ERINA_INTRO !== "PLACEHOLDER" && (
+          <div className="mt-14">
+            <VimeoEmbed videoId={VIMEO_ID_ERINA_INTRO} title="お豆奏法が生まれるまで" />
+            <p className="mt-4 text-center text-xs leading-relaxed text-omame-text/60">
+              3〜5分のえりな先生自己紹介。
+              <br />
+              留学・コンクール・研究ノート・気付きの瞬間まで、
+              <br />
+              LINEで語った物語を、声と表情でもう一度。
+            </p>
+          </div>
+        )}
       </Reveal>
     </SectionShell>
   );
