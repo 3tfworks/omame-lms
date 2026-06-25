@@ -74,6 +74,7 @@ export async function POST(request: Request) {
         },
       ],
       metadata,
+      allow_promotion_codes: true, // Checkout でプロモーションコード入力欄を表示
       success_url: `${siteUrl}/ja/lms?checkout=success`,
       cancel_url: `${siteUrl}/ja/lp?checkout=cancel`,
     });
