@@ -5,6 +5,32 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { LineLogo } from "@/components/ui/LineLogo";
+
+// ログインできない / 認証メールが届かない人向けの公式LINE導線。
+// form 下と success 画面の両方で使い回す。
+function LoginSupportCta() {
+  return (
+    <div className="mt-8 pt-6 border-t border-omame-gold/20">
+      <p className="text-center text-sm text-omame-text/70 mb-3">
+        ログインできない・認証メールが届かない方は
+        <br />
+        公式LINEからお問い合わせください
+      </p>
+      <div className="flex justify-center">
+        <a
+          href="https://lin.ee/RmeCAtQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-[#06C755] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#05b34d]"
+        >
+          <LineLogo size={18} />
+          公式LINEで問い合わせる
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -101,6 +127,8 @@ export default function LoginPage() {
               >
                 別のメールアドレスを試す
               </button>
+
+              <LoginSupportCta />
             </div>
           ) : (
             <form className="space-y-6" onSubmit={handleLogin}>
@@ -154,6 +182,8 @@ export default function LoginPage() {
                 <p>パスワードは不要です。入力したメールアドレス宛にログイン用のボタンが届きます。</p>
                 <p className="text-omame-primary/40 mt-2">※数分待っても届かない場合は、迷惑メールフォルダや「すべてのメール」「プロモーション」タブ等をご確認ください。</p>
               </div>
+
+              <LoginSupportCta />
             </form>
           )}
         </div>

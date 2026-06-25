@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Eyebrow, Heading, Reveal, SectionShell } from "../ui";
+import { LineLogo } from "@/components/ui/LineLogo";
 
 // §12 FAQ
 // 申込前の不安を一気に解消する。アコーディオン形式（CSR）。
@@ -77,6 +78,22 @@ export function Section12Faq() {
               </div>
             );
           })}
+        </div>
+
+        {/* 公式LINE 問い合わせ導線（LP v2 トーン：gold アクセント） */}
+        <div className="mt-12 text-center">
+          <p className="mb-4 text-base text-omame-text/80">
+            その他にご不明な点がございましたら、お気軽にお問い合わせください。
+          </p>
+          <a
+            href="https://lin.ee/RmeCAtQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-omame-gold/40 bg-white px-6 py-3 font-bold text-omame-deep transition-colors hover:bg-omame-gold/10"
+          >
+            <LineLogo size={18} className="text-[#06C755]" />
+            公式LINEで問い合わせる
+          </a>
         </div>
       </Reveal>
     </SectionShell>

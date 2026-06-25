@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, Lock, ChevronDown, ChevronRight, Sparkles, Handshake, Star } from "lucide-react";
 import { curriculumData } from "@/lib/lmsData";
 import ReferralPopup from "@/components/ReferralPopup";
+import { LineLogo } from "@/components/ui/LineLogo";
 
 // アコーディオン用のコンポーネント
 function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: any, defaultOpen?: boolean }) {
@@ -192,6 +193,15 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
               <div className="text-xs text-stone-500">ログイン中</div>
             </div>
           </div>
+          <a
+            href="https://lin.ee/RmeCAtQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-stone-500 hover:text-stone-800 hover:bg-neutral-100/80 rounded-lg transition-colors"
+          >
+            <LineLogo size={16} />
+            <span>お問い合わせ（公式LINE）</span>
+          </a>
           <button
             onClick={async () => {
               const { createBrowserClient } = await import("@supabase/ssr");
