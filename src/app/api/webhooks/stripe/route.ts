@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         // 単発購入(payment)のみ処理。サブスク初回も completed が来るが、ここでは payment に限定。
         if (session.mode === "payment") {
-          await handleCheckoutCompleted(session);
+          await handleCheckoutCompleted(session, event.id);
         } else {
           console.log(`[Stripe Webhook] Skipping checkout.session.completed (mode: ${session.mode})`);
         }
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string) {
   const email = session.customer_details?.email || session.customer_email;
   const name = session.customer_details?.name || "受講生";
   const referrerIdFromMeta =
@@ -84,14 +84,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const supabaseAdmin = createAdminClient();
 
-  // 1. 既存ユーザーかチェック
-  const { data: existingUsers, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
-  if (searchError) {
-    console.error("[Stripe Webhook] Error fetching users:", searchError);
-    throw searchError;
-  }
-
-  const existing = existingUsers.users.find((u) => u.email === email);
+  // 1. 既存ユーザーかチェック（listUsers を全ページ走査。50名超でも取りこぼさない）
+  const existing = await findAuthUserByEmail(supabaseAdmin, email);
   let userId: string;
 
   if (existing) {
@@ -112,18 +106,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       throw authError ?? new Error("Failed to create user");
     }
     userId = authData.user.id;
+  }
 
-    // 3. public.users へ INSERT（role は全員 "user"）
-    const { error: dbError } = await supabaseAdmin.from("users").insert({
-      id: userId,
-      email,
-      role: "user",
-    });
+  // 3. public.users を upsert（onConflict: id）。
+  //    新規・既存にかかわらず毎回実行し、「auth はあるが public.users が欠落」状態を
+  //    再処理で自己修復できるようにする。既存行は ignoreDuplicates で DO NOTHING とし、
+  //    role を上書きしない（salon_member / instructor 等の降格事故を防ぐ）。
+  const { error: dbError } = await supabaseAdmin
+    .from("users")
+    .upsert({ id: userId, email, role: "user" }, { onConflict: "id", ignoreDuplicates: true });
 
-    if (dbError) {
-      console.error("[Stripe Webhook] Error inserting to public.users:", dbError);
-      throw dbError;
-    }
+  if (dbError) {
+    console.error("[Stripe Webhook] Error upserting public.users:", dbError);
+    throw dbError;
   }
 
   // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
@@ -175,13 +170,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       );
       const rewardAmount = Math.floor((paymentAmount * rewardRate) / 100);
 
-      const { error: rewardError } = await supabaseAdmin.from("affiliate_rewards").insert({
-        referrer_id: referrerId,
-        buyer_id: userId,
-        amount: rewardAmount,
-        reward_rate: rewardRate,
-        status: "pending",
-      });
+      // stripe_event_id を一意キーにして二重付与を防止（同一イベント再処理は DO NOTHING）。
+      const { error: rewardError } = await supabaseAdmin.from("affiliate_rewards").upsert(
+        {
+          stripe_event_id: eventId,
+          referrer_id: referrerId,
+          buyer_id: userId,
+          amount: rewardAmount,
+          reward_rate: rewardRate,
+          status: "pending",
+        },
+        { onConflict: "stripe_event_id", ignoreDuplicates: true },
+      );
 
       if (rewardError) {
         console.error("[Stripe Webhook] Failed to insert affiliate reward:", rewardError);
@@ -219,4 +219,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   console.log(`[Stripe Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
+}
+
+// auth.users を email で検索する。supabase-js v2 には getUserByEmail が無いため、
+// listUsers を全ページ走査して代替する（50名超でも取りこぼさないための堅牢化）。
+async function findAuthUserByEmail(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  email: string,
+) {
+  const target = email.trim().toLowerCase();
+  const perPage = 1000;
+  let page = 1;
+  for (;;) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error("[Stripe Webhook] Error fetching users:", error);
+      throw error;
+    }
+    const match = data.users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match;
+    // 次ページが無い、または最終ページ（取得件数が perPage 未満）なら終了
+    if (!data.nextPage || data.users.length < perPage) return null;
+    page = data.nextPage;
+  }
 }
