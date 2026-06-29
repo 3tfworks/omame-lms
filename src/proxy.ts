@@ -221,7 +221,10 @@ export async function proxy(request: NextRequest) {
   }
 
   // ログイン済みユーザーがログイン画面にアクセスした場合 → LMSへ
-  if (pathname.includes("/login") && user) {
+  // 注意: 部分一致(pathname.includes("/login"))にすると /ja/help/login のような
+  //       派生ルートも巻き込んでしまい、ログイン済みユーザーがヘルプページを
+  //       開けなくなる。ロケール直下の /login のみに厳密一致させる。
+  if (/^\/[a-z]{2}\/login$/.test(pathname) && user) {
     return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
   }
 
