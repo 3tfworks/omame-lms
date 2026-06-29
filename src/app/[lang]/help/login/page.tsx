@@ -3,6 +3,8 @@
 // 読者像: 50-70代女性のピアノ講師（SP 約8割・デジタル不安強め）。
 //   → 本文は serif で気持ち大きめ（text-base md:text-lg）、角丸は rounded-2xl で統一。
 // 多言語: コンテンツは日本語のみ。[lang] 構造のため /en・/fr でも到達可（その場合は冒頭に注記）。
+// v4: §2 を実画面に合わせて全面再編（PC セクション削除）。§3-1 のブックマーク手順は
+//   共有コンポーネント BookmarkGuide に統一し、LMS トップのバナー誘導文を追加。
 // 注意: 連携実装（login のアコーディオン / ?error= バナー / メール追記 / LINE 自動応答）は
 //   本ページ本番反映後の別ラウンド。ここでは扱わない。
 
@@ -11,6 +13,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { isValidLocale } from "@/lib/i18n";
 import { LineLogo } from "@/components/ui/LineLogo";
+import { BookmarkGuide } from "@/components/help/BookmarkGuide";
 
 export const metadata: Metadata = {
   title: "ログイン方法のご案内 | お豆奏法基礎講座",
@@ -18,7 +21,8 @@ export const metadata: Metadata = {
     "お豆奏法基礎講座のログイン方法を、画面の画像つきでご案内します。パスワード不要のシンプルな方式で、一度ログインすればしばらく使えます。",
 };
 
-// 初回ログインの 6 ステップ。画像（プレースホルダ・実寸 390x844）と本文を交互に配置する。
+// 初回ログインの 6 ステップ（v4 で再編）。画像（プレースホルダ・実寸 390x844）と本文を交互に配置。
+// 本文は step.n で出し分ける（文面は仕様書 v4 §2 通り）。
 const STEPS = [
   {
     n: 1,
@@ -29,26 +33,26 @@ const STEPS = [
   {
     n: 2,
     img: "/images/help/omame-login-step2-sp.png",
-    alt: "メールアドレスを入力した状態のログインページ",
-    title: "② メールアドレスを入力します",
+    alt: "メールアドレスを入力し、「メールでログインする」ボタンを押す画面",
+    title: "② メールアドレスを入力し、「メールでログインする」ボタンを押します",
   },
   {
     n: 3,
     img: "/images/help/omame-login-step3-sp.png",
-    alt: "「ログインリンクを送る」と書かれた緑色のボタン",
-    title: "③「ログインリンクを送る」ボタンを押します",
+    alt: "メール送信完了画面。緑のチェックマークと「メールを送信しました!」というメッセージ",
+    title: "③「メールを送信しました!」画面が表示されます",
   },
   {
     n: 4,
     img: "/images/help/omame-login-step4-sp.png",
-    alt: "メールアプリの受信トレイにお豆奏法からのログイン用メールが届いている画面",
+    alt: "Gmail でお豆奏法からのログイン用メールを確認している画面。左側に「すべてのメール」「迷惑メール」も表示",
     title: "④ メールを確認します",
   },
   {
     n: 5,
     img: "/images/help/omame-login-step5-sp.png",
-    alt: "メール本文の中にある青色のログインボタン",
-    title: "⑤ メールの中の青いボタンを押します",
+    alt: "メール本文の中にある青色の「ログインする」リンク",
+    title: "⑤ メールの中の「ログインする」リンクを押します",
   },
   {
     n: 6,
@@ -56,15 +60,6 @@ const STEPS = [
     alt: "ログイン後の受講ページ（LMS）のトップ画面",
     title: "⑥ 受講ページが開きます",
   },
-];
-
-// 既存資産のブックマーク登録ガイド（/public/images 直下・PC 横長スクショ）。
-// ※ 仕様書 v2 の /images/lms/ は誤りで、実体は images 直下。サイズは画像ごとに異なる。
-const BOOKMARK_IMAGES = [
-  { img: "/images/bookmarks-guide-01.png", w: 1719, h: 915, alt: "ブックマーク登録手順 ①" },
-  { img: "/images/bookmarks-guide-02.png", w: 1693, h: 929, alt: "ブックマーク登録手順 ②" },
-  { img: "/images/bookmarks-guide-03.png", w: 1746, h: 901, alt: "ブックマーク登録手順 ③" },
-  { img: "/images/bookmarks-guide-04.png", w: 1691, h: 930, alt: "ブックマーク登録手順 ④" },
 ];
 
 // 「ログインできないとき」の Q&A。アコーディオンは <details> で静的に実装（JS 状態管理は不要）。
@@ -108,7 +103,7 @@ const FAQS = [
 ];
 
 // 公式 LINE 問い合わせ CTA。login ページの LoginSupportCta と同一スタイル（緑ピル + LineLogo）。
-// ※ 共有コンポーネント化は login/page.tsx に手を入れる別ラウンド（§7.4）で検討する。
+// ※ 共有コンポーネント化は login/page.tsx に手を入れる別ラウンド（§8 残課題）で検討する。
 function LineHelpCta() {
   return (
     <a
@@ -177,7 +172,7 @@ export default async function HelpLoginPage({
             <p>
               お豆奏法のサイトには、パスワードを覚えていただく必要がありません。
               必要なのは「ご購入時にお使いいただいたメールアドレス」だけ。アドレスを入力すると、そのメールアドレス宛にお豆奏法から「ログイン用のメール」が届きます。
-              あとは、そのメールに書かれているボタンを押すだけ。それでログインが完了します。
+              あとは、そのメールに書かれているリンクを押すだけ。それでログインが完了します。
             </p>
             <p>
               パスワードを思い出す、紙にメモする、忘れて再設定する――そういった手間は一切ありません。
@@ -197,7 +192,7 @@ export default async function HelpLoginPage({
           </div>
         </section>
 
-        {/* (2) 初回ログイン */}
+        {/* (2) 初回ログイン（v4 で全面再編・PC セクションは削除） */}
         <section id="first-login" className="mb-16 scroll-mt-6">
           <h2 className="mb-6 text-2xl font-bold text-omame-deep md:text-3xl">
             はじめてのログイン
@@ -231,33 +226,68 @@ export default async function HelpLoginPage({
                   </div>
                 )}
                 {step.n === 2 && (
-                  <p className="text-base leading-relaxed md:text-lg">
-                    入力欄に、<strong>ご購入時にお使いいただいたメールアドレス</strong>
-                    を入力してください。大文字・小文字、ハイフンや数字も、ご購入時とまったく同じものをお願いします。
-                  </p>
+                  <div className="space-y-3 text-base leading-relaxed md:text-lg">
+                    <p>
+                      入力欄に、<strong>ご購入時にお使いいただいたメールアドレス</strong>
+                      を入力してください。その下にある
+                      <strong>「メールでログインする」</strong>ボタンを押してください。
+                    </p>
+                    <p className="text-sm text-omame-text/70 md:text-base">
+                      ※大文字・小文字、ハイフンや数字も、ご購入時とまったく同じものをお願いします。
+                    </p>
+                  </div>
                 )}
                 {step.n === 3 && (
-                  <p className="text-base leading-relaxed md:text-lg">
-                    緑色の「ログインリンクを送る」ボタンを押してください。「メールをお送りしました」という画面が表示されたら成功です。
-                  </p>
+                  <div className="space-y-3 text-base leading-relaxed md:text-lg">
+                    <p>
+                      緑色のチェックマークと「メールを送信しました!」という文字が表示されたら、送信は成功です。
+                    </p>
+                    <p>続いてご登録のメールアプリを開いてください。</p>
+                  </div>
                 )}
                 {step.n === 4 && (
                   <div className="space-y-3 text-base leading-relaxed md:text-lg">
                     <p>
-                      ご登録のメールアプリを開いてください。お豆奏法から
-                      <strong>「ログイン用のリンクです」</strong>
+                      ご登録のメールアプリ（Gmail など）を開いてください。お豆奏法から
+                      <strong>
+                        「【おうちで学べるお豆奏法基礎講座】ログイン用リンクのご案内」
+                      </strong>
                       という件名のメールが届いています。
                     </p>
+                    <div className="rounded-2xl bg-omame-accent p-4">
+                      <p className="font-semibold">
+                        ⚠️ もし受信トレイに見当たらない場合は、以下も必ずご確認ください:
+                      </p>
+                      <ul className="mt-2 list-disc space-y-1 pl-6">
+                        <li>
+                          <strong>「迷惑メール」</strong>フォルダ
+                        </li>
+                        <li>
+                          Gmail の<strong>「すべてのメール」</strong>タブ
+                        </li>
+                        <li>
+                          Gmail の<strong>「プロモーション」</strong>タブ
+                        </li>
+                      </ul>
+                      <p className="mt-2 text-sm text-omame-text/70 md:text-base">
+                        お使いのメールサービスによっては、これらのフォルダに自動振り分けされていることがあります。
+                      </p>
+                    </div>
                     <p>
-                      数十秒〜2分ほどで届きます。届かない場合は、後ほどご案内する「ログインできないとき」をご覧ください。
+                      通常は数十秒〜2分ほどで届きます。それでも届かない場合は、後ほどご案内する「ログインできないとき」をご覧ください。
                     </p>
                   </div>
                 )}
                 {step.n === 5 && (
                   <div className="space-y-3 text-base leading-relaxed md:text-lg">
-                    <p>メールを開くと、青い「ログインする」ボタンがあります。これを押してください。</p>
-                    <p className="text-sm text-omame-text/70 md:text-base">
-                      ※ボタンが表示されない場合は、その下にあるリンク（https://… で始まるアドレス）を押してください。
+                    <p>
+                      メールを開くと、「以下のリンクをクリックして、『おうちで学べるお豆奏法基礎講座』へログインしてください。」というご案内の下に、
+                      <strong>青い文字の「ログインする」というリンク</strong>
+                      があります。これを押してください。
+                    </p>
+                    <p className="rounded-2xl bg-omame-accent px-4 py-3 text-sm text-omame-text/80 md:text-base">
+                      ※このリンクは<strong>一度だけ有効</strong>
+                      です。もし期限切れになっていた場合は、ログイン画面に戻ってもう一度メールアドレスを入力してください。新しいメールが届きます。
                     </p>
                   </div>
                 )}
@@ -271,23 +301,6 @@ export default async function HelpLoginPage({
                 )}
               </div>
             ))}
-          </div>
-
-          {/* PC 利用者向け */}
-          <div className="mt-12">
-            <Image
-              src="/images/help/omame-login-pc.png"
-              alt="パソコンで表示したお豆奏法のログインページ"
-              width={1440}
-              height={900}
-              className="h-auto w-full rounded-2xl border border-omame-gold/20 shadow-sm"
-            />
-            <h3 className="mb-2 mt-5 text-xl font-semibold text-omame-deep">
-              パソコンで利用される方へ
-            </h3>
-            <p className="text-base leading-relaxed md:text-lg">
-              パソコンでも手順は同じです。画面が大きい分、入力欄やボタンの位置が分かりやすくなっています。
-            </p>
           </div>
         </section>
 
@@ -323,33 +336,21 @@ export default async function HelpLoginPage({
             </p>
           </div>
 
-          {/* ブックマーク登録手順（既存資産の流用） */}
-          <h3 className="mb-3 mt-10 text-xl font-semibold text-omame-deep md:text-2xl">
-            ブックマーク登録の手順
-          </h3>
-          <p className="mb-6 text-base leading-relaxed md:text-lg">
-            次の画面の流れで登録できます。
-            <span className="text-sm text-omame-text/70 md:text-base">
-              （※お使いの端末・ブラウザにより画面は多少異なります。Android
-              端末の方は、ブラウザのメニュー（︙）から「ブックマーク」または「ホーム画面に追加」を選んでいただくと同様に登録できます。）
-            </span>
-          </p>
-          <div className="space-y-8">
-            {BOOKMARK_IMAGES.map((b, i) => (
-              <div key={b.img}>
-                <Image
-                  src={b.img}
-                  alt={b.alt}
-                  width={b.w}
-                  height={b.h}
-                  className="h-auto w-full rounded-2xl border border-omame-gold/20 shadow-sm"
-                />
-                <p className="mt-3 text-center text-sm text-omame-text/70 md:text-base">
-                  手順 {i + 1}
-                </p>
-              </div>
-            ))}
+          {/* v4: LMS トップのご案内バナーへの誘導 */}
+          <div className="mt-6 space-y-3 rounded-2xl bg-omame-accent px-5 py-5 text-base leading-relaxed md:text-lg">
+            <p>
+              受講ページ（LMS）のトップに、
+              <strong>「📌 ブックマーク登録のご案内」</strong>
+              バナーをご用意しています。タップしていただくと、お使いの端末に合わせた手順が表示されますので、そちらが最も簡単です。
+            </p>
+            <p>以下は同じ手順を画像でもご案内したものです。</p>
           </div>
+
+          {/* ブックマーク登録手順（LMS バナーと共有のコンポーネント） */}
+          <h3 className="mb-6 mt-10 text-xl font-semibold text-omame-deep md:text-2xl">
+            ブックマーク登録の手順（iPhone Safari の例）
+          </h3>
+          <BookmarkGuide />
         </section>
 
         {/* (3-2) 再ログインが必要なケース */}

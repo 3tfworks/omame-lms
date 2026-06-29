@@ -7,6 +7,7 @@ import { Watermark } from "@/components/decorations/Watermark";
 import { PixieDust } from "@/components/decorations/PixieDust";
 import { createClient } from "@/utils/supabase/server";
 import { curriculumData } from "@/lib/lmsData";
+import { BookmarkGuide } from "@/components/help/BookmarkGuide";
 
 export default async function LMSDashboard() {
   const supabase = await createClient();
@@ -85,6 +86,30 @@ export default async function LMSDashboard() {
   
   return (
     <div className="space-y-8 pb-12">
+      {/* ブックマーク登録のご案内バナー（控えめ・アコーディオン展開。主役は下の学習コンテンツ） */}
+      <details className="group rounded-2xl border-l-4 border-omame-gold bg-omame-accent/50 p-4 md:p-5">
+        <summary className="flex cursor-pointer list-none items-center gap-3">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-omame-gold text-base text-white">
+            📌
+          </span>
+          <div className="flex-1">
+            <p className="text-base font-medium text-omame-text md:text-lg">
+              このページをブックマーク登録しておかれることをおすすめします
+            </p>
+            <p className="mt-1 text-sm text-omame-text/70">
+              次回からは、ブックマークから一発でログインできます（メールでのログイン手続きが不要になります）
+            </p>
+          </div>
+          <span className="flex-shrink-0 text-sm font-medium text-omame-gold">
+            <span className="group-open:hidden">見る ▼</span>
+            <span className="hidden group-open:inline">閉じる ▲</span>
+          </span>
+        </summary>
+        <div className="mt-6 border-t border-omame-gold/30 pt-6">
+          <BookmarkGuide />
+        </div>
+      </details>
+
       {/* 歓迎メッセージ＆えりな先生の一言 */}
       <section className="bg-gradient-to-br from-omame-bg to-omame-accent/30 rounded-2xl p-6 lg:p-8 text-omame-text shadow-sm border border-omame-primary/20 relative overflow-hidden">
         
