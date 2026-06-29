@@ -3,8 +3,10 @@
 // 読者像: 50-70代女性のピアノ講師（SP 約8割・デジタル不安強め）。
 //   → 本文は serif で気持ち大きめ（text-base md:text-lg）、角丸は rounded-2xl で統一。
 // 多言語: コンテンツは日本語のみ。[lang] 構造のため /en・/fr でも到達可（その場合は冒頭に注記）。
-// v4: §2 を実画面に合わせて全面再編（PC セクション削除）。§3-1 のブックマーク手順は
-//   共有コンポーネント BookmarkGuide に統一し、LMS トップのバナー誘導文を追加。
+// v4: §2 を実画面に合わせて全面再編（PC セクション削除）。
+// v5: Step 4/5 は PC 横長スクショのため ZoomableImage（タップ拡大）で大きく表示。
+//   §3-1 のブックマーク手順は LMS トップのバナーに集約し、本ページからは描画を外して誘導文のみ残す
+//   （BookmarkGuide コンポーネント / 画像は LMS バナーで継続利用）。
 // 注意: 連携実装（login のアコーディオン / ?error= バナー / メール追記 / LINE 自動応答）は
 //   本ページ本番反映後の別ラウンド。ここでは扱わない。
 
@@ -13,7 +15,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { isValidLocale } from "@/lib/i18n";
 import { LineLogo } from "@/components/ui/LineLogo";
-import { BookmarkGuide } from "@/components/help/BookmarkGuide";
+import { ZoomableImage } from "@/components/help/ZoomableImage";
 
 export const metadata: Metadata = {
   title: "ログイン方法のご案内 | お豆奏法基礎講座",
@@ -21,42 +23,54 @@ export const metadata: Metadata = {
     "お豆奏法基礎講座のログイン方法を、画面の画像つきでご案内します。パスワード不要のシンプルな方式で、一度ログインすればしばらく使えます。",
 };
 
-// 初回ログインの 6 ステップ（v4 で再編）。画像（プレースホルダ・実寸 390x844）と本文を交互に配置。
-// 本文は step.n で出し分ける（文面は仕様書 v4 §2 通り）。
+// 初回ログインの 6 ステップ。w/h は実画像の寸法（step1/2/3/6 は SP 縦長、step4/5 は PC 横長）。
+// step4/5 は横長で小さく見えるため ZoomableImage（タップ拡大）で表示する。本文は step.n で出し分け。
 const STEPS = [
   {
     n: 1,
     img: "/images/help/omame-login-step1-sp.png",
+    w: 585,
+    h: 1266,
     alt: "お豆奏法のログインページ。メールアドレスを入力する欄が表示されている",
     title: "① ログインページを開きます",
   },
   {
     n: 2,
     img: "/images/help/omame-login-step2-sp.png",
+    w: 585,
+    h: 1266,
     alt: "メールアドレスを入力し、「メールでログインする」ボタンを押す画面",
     title: "② メールアドレスを入力し、「メールでログインする」ボタンを押します",
   },
   {
     n: 3,
     img: "/images/help/omame-login-step3-sp.png",
+    w: 585,
+    h: 1266,
     alt: "メール送信完了画面。緑のチェックマークと「メールを送信しました!」というメッセージ",
     title: "③「メールを送信しました!」画面が表示されます",
   },
   {
     n: 4,
     img: "/images/help/omame-login-step4-sp.png",
+    w: 2130,
+    h: 1069,
     alt: "Gmail でお豆奏法からのログイン用メールを確認している画面。左側に「すべてのメール」「迷惑メール」も表示",
     title: "④ メールを確認します",
   },
   {
     n: 5,
     img: "/images/help/omame-login-step5-sp.png",
+    w: 1501,
+    h: 602,
     alt: "メール本文の中にある青色の「ログインする」リンク",
     title: "⑤ メールの中の「ログインする」リンクを押します",
   },
   {
     n: 6,
     img: "/images/help/omame-login-step6-sp.png",
+    w: 585,
+    h: 1266,
     alt: "ログイン後の受講ページ（LMS）のトップ画面",
     title: "⑥ 受講ページが開きます",
   },
@@ -192,7 +206,7 @@ export default async function HelpLoginPage({
           </div>
         </section>
 
-        {/* (2) 初回ログイン（v4 で全面再編・PC セクションは削除） */}
+        {/* (2) 初回ログイン（v4 で全面再編・PC セクションは削除。v5 で step4/5 を拡大表示） */}
         <section id="first-login" className="mb-16 scroll-mt-6">
           <h2 className="mb-6 text-2xl font-bold text-omame-deep md:text-3xl">
             はじめてのログイン
@@ -204,13 +218,23 @@ export default async function HelpLoginPage({
           <div className="space-y-12">
             {STEPS.map((step) => (
               <div key={step.n}>
-                <Image
-                  src={step.img}
-                  alt={step.alt}
-                  width={390}
-                  height={844}
-                  className="mx-auto h-auto w-full max-w-xs rounded-2xl border border-omame-gold/20 shadow-sm"
-                />
+                {step.n === 4 || step.n === 5 ? (
+                  // PC 横長スクショ。タップで全画面拡大できるようにする。
+                  <ZoomableImage
+                    src={step.img}
+                    alt={step.alt}
+                    width={step.w}
+                    height={step.h}
+                  />
+                ) : (
+                  <Image
+                    src={step.img}
+                    alt={step.alt}
+                    width={step.w}
+                    height={step.h}
+                    className="mx-auto h-auto w-full max-w-xs rounded-2xl border border-omame-gold/20 shadow-sm"
+                  />
+                )}
                 <h3 className="mb-2 mt-5 text-xl font-semibold text-omame-deep">
                   {step.title}
                 </h3>
@@ -336,21 +360,14 @@ export default async function HelpLoginPage({
             </p>
           </div>
 
-          {/* v4: LMS トップのご案内バナーへの誘導 */}
-          <div className="mt-6 space-y-3 rounded-2xl bg-omame-accent px-5 py-5 text-base leading-relaxed md:text-lg">
+          {/* v5: ブックマーク手順は LMS トップのバナーに集約。本ページからは誘導のみ。 */}
+          <div className="mt-6 rounded-2xl bg-omame-accent px-5 py-5 text-base leading-relaxed md:text-lg">
             <p>
               受講ページ（LMS）のトップに、
               <strong>「📌 ブックマーク登録のご案内」</strong>
-              バナーをご用意しています。タップしていただくと、お使いの端末に合わせた手順が表示されますので、そちらが最も簡単です。
+              バナーをご用意しています。タップしていただくと、お使いの端末に合わせた登録手順が画像つきで表示されますので、そちらが最も簡単です。
             </p>
-            <p>以下は同じ手順を画像でもご案内したものです。</p>
           </div>
-
-          {/* ブックマーク登録手順（LMS バナーと共有のコンポーネント） */}
-          <h3 className="mb-6 mt-10 text-xl font-semibold text-omame-deep md:text-2xl">
-            ブックマーク登録の手順（iPhone Safari の例）
-          </h3>
-          <BookmarkGuide />
         </section>
 
         {/* (3-2) 再ログインが必要なケース */}
