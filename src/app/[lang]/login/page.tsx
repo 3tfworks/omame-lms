@@ -1,11 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { LineLogo } from "@/components/ui/LineLogo";
+
+// 失効・使用済みのログインリンクで戻ってきた人向けのエラー案内。
+// URL の ?error= が付いているときだけ表示する。
+function LoginErrorBanner() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+  if (!error) return null;
+  return (
+    <div className="mb-6 rounded-2xl bg-rose-50 p-4 text-rose-500" role="alert">
+      <p className="font-semibold">ログインリンクが使えませんでした</p>
+      <p className="text-sm mt-1 text-rose-500/80">
+        有効期限が切れているか、すでに使用済みの可能性があります。もう一度メールアドレスを入力してください。
+      </p>
+      <a href="/ja/help/login#trouble" className="text-sm underline mt-2 inline-block text-omame-gold">
+        詳しい対処法を見る →
+      </a>
+    </div>
+  );
+}
 
 // ログインできない / 認証メールが届かない人向けの公式LINE導線。
 // form 下と success 画面の両方で使い回す。
@@ -103,6 +122,16 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10">
+        <Suspense fallback={null}>
+          <LoginErrorBanner />
+        </Suspense>
+        <div className="mb-6 rounded-2xl bg-amber-50 p-4 border-l-4 border-amber-400" role="note">
+          <p className="text-sm md:text-base text-amber-900 leading-relaxed">
+            <strong>⚠️ LINE のトーク内から開かれた方へ:</strong>{" "}
+            画面右上の「↗」ボタンから <strong>Safari/Chrome で開き直してください</strong>。
+            LINE 内ブラウザではログインがうまく進まないことがあります。
+          </p>
+        </div>
         <div className="bg-white/80 backdrop-blur-md py-8 px-4 shadow-xl shadow-omame-primary/5 sm:rounded-2xl sm:px-10 border border-omame-gold/20">
           {status === "success" ? (
             <div className="text-center">
@@ -179,8 +208,16 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 text-center text-xs text-omame-primary/50 space-y-2">
-                <p>パスワードは不要です。入力したメールアドレス宛にログイン用のボタンが届きます。</p>
-                <p className="text-omame-primary/40 mt-2">※数分待っても届かない場合は、迷惑メールフォルダや「すべてのメール」「プロモーション」タブ等をご確認ください。</p>
+                <p>パスワードは不要です。入力したメールアドレス宛にログイン用のリンクが届きます。</p>
+              </div>
+
+              <div className="mt-6 text-center">
+                <a
+                  href="/ja/help/login"
+                  className="inline-flex items-center gap-2 text-omame-gold underline text-base md:text-lg"
+                >
+                  📖 ログイン方法の詳しいご案内はこちら →
+                </a>
               </div>
 
               <LoginSupportCta />
