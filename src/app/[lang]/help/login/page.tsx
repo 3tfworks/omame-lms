@@ -173,6 +173,18 @@ export default async function HelpLoginPage({
           「むずかしそう…」と感じる必要はまったくありません。スマートフォンでもパソコンでも、お手元のメールが使えれば数分で入っていただけます。
         </p>
 
+        <div className="my-8 rounded-2xl bg-amber-50 p-5 border-l-4 border-amber-400" role="note">
+          <p className="font-semibold text-amber-900 flex items-center gap-2">
+            <span aria-hidden="true">⚠️</span>
+            ご注意:LINE のトーク内ブラウザでこのページを開かれている方へ
+          </p>
+          <p className="text-amber-900/90 text-sm md:text-base mt-2 leading-relaxed">
+            画面右上の「↗」または「・・・」ボタンから
+            <strong>「Safari で開く」または「Chrome で開く」</strong>
+            をお選びください。LINE 内のブラウザでは、ログインがうまく進まないことがあります。
+          </p>
+        </div>
+
         {/* (1) 仕組み */}
         <section id="flow" className="mb-16 scroll-mt-6">
           <h2 className="mb-6 text-2xl font-bold text-omame-deep md:text-3xl">
