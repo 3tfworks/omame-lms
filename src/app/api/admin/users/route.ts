@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { validateOptionalDisplayName, validateOptionalLegalName } from "@/lib/displayName";
+
+type UserUpdateData = {
+  updated_at: string;
+  legal_name?: string | null;
+  display_name?: string | null;
+  role?: string;
+};
 
 // ユーザー一覧の取得（owner/adminのみ）
 export async function GET() {
@@ -27,7 +35,7 @@ export async function GET() {
     // 全ユーザーを取得
     const { data: users, error } = await supabaseAdmin
       .from("users")
-      .select("id, email, role, display_name, created_at")
+      .select("id, email, role, legal_name, display_name, created_at")
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -38,6 +46,7 @@ export async function GET() {
     return NextResponse.json({
       users,
       requesterRole: requester.role, // フロントでUI出し分けに使う
+      requesterId: user.id,
     });
   } catch (error) {
     console.error("[Admin Users API] Unhandled error:", error);
@@ -67,18 +76,31 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { targetUserId, newRole, newDisplayName } = body;
+    const { targetUserId, newRole, newDisplayName, newLegalName } = body;
 
     if (!targetUserId) {
       return NextResponse.json({ error: "targetUserId is required" }, { status: 400 });
     }
 
     // 更新データの構築
-    const updateData: any = { updated_at: new Date().toISOString() };
+    const updateData: UserUpdateData = { updated_at: new Date().toISOString() };
 
-    // 名前の更新（adminもownerも可能）
+    // 本名の更新（adminもownerも可能）
+    if (newLegalName !== undefined) {
+      const validation = validateOptionalLegalName(newLegalName);
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.message }, { status: 400 });
+      }
+      updateData.legal_name = validation.value;
+    }
+
+    // 表示名の更新（adminもownerも可能）
     if (newDisplayName !== undefined) {
-      updateData.display_name = newDisplayName;
+      const validation = validateOptionalDisplayName(newDisplayName);
+      if (!validation.ok) {
+        return NextResponse.json({ error: validation.message }, { status: 400 });
+      }
+      updateData.display_name = validation.value;
     }
 
     // ロールの更新（ownerのみ可能）
@@ -110,11 +132,11 @@ export async function PATCH(request: Request) {
       .eq("id", targetUserId);
 
     if (error) {
-      console.error("[Admin Users API] Error updating role:", error);
-      return NextResponse.json({ error: "Failed to update role" }, { status: 500 });
+      console.error("[Admin Users API] Error updating user:", error);
+      return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
     }
 
-    return NextResponse.json({ message: "Role updated successfully" });
+    return NextResponse.json({ message: "User updated successfully" });
   } catch (error) {
     console.error("[Admin Users API] Unhandled error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

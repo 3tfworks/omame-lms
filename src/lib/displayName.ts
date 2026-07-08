@@ -73,3 +73,24 @@ export function validateLegalName(input: unknown): LegalNameResult {
   }
   return { ok: true, value: trimmed };
 }
+
+export type OptionalLegalNameResult =
+  | { ok: true; value: string | null }
+  | { ok: false; message: string };
+
+// 管理者画面など、既存ユーザーの本名を後から整備する用途。
+// 空文字・空白のみは「未登録」に戻すため null として許可する。
+export function validateOptionalLegalName(input: unknown): OptionalLegalNameResult {
+  if (input === undefined || input === null) {
+    return { ok: true, value: null };
+  }
+  if (typeof input !== "string") {
+    return { ok: false, message: "本名に使用できない値です。" };
+  }
+  if (input.trim() === "") {
+    return { ok: true, value: null };
+  }
+  const result = validateLegalName(input);
+  if (!result.ok) return result;
+  return { ok: true, value: result.value };
+}
