@@ -68,7 +68,7 @@ function SetupNameForm({ lang }: { lang: string }) {
             ようこそ、お豆奏法へ
           </h1>
           <p className="text-omame-text/70 leading-loose">
-            はじめに、お名前を教えてください。
+            はじめに、画面に表示されるお名前を教えてください。
           </p>
         </div>
 
@@ -77,7 +77,7 @@ function SetupNameForm({ lang }: { lang: string }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="display-name" className="block text-sm font-bold text-omame-deep mb-2">
-                お名前（ニックネーム可）
+                ニックネーム
               </label>
               <input
                 id="display-name"
@@ -91,7 +91,7 @@ function SetupNameForm({ lang }: { lang: string }) {
                 className="w-full border border-stone-300 rounded-xl px-4 py-3.5 text-omame-text focus:outline-none focus:ring-2 focus:ring-omame-gold/40 focus:border-omame-gold/60 transition-all"
               />
               <p className="mt-2 text-xs text-omame-text/50 leading-relaxed">
-                サイドバーのご挨拶や、お友達への招待状に表示されます（{DISPLAY_NAME_MAX}文字以内）。
+                受講ページの画面上で使われるお名前です。本名でなくても大丈夫です（{DISPLAY_NAME_MAX}文字以内）。
               </p>
             </div>
 

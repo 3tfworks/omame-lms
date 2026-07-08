@@ -3,6 +3,7 @@
 // サーバ側はこの validateDisplayName を必ず通し、クライアント検証だけに頼らない。
 
 export const DISPLAY_NAME_MAX = 20;
+export const LEGAL_NAME_MAX = 50;
 
 // 改行・タブ等の制御文字（C0 制御文字 + DEL）
 const CONTROL_CHARS = /[\x00-\x1f\x7f]/;
@@ -49,4 +50,26 @@ export function validateOptionalDisplayName(input: unknown): OptionalDisplayName
   const result = validateDisplayName(input);
   if (!result.ok) return result;
   return { ok: true, value: result.value };
+}
+
+export type LegalNameResult =
+  | { ok: true; value: string }
+  | { ok: false; message: string };
+
+// 購入者管理用の本名。画面表示名とは別管理にし、空白のみ・空文字は不可。
+export function validateLegalName(input: unknown): LegalNameResult {
+  if (typeof input !== "string") {
+    return { ok: false, message: "本名を入力してください。" };
+  }
+  const trimmed = input.trim();
+  if (trimmed === "") {
+    return { ok: false, message: "本名を入力してください。" };
+  }
+  if (CONTROL_CHARS.test(trimmed)) {
+    return { ok: false, message: "本名に使用できない文字が含まれています。" };
+  }
+  if (trimmed.length > LEGAL_NAME_MAX) {
+    return { ok: false, message: `本名は${LEGAL_NAME_MAX}文字以内で入力してください。` };
+  }
+  return { ok: true, value: trimmed };
 }
