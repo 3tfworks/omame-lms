@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       metadata,
       // 紹介購入は10%OFFを自動適用し、別コードとの重複を防ぐ。
       ...(validReferrer && referralCouponId
-        ? { discounts: [{ coupon: referralCouponId }], allow_promotion_codes: false }
+        ? { discounts: [{ coupon: referralCouponId }] }
         : { allow_promotion_codes: true }),
       success_url: `${siteUrl}/ja/lms?checkout=success`,
       cancel_url: `${siteUrl}/ja/lp?checkout=cancel`,
