@@ -122,6 +122,7 @@ export default function MyPage() {
         setState("error");
         return;
       }
+      window.dispatchEvent(new Event("omame-profile-updated"));
       setState("saved");
       window.setTimeout(() => setState("idle"), 2200);
     } catch {

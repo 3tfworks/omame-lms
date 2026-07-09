@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound, AlertCircle } from "lucide-react";
 import { curriculumData, type ChapterData } from "@/lib/lmsData";
 import ReferralPopup from "@/components/ReferralPopup";
 import { LineLogo } from "@/components/ui/LineLogo";
@@ -49,7 +50,8 @@ function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: ChapterDa
 
 export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [profile, setProfile] = useState<{ role: string; display_name: string | null; referral_prompt_shown: boolean } | null>(null);
+  const pathname = usePathname();
+  const [profile, setProfile] = useState<{ role: string; legal_name: string | null; display_name: string | null; referral_prompt_shown: boolean } | null>(null);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
 
   useEffect(() => {
@@ -68,7 +70,15 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
       }
     };
     fetchProfile();
+    window.addEventListener("omame-profile-updated", fetchProfile);
+    return () => window.removeEventListener("omame-profile-updated", fetchProfile);
   }, []);
+
+  const needsLegalName = Boolean(
+    profile &&
+    (!profile.legal_name || profile.legal_name.trim() === "") &&
+    !pathname.includes("/lms/mypage")
+  );
 
   return (
     <div className="min-h-screen bg-omame-bg flex font-serif">
@@ -227,6 +237,29 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
       {/* メインコンテンツエリア */}
       <main className="flex-1 overflow-y-auto lg:pt-0 pt-16">
         <div className="max-w-5xl mx-auto p-4 lg:p-8">
+          {needsLegalName && (
+            <div className="mb-6 rounded-2xl border-l-4 border-amber-400 bg-amber-50 p-4 md:p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-900">本名の登録がまだ完了していません</p>
+                    <p className="mt-1 text-sm leading-relaxed text-amber-900/80">
+                      本名は購入者確認・お問い合わせ対応のためだけに使用され、受講ページには表示されません。
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/ja/lms/mypage"
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-stone-800 px-4 text-sm font-bold text-white transition-colors hover:bg-stone-700"
+                >
+                  本名を登録する
+                </Link>
+              </div>
+            </div>
+          )}
           {children}
         </div>
       </main>
