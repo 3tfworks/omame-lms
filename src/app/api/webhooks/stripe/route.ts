@@ -176,7 +176,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       if (lead) leadId = lead.id;
     }
 
-    if (referrerId && paymentAmount > 0) {
+    if (referrerId === userId) {
+      console.warn(
+        `[Stripe Webhook] Self-referral reward skipped: user=${userId}, session=${session.id}`,
+      );
+      if (leadId) {
+        await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", leadId);
+      }
+    } else if (referrerId && paymentAmount > 0) {
       // 報酬率は決済成立日時（Checkout Session の作成時刻＝unix秒）を基準に判定する。
       const { rate: rewardRate } = await getAffiliateRewardRate(
         new Date(session.created * 1000),

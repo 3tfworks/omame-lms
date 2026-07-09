@@ -49,5 +49,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save registration" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("referrer_id", referrerId, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+
+  return response;
 }
