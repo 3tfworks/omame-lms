@@ -135,7 +135,7 @@ function SectionTitle({
 }) {
   return (
     <div className="text-center">
-      <p className="font-sans text-[0.7rem] uppercase tracking-[0.32em] text-omame-gold">
+      <p className="font-sans text-sm font-medium uppercase tracking-[0.24em] text-[#956b2f]">
         {eyebrow}
       </p>
       <h2 className="mt-4 whitespace-pre-line text-2xl font-bold leading-relaxed text-omame-deep md:text-4xl md:leading-relaxed">
@@ -160,7 +160,7 @@ export default function PracticeLpPage() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(29,24,21,.8),rgba(29,24,21,.52),rgba(29,24,21,.35))]" />
         <div className="relative mx-auto w-full max-w-5xl px-5 py-20 text-white md:px-8">
           <div className="max-w-2xl">
-            <p className="inline-flex rounded-full border border-white/35 bg-black/15 px-4 py-2 text-xs tracking-wider backdrop-blur-sm">
+            <p className="inline-flex rounded-full border border-white/50 bg-black/25 px-4 py-2 text-sm tracking-wide backdrop-blur-sm">
               動画教材をご受講いただいたあなたへ
             </p>
             <h1 className="mt-7 text-3xl font-bold leading-[1.65] md:text-5xl md:leading-[1.6]">
@@ -178,14 +178,14 @@ export default function PracticeLpPage() {
               その不安を、確信に変える4ヶ月。
             </p>
             <div className="mt-7 border-l border-omame-gold pl-5">
-              <p className="text-sm leading-loose text-white/85">
+              <p className="text-base leading-loose text-white">
                 えりな先生の直接指導で、あなたの演奏を別次元へ引き上げる
                 <br />
                 グループ実践レッスン
               </p>
               <p className="mt-3 text-lg font-bold">
                 お豆奏法 実践落とし込み講座
-                <span className="ml-2 text-sm font-normal">第1期生募集</span>
+                <span className="ml-2 text-base font-normal">第1期生募集</span>
               </p>
             </div>
             <div className="mt-8 grid max-w-xl grid-cols-2 gap-3 text-sm md:grid-cols-4">
@@ -232,7 +232,7 @@ export default function PracticeLpPage() {
             <br />
             でも、こんな風に立ち止まっていませんか？
           </p>
-          <ul className="mt-10 grid gap-4 md:grid-cols-2">
+          <ul className="mx-auto mt-10 grid max-w-2xl gap-4 lg:max-w-none lg:grid-cols-2">
             {worries.map((worry) => (
               <li
                 key={worry}
@@ -254,7 +254,7 @@ export default function PracticeLpPage() {
       <section className="px-5 py-20 md:py-28">
         <div className="mx-auto max-w-3xl text-center">
           <SectionTitle eyebrow="Why Direct Guidance?">{"動画を学んだからこそ、\n最後に必要なもの。"}</SectionTitle>
-          <div className="mx-auto mt-10 max-w-2xl space-y-7 text-base leading-[2.2] md:text-lg">
+          <div className="mx-auto mt-10 max-w-3xl space-y-7 text-base leading-[2.2] md:text-lg">
             <p>
               動画教材は、お豆奏法の膨大なエッセンスを詰め込んだ
               <br className="hidden md:block" />
@@ -268,7 +268,8 @@ export default function PracticeLpPage() {
             </p>
             <p>
               この実践講座では、動画で基礎知識を頭に入れたあなただからこそ
-              スムーズに理解できる、「超・実践的な直接指導」を行います。
+              <span className="whitespace-nowrap">スムーズに理解できる</span>
+              、「超・実践的な直接指導」を行います。
             </p>
           </div>
         </div>
@@ -277,7 +278,7 @@ export default function PracticeLpPage() {
       <section className="bg-omame-deep px-5 py-20 text-white md:py-28">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
-            <p className="font-sans text-xs uppercase tracking-[0.32em] text-[#f1d4a2]">After 4 Months</p>
+            <p className="font-sans text-sm font-medium uppercase tracking-[0.24em] text-[#f1d4a2]">After 4 Months</p>
             <h2 className="mt-4 text-2xl font-bold leading-relaxed md:text-4xl">
               知識から、一生モノの身体感覚へ。
             </h2>
@@ -304,7 +305,7 @@ export default function PracticeLpPage() {
             <br />
             これ以上ない最高環境を用意しました。
           </p>
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
+          <div className="mx-auto mt-12 grid max-w-3xl gap-5 lg:max-w-none lg:grid-cols-2">
             {support.map(({ icon: Icon, title, body, note }) => (
               <article key={title} className="rounded-2xl border border-omame-gold/25 bg-omame-bg p-6 md:p-8">
                 <div className="flex items-start gap-4">
@@ -315,7 +316,7 @@ export default function PracticeLpPage() {
                     <h3 className="whitespace-pre-line text-xl font-bold leading-relaxed text-omame-deep">
                       {title}
                     </h3>
-                    <p className="mt-1 text-xs tracking-wide text-omame-gold">{note}</p>
+                    <p className="mt-1 text-sm font-medium tracking-wide text-[#956b2f]">{note}</p>
                   </div>
                 </div>
                 <p className="mt-5 leading-loose">{body}</p>
@@ -336,13 +337,13 @@ export default function PracticeLpPage() {
               ["4ヶ月目", "自分で気づき修正する"],
             ].map(([month, goal], index) => (
               <div key={month} className="relative rounded-2xl border border-omame-gold/30 bg-white p-5 text-center">
-                <p className="font-sans text-sm text-omame-gold">STEP {index + 1}</p>
+                <p className="font-sans text-sm font-medium text-[#956b2f]">STEP {index + 1}</p>
                 <h3 className="mt-2 font-bold text-omame-deep">{month}</h3>
-                <p className="mt-3 text-sm leading-loose">{goal}</p>
+                <p className="mt-3 text-base leading-loose">{goal}</p>
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-xs text-omame-text/60">
+          <p className="mt-8 text-center text-sm leading-loose text-omame-text/85">
             ※上記は成長イメージです。レッスンはお一人ずつの課題に合わせて進めます。
           </p>
         </div>
@@ -351,12 +352,12 @@ export default function PracticeLpPage() {
       <section className="bg-white px-5 py-20 md:py-28">
         <div className="mx-auto max-w-4xl">
           <SectionTitle eyebrow="Student Voices">お豆奏法受講生さんの声</SectionTitle>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mx-auto mt-12 grid max-w-2xl gap-6 lg:max-w-none lg:grid-cols-3">
             {voices.map((voice) => (
               <article key={voice.quote} className="rounded-2xl border border-omame-gold/20 bg-omame-bg p-6">
                 <Sparkles className="h-6 w-6 text-omame-gold" />
                 <h3 className="mt-4 font-bold leading-loose text-omame-deep">{voice.quote}</h3>
-                <p className="mt-4 text-sm leading-[2]">{voice.body}</p>
+                <p className="mt-4 text-base leading-[2]">{voice.body}</p>
               </article>
             ))}
           </div>
@@ -369,7 +370,7 @@ export default function PracticeLpPage() {
       <section className="px-5 py-20 md:py-28">
         <div className="mx-auto max-w-4xl">
           <SectionTitle eyebrow="For You">こんな方が対象です</SectionTitle>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-2xl gap-4 lg:max-w-none lg:grid-cols-2">
             {[
               "お豆奏法の動画教材を受講し終えた方、または受講中の方",
               "理論は分かったので「実践・定着」へ進みたい方",
@@ -390,7 +391,7 @@ export default function PracticeLpPage() {
       <section className="bg-white px-5 py-20 md:py-28">
         <div className="mx-auto max-w-3xl">
           <SectionTitle eyebrow="Your Guide">講師紹介</SectionTitle>
-          <div className="mt-12 grid items-start gap-8 md:grid-cols-[240px_1fr]">
+          <div className="mx-auto mt-12 grid max-w-2xl items-start gap-8 lg:max-w-none lg:grid-cols-[240px_1fr]">
             <Image
               src="/images/erina-profile.jpg"
               alt="講師 舘依里奈"
@@ -400,7 +401,7 @@ export default function PracticeLpPage() {
               className="mx-auto aspect-[4/5] w-full max-w-[240px] rounded-2xl object-cover shadow-lg"
             />
             <div>
-              <p className="text-sm tracking-widest text-omame-gold">講師</p>
+              <p className="text-sm font-medium tracking-widest text-[#956b2f]">講師</p>
               <h3 className="mt-1 text-2xl font-bold text-omame-deep">舘 依里奈</h3>
               <p className="mt-5 leading-[2]">
                 愛知県立明和高等学校音楽科、国立音楽大学音楽学部器楽学科ピアノ専攻卒業。その後渡仏し、パリ・エコールノルマル音楽院にて高等演奏資格（ディプロマ）取得。
@@ -410,7 +411,7 @@ export default function PracticeLpPage() {
               </p>
               <details className="mt-5 rounded-xl border border-omame-gold/20 bg-omame-bg p-4">
                 <summary className="cursor-pointer font-bold text-omame-deep">詳しいプロフィールを見る</summary>
-                <p className="mt-4 text-sm leading-[2]">
+                <p className="mt-4 text-base leading-[2]">
                   ソロ、伴奏、オペラのコレペティートルとして活動。フランスを拠点にソロ・室内楽・リサイタル等へ出演し、帰国後もクラシックに留まらず幅広いジャンルで演奏活動を行う。国際ピアノコンクールをはじめ入賞・入選多数。全日本演奏家協会正会員。
                 </p>
               </details>
@@ -430,7 +431,7 @@ export default function PracticeLpPage() {
                   <span className="flex-1">{faq.q}</span>
                   <span className="text-omame-gold transition-transform group-open:rotate-45">＋</span>
                 </summary>
-                <p className="mt-4 border-t border-omame-gold/10 pt-4 text-sm leading-[2]">
+                <p className="mt-4 border-t border-omame-gold/20 pt-4 text-base leading-[2]">
                   <span className="mr-2 font-bold text-omame-gold">A.</span>
                   {faq.a}
                 </p>
@@ -442,7 +443,7 @@ export default function PracticeLpPage() {
 
       <section id="application" className="scroll-mt-6 bg-omame-deep px-5 py-20 text-white md:py-28">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="font-sans text-xs uppercase tracking-[0.32em] text-[#f1d4a2]">Course Information</p>
+          <p className="font-sans text-sm font-medium uppercase tracking-[0.24em] text-[#f1d4a2]">Course Information</p>
           <h2 className="mt-4 text-2xl font-bold leading-relaxed md:text-4xl">開催概要・お申込み</h2>
           <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-white p-6 text-left text-omame-text shadow-xl md:p-9">
             <dl className="divide-y divide-omame-gold/15">
@@ -454,22 +455,22 @@ export default function PracticeLpPage() {
                 ["内容", "実践講座 全4回＋質問サポート＋動画添削 月2回＋お茶会 全3回"],
                 ["主催", "お豆奏法ラボ"],
               ].map(([term, description]) => (
-                <div key={term} className="grid gap-1 py-4 md:grid-cols-[90px_1fr]">
+                <div key={term} className="grid gap-1 py-4 lg:grid-cols-[90px_1fr]">
                   <dt className="font-bold text-omame-deep">{term}</dt>
                   <dd className="leading-loose">{description}</dd>
                 </div>
               ))}
             </dl>
             <div className="mt-7 rounded-xl bg-omame-accent p-6 text-center">
-              <p className="text-sm text-omame-text/70">
+              <p className="text-sm text-omame-text">
                 通常価格 <span className="line-through">198,000円</span>
               </p>
-              <p className="mt-2 text-sm font-bold text-omame-gold">第1期限定 50,000円引き</p>
+              <p className="mt-2 text-sm font-bold text-[#956b2f]">第1期限定 50,000円引き</p>
               <p className="mt-1 text-4xl font-bold text-omame-deep">
                 148,000<span className="text-base">円</span>
               </p>
             </div>
-            <p className="mt-5 text-center text-xs leading-loose text-omame-text/60">
+            <p className="mt-5 text-center text-sm leading-loose text-omame-text/85">
               銀行振込・PayPay・クレジットカード
               <br />
               ※カード払いのみ、カード会社への分割申込みが可能です。
@@ -484,8 +485,8 @@ export default function PracticeLpPage() {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </a>
           </div>
-          <p className="mt-5 text-sm text-white/70">erina.t.piano@gmail.com</p>
-          <p className="mt-5 text-xs leading-loose text-white/55">
+          <p className="mt-5 text-base text-white">erina.t.piano@gmail.com</p>
+          <p className="mt-5 text-sm leading-loose text-white/85">
             ※申込フォーム・定員・申込締切・キャンセル規定は公開前に確定し、本欄へ追記します。
           </p>
         </div>
@@ -496,7 +497,7 @@ export default function PracticeLpPage() {
           <Image src="/images/hands.png" alt="" fill sizes="100vw" className="object-cover" />
         </div>
         <div className="relative mx-auto max-w-2xl text-center">
-          <p className="font-sans text-xs uppercase tracking-[0.32em] text-omame-gold">A Message For You</p>
+          <p className="font-sans text-sm font-medium uppercase tracking-[0.24em] text-[#956b2f]">A Message For You</p>
           <h2 className="mt-5 text-2xl font-bold leading-relaxed text-omame-deep md:text-4xl">
             一緒に、一生モノの感覚へ
             <br />
@@ -523,7 +524,7 @@ export default function PracticeLpPage() {
         </div>
       </section>
 
-      <footer className="bg-[#312b27] px-5 py-8 text-center text-xs text-white/55">
+      <footer className="bg-[#312b27] px-5 py-8 text-center text-sm text-white/85">
         <p>Copyright © お豆奏法ラボ</p>
       </footer>
     </main>
