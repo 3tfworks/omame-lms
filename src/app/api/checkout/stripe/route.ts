@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { getProductPricing, type PriceType } from "@/lib/pricing";
+import { getValidReferrer } from "@/lib/invite";
+
+const REFERRAL_DISCOUNT_PERCENT = 10;
 
 // Stripe Checkout Session を作成する API。
 // POST { priceType?: "general" | "salon", referrerId?: string } を受け取り、
@@ -60,10 +63,32 @@ export async function POST(request: Request) {
       new URL(request.url).origin ||
       "https://omamepiano.com";
 
-    // metadata: price_type は常に付与（webhook が salon 報酬スキップ判定に使用）。
-    // referrer_id はアフィリエイト紐付け用で、存在する場合のみ付与する。
+    // 紹介IDは購入者入力を信用せず、Checkout作成直前に権限まで検証する。
+    // salon価格は既に特別価格のため、紹介割引・紹介報酬とも対象外。
+    const validReferrer =
+      referrerId && priceType === "general" ? await getValidReferrer(referrerId) : null;
+    if (referrerId && priceType === "general" && !validReferrer) {
+      return NextResponse.json(
+        { error: "紹介リンクを確認できませんでした。紹介者に新しいリンクをご確認ください。" },
+        { status: 400 },
+      );
+    }
+
+    const referralCouponId = process.env.STRIPE_REFERRAL_COUPON_ID?.trim();
+    if (validReferrer && !referralCouponId) {
+      console.error("[checkout/stripe] Missing STRIPE_REFERRAL_COUPON_ID");
+      return NextResponse.json(
+        { error: "紹介割引を準備中です。時間をおいてもう一度お試しください。" },
+        { status: 503 },
+      );
+    }
+
+    // Stripe Dashboardとwebhookの双方で紹介割引を追跡できるようにする。
     const metadata: Record<string, string> = { price_type: priceType };
-    if (referrerId) metadata.referrer_id = referrerId;
+    if (validReferrer) {
+      metadata.referrer_id = validReferrer.id;
+      metadata.referral_discount_percent = String(REFERRAL_DISCOUNT_PERCENT);
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment", // 単発購入
@@ -74,7 +99,10 @@ export async function POST(request: Request) {
         },
       ],
       metadata,
-      allow_promotion_codes: true, // Checkout でプロモーションコード入力欄を表示
+      // 紹介購入は10%OFFを自動適用し、別コードとの重複を防ぐ。
+      ...(validReferrer && referralCouponId
+        ? { discounts: [{ coupon: referralCouponId }], allow_promotion_codes: false }
+        : { allow_promotion_codes: true }),
       success_url: `${siteUrl}/ja/lms?checkout=success`,
       cancel_url: `${siteUrl}/ja/lp?checkout=cancel`,
     });

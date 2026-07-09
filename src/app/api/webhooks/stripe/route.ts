@@ -76,6 +76,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       : undefined;
   // JPY はゼロ十進通貨なので amount_total はそのまま「円」
   const paymentAmount = session.amount_total ?? 0;
+  const referralDiscountPercent = session.metadata?.referral_discount_percent;
+  const discountAmount = session.total_details?.amount_discount ?? 0;
+
+  if (referralDiscountPercent) {
+    if (referralDiscountPercent !== "10" || discountAmount <= 0) {
+      console.error(
+        `[Stripe Webhook] Referral discount mismatch: session=${session.id}, percent=${referralDiscountPercent}, amount=${discountAmount}`,
+      );
+    } else {
+      console.log(
+        `[Stripe Webhook] Referral discount applied: session=${session.id}, amount=${discountAmount}, paid=${paymentAmount}`,
+      );
+    }
+  }
 
   if (!email) {
     console.error("[Stripe Webhook] checkout.session.completed without email:", session.id);

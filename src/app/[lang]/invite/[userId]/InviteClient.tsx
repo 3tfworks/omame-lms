@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, Mail, User, ArrowDown, CheckCircle2 } from "lucide-react";
+import { Heart, Mail, User, ArrowDown } from "lucide-react";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -21,10 +21,14 @@ export default function InviteClient({
   lang,
   userId,
   referrerName,
+  regularPrice,
+  referralPrice,
 }: {
   lang: string;
   userId: string;
   referrerName: string | null;
+  regularPrice: number;
+  referralPrice: number;
 }) {
   const router = useRouter();
 
@@ -282,6 +286,17 @@ export default function InviteClient({
             </div>
 
             <div className="bg-[#FAFAF8] px-5 py-7 md:p-14 rounded-3xl shadow-2xl border border-omame-gold/30">
+              <div className="mb-8 border border-emerald-200 bg-emerald-50 px-5 py-4 text-center font-sans">
+                <p className="font-bold text-emerald-800">ご紹介特典 10%OFF</p>
+                <p className="mt-2 text-sm text-emerald-700">
+                  <span className="line-through">{regularPrice.toLocaleString("ja-JP")}円</span>
+                  <span className="mx-2">→</span>
+                  <strong className="text-lg">{referralPrice.toLocaleString("ja-JP")}円</strong>
+                </p>
+                <p className="mt-2 text-xs text-emerald-700">
+                  クーポンコードの入力は不要です。この紹介ページから自動で適用されます。
+                </p>
+              </div>
 
               {/* LINE友達追加ボタン */}
               <a

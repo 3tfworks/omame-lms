@@ -1,4 +1,6 @@
-import { getReferrerInviteName } from "@/lib/invite";
+import InvalidReferralPage from "@/components/InvalidReferralPage";
+import { getValidReferrer } from "@/lib/invite";
+import { getProductPricing } from "@/lib/pricing";
 import InviteClient from "./InviteClient";
 
 // Server Component: 紹介者名をサーバ側で取得し、クライアントへ name 文字列のみを渡す。
@@ -9,7 +11,21 @@ export default async function InvitePage({
   params: Promise<{ lang: string; userId: string }>;
 }) {
   const { lang, userId } = await params;
-  const referrerName = await getReferrerInviteName(userId);
+  const [referrer, pricing] = await Promise.all([
+    getValidReferrer(userId),
+    getProductPricing("general"),
+  ]);
+  if (!referrer) return <InvalidReferralPage lang={lang} />;
 
-  return <InviteClient lang={lang} userId={userId} referrerName={referrerName} />;
+  const referralPrice = Math.floor(pricing.salePrice * 0.9);
+
+  return (
+    <InviteClient
+      lang={lang}
+      userId={userId}
+      referrerName={referrer.displayName}
+      regularPrice={pricing.salePrice}
+      referralPrice={referralPrice}
+    />
+  );
 }
