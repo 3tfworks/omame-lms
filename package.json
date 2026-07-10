@@ -6,7 +6,8 @@
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:bookmarks": "node --experimental-strip-types --test src/lib/bookmarks.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
