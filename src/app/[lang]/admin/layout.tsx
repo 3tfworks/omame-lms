@@ -18,12 +18,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          {/* 未実装のため一時非表示
-          <Link href="/ja/admin/bookmarks" className="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-stone-800 hover:text-white rounded-xl font-bold transition-colors">
+          <Link
+            href="/ja/admin/bookmarks"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors ${
+              pathname.includes('/admin/bookmarks')
+                ? 'bg-stone-800 text-white'
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
             <CheckSquare size={20} />
             付箋の確認・承認
           </Link>
-          */}
           <Link
             href="/ja/admin"
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
