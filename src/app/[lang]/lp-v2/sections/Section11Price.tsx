@@ -20,14 +20,18 @@ const career = [
 export function Section11Price({
   regularPrice,
   salePrice,
+  referralPrice,
   campaignLabel,
   showCampaign,
+  showReferralDiscount,
   priceType = "general",
 }: {
   regularPrice: number;
   salePrice: number;
+  referralPrice: number;
   campaignLabel: string;
   showCampaign: boolean;
+  showReferralDiscount: boolean;
   priceType?: "general" | "salon";
 }) {
   return (
@@ -114,7 +118,28 @@ export function Section11Price({
               サロンメンバー特別価格
             </p>
           )}
-          {showCampaign ? (
+          {showReferralDiscount ? (
+            <>
+              <p className="font-sans text-xs uppercase tracking-[0.2em] text-emerald-700">
+                ご紹介特典 10%OFF
+              </p>
+              <p className="mt-3 text-sm text-omame-text/60">
+                通常価格 <span className="line-through">{yen(regularPrice)}</span>
+              </p>
+              <p className="mt-1 text-sm text-omame-text/60">
+                キャンペーン価格 <span className="line-through">{yen(salePrice)}</span>
+              </p>
+              <p className="mt-2 text-4xl font-bold text-omame-deep md:text-5xl">
+                <span className="bg-gradient-to-b from-transparent to-emerald-200/50 px-1">
+                  {yen(referralPrice)}
+                </span>
+                <span className="ml-1 text-base font-normal text-omame-text/70">（税込）</span>
+              </p>
+              <p className="mt-3 text-xs font-bold text-emerald-700">
+                紹介リンク経由の方だけの自動割引価格です。
+              </p>
+            </>
+          ) : showCampaign ? (
             <>
               {/* キャンペーン文言（campaignLabel をそのまま表示） */}
               {campaignLabel && (
@@ -144,7 +169,9 @@ export function Section11Price({
         </div>
 
         <div className="mt-10">
-          <CtaButton priceType={priceType}>今すぐ受講する</CtaButton>
+          <CtaButton priceType={priceType}>
+            {showReferralDiscount ? "10%OFFで受講する" : "今すぐ受講する"}
+          </CtaButton>
         </div>
       </Reveal>
     </SectionShell>

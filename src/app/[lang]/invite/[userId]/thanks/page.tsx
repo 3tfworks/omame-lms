@@ -19,6 +19,7 @@ export default async function ThanksPage({
 
   return (
     <ThanksClient
+      lang={lang}
       userId={userId}
       referrerName={referrer.displayName}
       regularPrice={pricing.salePrice}

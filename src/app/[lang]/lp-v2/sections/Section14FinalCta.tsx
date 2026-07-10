@@ -12,15 +12,19 @@ export function Section14FinalCta({
   lang,
   regularPrice,
   salePrice,
+  referralPrice,
   campaignLabel,
   showCampaign,
+  showReferralDiscount,
   priceType = "general",
 }: {
   lang: string;
   regularPrice: number;
   salePrice: number;
+  referralPrice: number;
   campaignLabel: string;
   showCampaign: boolean;
+  showReferralDiscount: boolean;
   priceType?: "general" | "salon";
 }) {
   return (
@@ -53,7 +57,22 @@ export function Section14FinalCta({
               サロンメンバー特別価格
             </p>
           )}
-          {showCampaign ? (
+          {showReferralDiscount ? (
+            <>
+              <p className="mt-3 text-xs font-bold text-emerald-700">
+                ご紹介特典 10%OFF
+              </p>
+              <p className="mt-2 text-4xl font-bold text-omame-deep">
+                <span className="mr-2 align-middle text-lg font-normal text-omame-text/50 line-through">
+                  {yen(salePrice)}
+                </span>
+                {yen(referralPrice)}
+              </p>
+              <p className="mt-1 text-xs font-bold text-emerald-700">
+                税込・紹介リンク経由の自動割引価格
+              </p>
+            </>
+          ) : showCampaign ? (
             <>
               <p className="mt-3 text-4xl font-bold text-omame-deep">
                 <span className="mr-2 align-middle text-lg font-normal text-omame-text/50 line-through">
@@ -81,7 +100,7 @@ export function Section14FinalCta({
             priceType={priceType}
             className="h-14 w-[85%] max-w-[320px] md:h-auto md:w-auto md:max-w-none"
           >
-            今すぐ受講する
+            {showReferralDiscount ? "10%OFFで受講する" : "今すぐ受講する"}
           </CtaButton>
         </div>
 

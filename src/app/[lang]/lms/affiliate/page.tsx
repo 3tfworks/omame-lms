@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Handshake, Copy, CheckCircle2, TrendingUp, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift, ChevronDown } from "lucide-react";
+import { Handshake, Copy, CheckCircle2, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift, ChevronDown } from "lucide-react";
 import Image from "next/image";
 
 type AffiliateStats = {
@@ -34,10 +34,11 @@ export default function AffiliatePage() {
   });
   
   const [copied, setCopied] = useState(false);
+  const [copiedTemplate, setCopiedTemplate] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState({ text: "", type: "" });
 
-  // 招待用表示名（任意の上書き）。displayName は placeholder と補助文に使う。
+  // 紹介ページ用表示名（任意の上書き）。displayName は placeholder と補助文に使う。
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [referralName, setReferralName] = useState("");
   const [savingReferral, setSavingReferral] = useState(false);
@@ -77,7 +78,7 @@ export default function AffiliatePage() {
         body: JSON.stringify({ referralDisplayName: referralName }),
       });
       if (res.ok) {
-        setReferralMessage({ text: "招待状のお名前を保存しました", type: "success" });
+        setReferralMessage({ text: "紹介ページのお名前を保存しました", type: "success" });
       } else {
         const data = await res.json().catch(() => null);
         setReferralMessage({ text: data?.error || "保存に失敗しました", type: "error" });
@@ -89,6 +90,12 @@ export default function AffiliatePage() {
   };
 
   const affiliateUrl = userId ? `https://omamepiano.com/ja/invite/${userId}` : "";
+  const lineShareText = `ピアノの弾き方や脱力で悩んでいたら、えりな先生のお豆奏法おすすめです。私も学んでいて、身体の使い方の見方が変わりました。紹介リンクから見ると特典があるみたいなので、よかったら見てみてください☺️\n${affiliateUrl}`;
+  const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(lineShareText)}`;
+  const messageTemplates = [
+    `ピアノの弾き方や脱力で悩んでいたら、えりな先生のお豆奏法おすすめです。私も学んでいて、身体の使い方の見方が変わりました。紹介リンクから見ると特典があるみたいなので、よかったら見てみてください☺️\n${affiliateUrl}`,
+    `無理にすすめたいわけではないんだけど、ピアノで手や腕が疲れる話をしていたので思い出しました。お豆奏法、普通の脱力の話とは少し違って面白いです。よかったらこのリンクから見てみてください。\n${affiliateUrl}`,
+  ];
 
   const handleCopy = async () => {
     try {
@@ -97,6 +104,16 @@ export default function AffiliatePage() {
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy", err);
+    }
+  };
+
+  const handleTemplateCopy = async (template: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(template);
+      setCopiedTemplate(index);
+      setTimeout(() => setCopiedTemplate(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy template", err);
     }
   };
 
@@ -118,7 +135,7 @@ export default function AffiliatePage() {
         const data = await res.json().catch(() => null);
         setSaveMessage({ text: data?.error || "保存に失敗しました", type: "error" });
       }
-    } catch (e) {
+    } catch {
       setSaveMessage({ text: "通信エラーが発生しました", type: "error" });
     }
     setSaving(false);
@@ -140,16 +157,241 @@ export default function AffiliatePage() {
         <div className="p-2 bg-amber-100 text-amber-700 rounded-xl shadow-sm">
           <Heart className="w-6 h-6" />
         </div>
-        <h1 className="text-2xl font-bold text-omame-deep font-serif">お豆メッセンジャー</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-omame-deep font-serif">お豆メッセンジャー</h1>
+          <p className="mt-1 text-sm font-bold text-stone-500">紹介リンク・特典</p>
+        </div>
+      </div>
+
+      {/* ファーストビュー：今すぐやること */}
+      <div className="mb-8 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 shadow-sm sm:p-8">
+        <div className="text-center">
+          <p className="text-sm font-bold tracking-[0.2em] text-amber-700">OMAME MESSENGER</p>
+          <h2 className="mt-3 text-2xl font-bold leading-relaxed text-stone-900 font-serif md:text-3xl">
+            やることは、あなた専用リンクを<br className="hidden sm:block" />
+            LINEで送るだけです。
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-loose text-stone-700">
+            お豆メッセンジャーは、紹介リンクを送るだけで、
+            お友達にもあなたにも嬉しい特典が届く仕組みです。
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            ["STEP 1", "リンクをコピー", "下のあなた専用リンクをコピーします"],
+            ["STEP 2", "お友達へ送る", "ピアノに悩んでいる方へそっとシェア"],
+            ["STEP 3", "お互いに特典", "お友達が受講するとあなたにもギフト"],
+          ].map(([step, title, body]) => (
+            <div key={step} className="rounded-2xl border border-amber-100 bg-white/85 p-5 text-center shadow-sm">
+              <p className="text-xs font-bold tracking-widest text-amber-700">{step}</p>
+              <p className="mt-2 text-lg font-bold text-stone-900">{title}</p>
+              <p className="mt-2 text-sm leading-relaxed text-stone-600">{body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl bg-emerald-50 p-5 text-center text-emerald-800">
+            <p className="text-sm font-bold">紹介されたお友達</p>
+            <p className="mt-1 text-2xl font-black">受講料 10%OFF</p>
+          </div>
+          <div className="rounded-2xl bg-rose-50 p-5 text-center text-rose-800">
+            <p className="text-sm font-bold">紹介したあなた</p>
+            <p className="mt-1 text-2xl font-black">
+              {currentRate ? `${currentRate.rate}%` : "紹介"}ギフト
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 紹介リンク */}
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-10">
+        <div className="bg-[#faf9f6] px-6 py-4 border-b border-stone-200 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-amber-600" />
+          <h2 className="font-bold text-omame-deep text-lg">あなた専用のおすそ分けリンク</h2>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-stone-600 mb-4 leading-relaxed">
+            まずはこのリンクをコピーして、LINEやメッセージでお友達へ送ってください。<br/>
+            リンクをクリックしてから30日以内の受講スタートが対象となります。
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <input
+              type="text"
+              readOnly
+              value={affiliateUrl}
+              className="w-full sm:flex-1 bg-stone-50 border border-stone-300 rounded-xl px-4 py-3.5 text-stone-600 focus:outline-none"
+            />
+            <button
+              onClick={handleCopy}
+              className="w-full sm:w-auto flex justify-center items-center gap-2 px-8 py-3.5 bg-stone-800 text-white font-bold rounded-xl hover:bg-stone-700 transition-colors"
+            >
+              {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+              {copied ? "コピーしました！" : "リンクをコピー"}
+            </button>
+            <a
+              href={lineShareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto flex justify-center items-center gap-2 px-8 py-3.5 bg-[#06C755] text-white font-bold rounded-xl hover:bg-[#05ad49] transition-colors"
+            >
+              LINEで送る
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* 送る相手の例 */}
+      <div className="mb-10 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-omame-deep">こんな方がいたら、そっと送ってあげてください</h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {[
+            "ピアノを弾くと手や腕が疲れやすい方",
+            "脱力が分からず悩んでいる方",
+            "レッスンで言われても身体で再現できない方",
+            "大人になってからピアノを再開した方",
+            "生徒さんの身体の使い方を見てあげたい先生",
+            "ジストニアや腱鞘炎などで演奏に不安がある方",
+          ].map(item => (
+            <div key={item} className="flex gap-3 rounded-xl bg-amber-50/60 p-4 text-stone-700">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <p className="text-sm font-bold leading-relaxed">{item}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 紹介文テンプレート */}
+      <div className="mb-12 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-omame-deep">そのままLINEに貼れる紹介文</h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-500">
+          文章を考えるのが大変なときは、このままコピーしてお使いください。押し売り感が出にくい文面にしています。
+        </p>
+        <div className="mt-5 space-y-4">
+          {messageTemplates.map((template, index) => (
+            <div key={index} className="rounded-2xl bg-[#faf9f6] p-5">
+              <p className="whitespace-pre-wrap text-sm leading-loose text-stone-700">{template}</p>
+              <button
+                onClick={() => handleTemplateCopy(template, index)}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-stone-800 px-5 py-3 text-sm font-bold text-white hover:bg-stone-700"
+              >
+                {copiedTemplate === index ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copiedTemplate === index ? "コピーしました！" : "この文章をコピー"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* お豆メッセンジャーのステップ図解 */}
+      <div className="mb-14 max-w-2xl mx-auto">
+        <h3 className="text-xl md:text-2xl font-bold text-stone-800 text-center mb-6 flex items-center justify-center gap-2">
+          <Sparkles className="text-amber-500" />
+          お豆メッセンジャーのはじめ方
+          <Sparkles className="text-amber-500" />
+        </h3>
+        <div className="mb-8 rounded-2xl bg-white p-5 shadow-sm border border-stone-200">
+          <p className="text-center font-bold text-stone-800">やることは3つだけ</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {["紹介リンクを送る", "お友達が登録・受講", "お互いに特典が届く"].map((item, index) => (
+              <div key={item} className="rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-900">
+                {index + 1}. {item}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex flex-col gap-6">
+          {/* STEP 1 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
+            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
+              <Image src="/images/messenger-step1.png" alt="STEP 1" fill className="object-cover" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.endsWith('.png')) {
+                    target.src = '/images/messenger-step1.jpg';
+                  } else if (target.src.endsWith('.jpg')) {
+                    target.src = '/images/messenger-step1.jpeg';
+                  } else {
+                    target.style.display = 'none';
+                  }
+                }}
+              />
+            </div>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 1</span>
+              <p className="font-bold text-stone-800 text-lg">あなた専用のリンクをシェア</p>
+            </div>
+          </div>
+
+          <div className="flex justify-center -my-2">
+            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
+          </div>
+
+          {/* STEP 2 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
+            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
+              <Image src="/images/messenger-step2.png" alt="STEP 2" fill className="object-cover" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.endsWith('.png')) target.src = '/images/messenger-step2.jpg';
+                  else if (target.src.endsWith('.jpg')) target.src = '/images/messenger-step2.jpeg';
+                  else target.style.display = 'none';
+                }}
+              />
+            </div>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 2</span>
+              <p className="font-bold text-stone-800 text-lg">お友達がお豆奏法をスタート！</p>
+            </div>
+          </div>
+
+          <div className="flex justify-center -my-2">
+            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
+          </div>
+
+          {/* STEP 3 */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
+            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
+              <Image src="/images/messenger-step3.png" alt="STEP 3" fill className="object-cover" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.endsWith('.png')) target.src = '/images/messenger-step3.jpg';
+                  else if (target.src.endsWith('.jpg')) target.src = '/images/messenger-step3.jpeg';
+                  else target.style.display = 'none';
+                }}
+              />
+            </div>
+            <div className="p-5 text-center">
+              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 3</span>
+              <p className="font-bold text-stone-800 text-lg">お互いに嬉しいギフトが届く</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* えりな先生からのお手紙 */}
-      <div className="mb-12 bg-[#faf9f6] rounded-3xl p-6 sm:p-10 md:p-12 shadow-md border border-[#e8dfce] relative overflow-hidden">
+      <details className="mb-12 bg-[#faf9f6] rounded-3xl p-6 sm:p-10 md:p-12 shadow-md border border-[#e8dfce] relative overflow-hidden">
         {/* 背景の装飾 */}
         <div className="absolute -top-16 -right-16 w-64 h-64 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-orange-100/30 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10">
+        <summary className="relative z-10 cursor-pointer list-none">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold tracking-[0.28em] text-amber-700 uppercase mb-2">MESSAGE FROM ERINA</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-stone-800 font-serif leading-relaxed">
+                えりな先生からのメッセージを読む
+              </h2>
+            </div>
+            <span className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white border border-[#e8dfce] text-sm font-bold text-stone-700 shadow-sm">
+              開く <ChevronDown className="w-5 h-5 text-amber-600" />
+            </span>
+          </div>
+        </summary>
+
+        <div className="relative z-10 mt-8">
           <div className="flex items-center gap-3 mb-8">
             <h2 className="text-xl sm:text-2xl font-bold text-stone-800 font-serif leading-relaxed">
               【重要❣️ 皆さんに、お豆メッセンジャーになっていただきたい‼️‼️<br />
@@ -226,84 +468,7 @@ export default function AffiliatePage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* お豆メッセンジャーのステップ図解 */}
-      <div className="mb-14 max-w-2xl mx-auto">
-        <h3 className="text-xl md:text-2xl font-bold text-stone-800 text-center mb-10 flex items-center justify-center gap-2">
-          <Sparkles className="text-amber-500" />
-          お豆メッセンジャーのはじめ方
-          <Sparkles className="text-amber-500" />
-        </h3>
-        
-        <div className="flex flex-col gap-6">
-          {/* STEP 1 */}
-          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
-            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
-              <Image src="/images/messenger-step1.png" alt="STEP 1" fill className="object-cover" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (target.src.endsWith('.png')) {
-                    target.src = '/images/messenger-step1.jpg';
-                  } else if (target.src.endsWith('.jpg')) {
-                    target.src = '/images/messenger-step1.jpeg';
-                  } else {
-                    target.style.display = 'none';
-                  }
-                }}
-              />
-            </div>
-            <div className="p-5 text-center">
-              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 1</span>
-              <p className="font-bold text-stone-800 text-lg">あなた専用のリンクをシェア</p>
-            </div>
-          </div>
-
-          <div className="flex justify-center -my-2">
-            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
-          </div>
-
-          {/* STEP 2 */}
-          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
-            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
-              <Image src="/images/messenger-step2.png" alt="STEP 2" fill className="object-cover" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (target.src.endsWith('.png')) target.src = '/images/messenger-step2.jpg';
-                  else if (target.src.endsWith('.jpg')) target.src = '/images/messenger-step2.jpeg';
-                  else target.style.display = 'none';
-                }}
-              />
-            </div>
-            <div className="p-5 text-center">
-              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 2</span>
-              <p className="font-bold text-stone-800 text-lg">お友達がお豆奏法をスタート！</p>
-            </div>
-          </div>
-
-          <div className="flex justify-center -my-2">
-            <ChevronDown size={36} className="text-[#b8a98f] opacity-50" />
-          </div>
-
-          {/* STEP 3 */}
-          <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-stone-200">
-            <div className="aspect-video relative bg-stone-100 flex items-center justify-center">
-              <Image src="/images/messenger-step3.png" alt="STEP 3" fill className="object-cover" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (target.src.endsWith('.png')) target.src = '/images/messenger-step3.jpg';
-                  else if (target.src.endsWith('.jpg')) target.src = '/images/messenger-step3.jpeg';
-                  else target.style.display = 'none';
-                }}
-              />
-            </div>
-            <div className="p-5 text-center">
-              <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-800 font-bold text-sm rounded-full mb-3 tracking-wider">STEP 3</span>
-              <p className="font-bold text-stone-800 text-lg">お互いに嬉しいギフトが届く</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      </details>
 
       {/* サマリーカード */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
@@ -330,50 +495,21 @@ export default function AffiliatePage() {
         </div>
       </div>
 
-      {/* 紹介リンク */}
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-10">
-        <div className="bg-[#faf9f6] px-6 py-4 border-b border-stone-200 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-amber-600" />
-          <h2 className="font-bold text-omame-deep text-lg">あなた専用のおすそ分けリンク</h2>
-        </div>
-        <div className="p-6">
-          <p className="text-sm text-stone-600 mb-4 leading-relaxed">
-            このURLをLINEやブログに貼り付けて、お友達にそっと手渡してあげてください。<br/>
-            リンクをクリックしてから30日以内の受講スタートが対象となります。
-          </p>
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <input 
-              type="text" 
-              readOnly 
-              value={affiliateUrl}
-              className="w-full sm:flex-1 bg-stone-50 border border-stone-300 rounded-xl px-4 py-3.5 text-stone-600 focus:outline-none"
-            />
-            <button
-              onClick={handleCopy}
-              className="w-full sm:w-auto flex justify-center items-center gap-2 px-8 py-3.5 bg-stone-800 text-white font-bold rounded-xl hover:bg-stone-700 transition-colors"
-            >
-              {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-              {copied ? "コピーしました！" : "リンクをコピー"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 招待状で表示されるお名前（任意の上書き） */}
+      {/* 紹介ページで表示されるお名前（任意の上書き） */}
       <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-10">
         <div className="bg-[#faf9f6] px-6 py-4 border-b border-stone-200 flex items-center gap-2">
           <Mail className="w-5 h-5 text-amber-600" />
-          <h2 className="font-bold text-omame-deep text-lg">招待状で表示されるお名前（任意）</h2>
+          <h2 className="font-bold text-omame-deep text-lg">紹介ページに表示されるお名前（任意）</h2>
         </div>
         <div className="p-6">
           <p className="text-sm text-stone-500 mb-6 leading-relaxed">
             {displayName
-              ? `未入力の場合は「${displayName}」が招待状に表示されます。お友達に分かりやすいお名前にしたい方は、こちらでご変更ください。`
-              : "お友達への招待状に表示されるお名前です。分かりやすいお名前をご登録ください。"}
+              ? `未入力の場合は「${displayName}」が紹介ページに表示されます。お友達に分かりやすいお名前にしたい方は、こちらでご変更ください。`
+              : "お友達が見る紹介ページに表示されるお名前です。分かりやすいお名前をご登録ください。"}
           </p>
           <form onSubmit={handleSaveReferralName} className="space-y-5 max-w-xl">
             <div>
-              <label className="block text-sm font-bold text-stone-700 mb-1.5">招待状でのお名前</label>
+              <label className="block text-sm font-bold text-stone-700 mb-1.5">紹介ページでのお名前</label>
               <input
                 type="text"
                 maxLength={20}
@@ -408,11 +544,11 @@ export default function AffiliatePage() {
       <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
         <div className="bg-[#faf9f6] px-6 py-4 border-b border-stone-200 flex items-center gap-2">
           <Banknote className="w-5 h-5 text-amber-600" />
-          <h2 className="font-bold text-omame-deep text-lg">えりな先生からのギフトお受取り口座</h2>
+          <h2 className="font-bold text-omame-deep text-lg">特典受け取り用の口座情報</h2>
         </div>
         <div className="p-6">
           <p className="text-sm text-stone-500 mb-6">
-            還元（ギフト）をお届けするための口座情報を登録してください。
+            紹介特典（ギフト）をお届けするための口座情報を登録してください。
           </p>
           <form onSubmit={handleSaveBankInfo} className="space-y-5 max-w-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

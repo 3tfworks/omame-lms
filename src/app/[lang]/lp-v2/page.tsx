@@ -1,4 +1,6 @@
 import { getProductPricing, type PriceType } from "@/lib/pricing";
+import { getValidReferrer } from "@/lib/invite";
+import { cookies } from "next/headers";
 
 import { Section01Hero } from "./sections/Section01Hero";
 import { Section02Empathy } from "./sections/Section02Empathy";
@@ -26,13 +28,27 @@ export const dynamic = "force-dynamic";
 // /[lang]/lp は無引数の再エクスポートのため priceType は未指定＝"general"（後方互換）。
 export default async function LpV2Page({
   params,
+  searchParams,
   priceType = "general",
 }: {
   params: Promise<{ lang: string }>;
+  searchParams?: Promise<{ ref?: string }>;
   priceType?: PriceType;
 }) {
   const { lang } = await params;
-  const pricing = await getProductPricing(priceType);
+  const [pricing, resolvedSearchParams, cookieStore] = await Promise.all([
+    getProductPricing(priceType),
+    searchParams ?? Promise.resolve({}),
+    cookies(),
+  ]);
+  const referrerId =
+    typeof resolvedSearchParams.ref === "string" && resolvedSearchParams.ref.trim()
+      ? resolvedSearchParams.ref.trim()
+      : cookieStore.get("referrer_id")?.value?.trim();
+  const validReferrer =
+    priceType === "general" && referrerId ? await getValidReferrer(referrerId) : null;
+  const showReferralDiscount = Boolean(validReferrer);
+  const referralPrice = Math.floor(pricing.salePrice * 0.9);
 
   return (
     <main className="w-full overflow-x-hidden bg-omame-bg text-omame-text">
@@ -52,8 +68,10 @@ export default async function LpV2Page({
         priceType={priceType}
         regularPrice={pricing.regularPrice}
         salePrice={pricing.salePrice}
+        referralPrice={referralPrice}
         campaignLabel={pricing.campaignLabel}
         showCampaign={pricing.showCampaign}
+        showReferralDiscount={showReferralDiscount}
       />
       <Section12Faq />
       <Section13Message />
@@ -62,8 +80,10 @@ export default async function LpV2Page({
         priceType={priceType}
         regularPrice={pricing.regularPrice}
         salePrice={pricing.salePrice}
+        referralPrice={referralPrice}
         campaignLabel={pricing.campaignLabel}
         showCampaign={pricing.showCampaign}
+        showReferralDiscount={showReferralDiscount}
       />
     </main>
   );

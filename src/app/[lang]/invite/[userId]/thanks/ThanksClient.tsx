@@ -1,43 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Heart, CheckCircle2, Sparkles } from "lucide-react";
 
 export default function ThanksClient({
+  lang,
   userId,
   referrerName,
   regularPrice,
   referralPrice,
 }: {
+  lang: string;
   userId: string;
   referrerName: string | null;
   regularPrice: number;
   referralPrice: number;
 }) {
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
-
-  const handleCheckout = async () => {
-    setCheckoutLoading(true);
-    setCheckoutError("");
-    try {
-      const res = await fetch("/api/checkout/stripe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ referrerId: userId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setCheckoutError(data.error || "購入画面を開けませんでした。時間をおいてお試しください。");
-        setCheckoutLoading(false);
-      }
-    } catch {
-      setCheckoutError("通信エラーが発生しました。時間をおいてお試しください。");
-      setCheckoutLoading(false);
-    }
-  };
+  const salesPageUrl = `/${lang}/lp-v2?ref=${userId}`;
 
   return (
     <div className="min-h-screen bg-[#faf9f6] flex flex-col">
@@ -67,12 +46,10 @@ export default function ThanksClient({
         </h1>
 
         <p className="text-stone-500 leading-loose max-w-md mb-12">
-          ご登録ありがとうございます。<br />
-          えりな先生から、まもなくメールをお届けします。<br />
-          届かない場合は、迷惑メールフォルダもご確認ください。
+          ご登録ありがとうございます。
         </p>
 
-        {/* お豆奏法 動画コンテンツへの申し込み（Stripe Checkout） */}
+        {/* お豆奏法 動画コンテンツへの申し込み（販売ページへ） */}
         <div className="w-full bg-gradient-to-br from-amber-50 to-[#faf6ee] rounded-3xl p-8 border border-amber-200 shadow-sm text-center mb-10">
           <p className="mb-3 text-sm font-bold text-emerald-700">
             {referrerName ? `${referrerName}さんからのご紹介` : "ご紹介特典"}
@@ -87,20 +64,14 @@ export default function ThanksClient({
               {referralPrice.toLocaleString("ja-JP")}円
             </strong>
             <br />
-            クーポンコードは不要です。購入画面で自動的に割引されます。
+            クーポンコードは不要です。販売ページからお申し込みへ進むと自動で割引されます。
           </p>
-          {checkoutError && (
-            <p role="alert" className="mb-5 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {checkoutError}
-            </p>
-          )}
-          <button
-            onClick={handleCheckout}
-            disabled={checkoutLoading}
+          <a
+            href={salesPageUrl}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-base md:text-lg py-4 px-10 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 tracking-wide disabled:cursor-wait disabled:opacity-60 disabled:hover:scale-100"
           >
-            {checkoutLoading ? "購入画面を準備しています..." : "10%OFFで申し込む"}
-          </button>
+            販売ページを見て申し込む
+          </a>
         </div>
 
         {/* 次のステップ */}
@@ -113,38 +84,31 @@ export default function ThanksClient({
             {[
               {
                 num: "01",
-                title: "LINEを友達追加する",
-                body: "まだの方は、えりな先生の公式LINEを友達追加してください。最新情報をいち早くお届けします。",
+                title: "【必ず登録してください】LINE公式アカウントを友だち追加する",
+                body: "LINE未登録のままだと、お問い合わせへの返信・受講に関する重要なお知らせ・特典のご案内を受け取れない場合があります。お申し込み前に、必ずえりな先生の公式LINEを友だち追加してください。",
                 action: {
-                  label: "LINE 公式を友達追加する",
+                  label: "今すぐLINE登録を完了する",
                   href: "https://lin.ee/RmeCAtQ",
                   color: "#06C755",
                 },
               },
-              {
-                num: "02",
-                title: "届いたメールを確認する",
-                body: "ご登録のメールアドレスに、特典情報と次のご案内をお送りします。",
-              },
-              {
-                num: "03",
-                title: "えりな先生の動画を楽しみに待つ",
-                body: "もうすぐ、あなたの演奏が変わる瞬間が訪れます。楽しみにしていてください。",
-              },
             ].map((step) => (
-              <li key={step.num} className="flex gap-4 items-start">
-                <span className="shrink-0 w-9 h-9 rounded-full bg-[#faf9f6] border border-[#e8dfce] flex items-center justify-center text-xs font-bold text-[#b8a98f]">
+              <li key={step.num} className="flex gap-4 items-start rounded-2xl border-2 border-red-200 bg-red-50/70 p-5">
+                <span className="shrink-0 w-9 h-9 rounded-full bg-red-100 border border-red-300 flex items-center justify-center text-xs font-bold text-red-700">
                   {step.num}
                 </span>
                 <div className="flex-1">
-                  <p className="font-bold text-stone-800 mb-1">{step.title}</p>
-                  <p className="text-sm text-stone-500 leading-relaxed">{step.body}</p>
+                  <p className="font-bold text-red-800 mb-2">{step.title}</p>
+                  <p className="text-sm font-bold text-stone-700 leading-relaxed">{step.body}</p>
+                  <p className="mt-3 rounded-xl bg-white px-4 py-3 text-sm font-bold text-red-700 border border-red-100">
+                    ※LINE登録が未完了の場合、重要なご案内を確認できず、手続きがスムーズに進まない可能性があります。
+                  </p>
                   {step.action && (
                     <a
                       href={step.action.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:opacity-90"
+                      className="inline-flex items-center gap-2 mt-4 px-6 py-3 rounded-xl text-white text-base font-bold transition-all hover:opacity-90 shadow-lg"
                       style={{ backgroundColor: step.action.color }}
                     >
                       <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white flex-shrink-0">
