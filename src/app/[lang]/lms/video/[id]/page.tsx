@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2, HelpCircle } from "lucide-react";
 import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } from "@/lib/lmsData";
+import { BOOKMARK_CONTENT_MAX, type BookmarkStatus } from "@/lib/bookmarks";
 import { motion, AnimatePresence } from "framer-motion";
 
 import Player from '@vimeo/player';
@@ -120,28 +121,149 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [bookmarkTime, setBookmarkTime] = useState<number>(0);
   const [bookmarkContent, setBookmarkContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [bookmarks, setBookmarks] = useState<any[]>([]);
+  type Bookmark = {
+    id: string;
+    timeSeconds: number;
+    timeStr: string;
+    content: string;
+    author: string;
+    likes: number;
+    isLiked: boolean;
+    createdAt: string;
+    isOwn: boolean;
+    status: BookmarkStatus;
+  };
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [bookmarksLoading, setBookmarksLoading] = useState(true);
+  const [bookmarkError, setBookmarkError] = useState("");
+  const [bookmarkNotice, setBookmarkNotice] = useState("");
+  const [reactionProcessingId, setReactionProcessingId] = useState<string | null>(null);
   const [isVideoCompleted, setIsVideoCompleted] = useState(false); // 完了状態のステート追加
 
   // 付箋一覧の取得
   React.useEffect(() => {
+    let active = true;
     async function fetchBookmarks() {
+      setBookmarksLoading(true);
+      setBookmarkError("");
       try {
         const res = await fetch(`/api/bookmarks?videoId=${videoId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setBookmarks(data.bookmarks);
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "付箋を読み込めませんでした。");
+        if (active) setBookmarks(data.bookmarks);
       } catch (error) {
         console.error("Failed to fetch bookmarks:", error);
+        if (active) {
+          setBookmarkError(error instanceof Error ? error.message : "付箋を読み込めませんでした。");
+        }
+      } finally {
+        if (active) setBookmarksLoading(false);
       }
     }
     fetchBookmarks();
+    return () => {
+      active = false;
+    };
   }, [videoId]);
   
   if (!videoData) {
     return <div className="p-12 text-center">動画が見つかりませんでした</div>;
   }
+
+  const submitBookmark = async () => {
+    const content = bookmarkContent.trim();
+    if (!content || content.length > BOOKMARK_CONTENT_MAX || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setBookmarkError("");
+    setBookmarkNotice("");
+    try {
+      const response = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId,
+          timestampSeconds: bookmarkTime,
+          content,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "付箋を投稿できませんでした。");
+
+      setBookmarks((current) =>
+        [...current, data.bookmark].sort((a, b) => a.timeSeconds - b.timeSeconds),
+      );
+      setBookmarkContent("");
+      setIsAddingBookmark(false);
+      setActiveTab("bookmarks");
+      setBookmarkNotice("付箋を投稿しました。承認されると、ほかの受講生にも公開されます。");
+    } catch (error) {
+      console.error("Failed to post bookmark:", error);
+      setBookmarkError(error instanceof Error ? error.message : "付箋を投稿できませんでした。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteBookmark = async (bookmarkId: string) => {
+    if (!window.confirm("この付箋を削除しますか？")) return;
+    setBookmarkError("");
+    setBookmarkNotice("");
+    try {
+      const response = await fetch("/api/bookmarks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookmarkId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "付箋を削除できませんでした。");
+      setBookmarks((current) => current.filter((bookmark) => bookmark.id !== bookmarkId));
+      setBookmarkNotice("付箋を削除しました。");
+    } catch (error) {
+      console.error("Failed to delete bookmark:", error);
+      setBookmarkError(error instanceof Error ? error.message : "付箋を削除できませんでした。");
+    }
+  };
+
+  const toggleBookmarkLike = async (bookmark: Bookmark) => {
+    if (reactionProcessingId || bookmark.isOwn || bookmark.status !== "approved") return;
+
+    const wasLiked = bookmark.isLiked;
+    setReactionProcessingId(bookmark.id);
+    setBookmarkError("");
+    setBookmarks((current) =>
+      current.map((item) =>
+        item.id === bookmark.id
+          ? { ...item, isLiked: !wasLiked, likes: Math.max(0, item.likes + (wasLiked ? -1 : 1)) }
+          : item,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/bookmarks/${bookmark.id}/like`, {
+        method: wasLiked ? "DELETE" : "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "リアクションを保存できませんでした。");
+      setBookmarks((current) =>
+        current.map((item) =>
+          item.id === bookmark.id ? { ...item, isLiked: data.isLiked, likes: data.likes } : item,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to update bookmark reaction:", error);
+      setBookmarks((current) =>
+        current.map((item) =>
+          item.id === bookmark.id
+            ? { ...item, isLiked: wasLiked, likes: Math.max(0, item.likes + (wasLiked ? 1 : -1)) }
+            : item,
+        ),
+      );
+      setBookmarkError(error instanceof Error ? error.message : "リアクションを保存できませんでした。");
+    } finally {
+      setReactionProcessingId(null);
+    }
+  };
 
   // マイノート（user_notes）へ upsert 保存する。
   // silent=true は行動リスト連携の自動保存用（成功トーストを出さない）。
@@ -564,7 +686,11 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               placeholder="このシーンの気づきやメモを入力してください（他の受講生にも共有されます）"
               value={bookmarkContent}
               onChange={(e) => setBookmarkContent(e.target.value)}
+              maxLength={BOOKMARK_CONTENT_MAX}
             ></textarea>
+            <p className="-mt-2 mb-4 text-right text-xs text-stone-400">
+              {bookmarkContent.length} / {BOOKMARK_CONTENT_MAX}文字
+            </p>
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setIsAddingBookmark(false)}
@@ -573,39 +699,9 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                 キャンセル
               </button>
               <button 
-                onClick={async () => {
-                  if (!bookmarkContent.trim() || isSubmitting) return;
-                  setIsSubmitting(true);
-                  try {
-                    const res = await fetch("/api/bookmarks", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        videoId: videoId,
-                        timestampSeconds: bookmarkTime,
-                        content: bookmarkContent
-                      })
-                    });
-                    
-                    if (res.ok) {
-                      const data = await res.json();
-                      setBookmarks(prev => [...prev, data.bookmark].sort((a, b) => a.timeSeconds - b.timeSeconds));
-                      setBookmarkContent("");
-                      setIsAddingBookmark(false);
-                      setActiveTab("bookmarks");
-                    } else {
-                      const errorData = await res.json();
-                      alert(`投稿に失敗しました: ${errorData.error}`);
-                    }
-                  } catch (error) {
-                    console.error("Failed to post bookmark:", error);
-                    alert("通信エラーが発生しました。");
-                  } finally {
-                    setIsSubmitting(false);
-                  }
-                }}
-                disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg font-bold transition-colors ${isSubmitting ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-[#b8a98f] text-white hover:bg-amber-700'}`}
+                onClick={submitBookmark}
+                disabled={isSubmitting || !bookmarkContent.trim() || bookmarkContent.trim().length > BOOKMARK_CONTENT_MAX}
+                className={`px-6 py-2 rounded-lg font-bold transition-colors ${isSubmitting || !bookmarkContent.trim() ? 'bg-stone-300 text-stone-500 cursor-not-allowed' : 'bg-[#b8a98f] text-white hover:bg-amber-700'}`}
               >
                 {isSubmitting ? '送信中...' : '付箋を投稿する'}
               </button>
@@ -689,9 +785,24 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                 </h3>
                 <span className="text-sm text-stone-500">{bookmarks.length}件の付箋</span>
               </div>
+
+              {bookmarkNotice && (
+                <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  {bookmarkNotice}
+                </p>
+              )}
+              {bookmarkError && (
+                <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                  {bookmarkError}
+                </p>
+              )}
               
               <div className="grid grid-cols-1 gap-4">
-                {bookmarks.length > 0 ? bookmarks.map((bm) => (
+                {bookmarksLoading ? (
+                  <div className="rounded-xl border border-stone-200 bg-white p-10 text-center text-sm font-bold text-stone-500">
+                    付箋を読み込んでいます…
+                  </div>
+                ) : bookmarks.length > 0 ? bookmarks.map((bm) => (
                   <div key={bm.id} className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:border-[#b8a98f] transition-colors relative group">
                     <div className="flex justify-between items-start mb-3">
                       <button 
@@ -706,24 +817,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                       <div className="flex items-center gap-2">
                         {bm.isOwn && (
                           <button
-                            onClick={async () => {
-                              if (!confirm("この付箋を削除しますか？")) return;
-                              try {
-                                const res = await fetch("/api/bookmarks", {
-                                  method: "DELETE",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ bookmarkId: bm.id })
-                                });
-                                if (res.ok) {
-                                  setBookmarks(prev => prev.filter(b => b.id !== bm.id));
-                                } else {
-                                  const errData = await res.json();
-                                  alert(`削除に失敗しました: ${errData.error}`);
-                                }
-                              } catch (error) {
-                                console.error("Failed to delete bookmark:", error);
-                              }
-                            }}
+                            onClick={() => deleteBookmark(bm.id)}
                             className="p-1 rounded-md text-stone-500 hover:text-red-500 hover:bg-red-50 transition-colors"
                             title="この付箋を削除"
                           >
@@ -733,31 +827,35 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                         <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
                           {bm.author}
                         </span>
+                        {bm.isOwn && bm.status !== "approved" && (
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                            bm.status === "pending"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-stone-200 text-stone-600"
+                          }`}>
+                            {bm.status === "pending" ? "承認待ち" : "非承認"}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <p className="text-stone-800 leading-relaxed font-medium mb-4">{bm.content}</p>
                     <div className="flex justify-end border-t border-stone-100 pt-3">
-                      <button 
-                        onClick={async () => {
-                          try {
-                            const res = await fetch("/api/bookmarks", {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ bookmarkId: bm.id })
-                            });
-                            if (res.ok) {
-                              const data = await res.json();
-                              setBookmarks(prev => prev.map(b => b.id === bm.id ? { ...b, likes: data.likes } : b));
-                            }
-                          } catch (error) {
-                            console.error("Failed to like bookmark:", error);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 text-stone-400 hover:text-rose-500 transition-colors group/btn"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                        <span className="text-sm font-bold">助かった！ {bm.likes}</span>
-                      </button>
+                      {bm.status === "approved" && !bm.isOwn ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleBookmarkLike(bm)}
+                          disabled={reactionProcessingId !== null}
+                          aria-pressed={bm.isLiked}
+                          className={`flex items-center gap-1.5 transition-colors group/btn disabled:opacity-50 ${
+                            bm.isLiked ? "text-rose-600" : "text-stone-400 hover:text-rose-500"
+                          }`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={bm.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                          <span className="text-sm font-bold">助かった！ {bm.likes}</span>
+                        </button>
+                      ) : (
+                        <span className="text-sm font-bold text-stone-400">助かった！ {bm.likes}</span>
+                      )}
                     </div>
                   </div>
                 )) : (
