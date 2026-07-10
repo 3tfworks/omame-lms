@@ -68,6 +68,7 @@ export async function GET(request: Request) {
         bookmark_likes (id)
       `)
       .order("created_at", { ascending: false })
+      .eq("visibility", "shared")
       .limit(300);
 
     if (requestedStatus !== "all") query = query.eq("status", requestedStatus);

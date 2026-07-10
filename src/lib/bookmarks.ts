@@ -1,6 +1,15 @@
 export const BOOKMARK_CONTENT_MAX = 500;
 
 export type BookmarkStatus = "pending" | "approved" | "rejected";
+export type BookmarkVisibility = "private" | "shared";
+
+export function validateBookmarkVisibility(value: unknown) {
+  if (value !== "private" && value !== "shared") {
+    return { ok: false as const, message: "付箋の公開範囲が不正です。" };
+  }
+
+  return { ok: true as const, value };
+}
 
 export function validateVideoId(value: unknown) {
   if (typeof value !== "string") {
