@@ -163,6 +163,7 @@ export default function AdminBookmarksPage() {
               key={value}
               type="button"
               onClick={() => {
+                if (value === status) return;
                 setLoading(true);
                 setError("");
                 setStatus(value);
