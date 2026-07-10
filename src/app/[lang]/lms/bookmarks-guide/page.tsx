@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle2, Star } from "lucide-react";
+import { CheckCircle2, Lock, Star, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 // 各ステップのデータ定義
@@ -22,8 +22,8 @@ const steps = [
   },
   {
     number: "03",
-    title: "みんなの付箋が一覧で見られる",
-    description: "動画下部のタブメニューから「みんなの付箋」を選ぶと、その動画について投稿された付箋が一覧で表示されます。時間のボタンを押すと、該当のシーンにジャンプできます。",
+    title: "自分用と共有用を切り替える",
+    description: "動画下部の「付箋」タブでは、「自分の付箋」と「みんなの付箋」を切り替えられます。時間のボタンを押すと、該当のシーンにジャンプできます。",
     image: "/images/bookmarks-guide-03.png",
   },
   {
@@ -51,9 +51,30 @@ export default function BookmarksGuidePage() {
           みんなの付箋とは？
         </h1>
         <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-          「みんなの付箋」は、動画を見ている最中に得た「気づき」や「メモ」を、
-          動画の秒数と一緒にコミュニティ全体に共有できる新しい機能です。
+          動画を見ている最中に得た「気づき」や「メモ」を、動画の秒数と一緒に残せます。
+          自分だけの復習メモとしても、みんなへ共有する学びとしても使えます。
         </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+          <div className="mb-3 flex items-center gap-2 font-bold text-amber-950">
+            <Lock size={20} />
+            自分だけ
+          </div>
+          <p className="text-sm leading-relaxed text-stone-600">
+            投稿時の初期設定です。承認不要ですぐ保存され、ほかの受講生や管理画面には表示されません。
+          </p>
+        </div>
+        <div className="rounded-2xl border border-stone-200 bg-white p-6">
+          <div className="mb-3 flex items-center gap-2 font-bold text-stone-800">
+            <Users size={20} />
+            みんなに共有
+          </div>
+          <p className="text-sm leading-relaxed text-stone-600">
+            管理者の承認後、ほかの受講生にも公開されます。保存後に公開範囲を変更することもできます。
+          </p>
+        </div>
       </div>
 
       {/* ステップ一覧（1枚ずつ大きく表示） */}
