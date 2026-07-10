@@ -4,6 +4,7 @@ import {
   BOOKMARK_CONTENT_MAX,
   formatBookmarkTime,
   validateBookmarkContent,
+  validateBookmarkVisibility,
   validateTimestampSeconds,
   validateUuid,
   validateVideoId,
@@ -16,6 +17,13 @@ test("validateVideoId accepts curriculum video IDs", () => {
   });
   assert.equal(validateVideoId("1188100383").ok, false);
   assert.equal(validateVideoId("video-1?admin=true").ok, false);
+});
+
+test("validateBookmarkVisibility accepts only private and shared", () => {
+  assert.deepEqual(validateBookmarkVisibility("private"), { ok: true, value: "private" });
+  assert.deepEqual(validateBookmarkVisibility("shared"), { ok: true, value: "shared" });
+  assert.equal(validateBookmarkVisibility("public").ok, false);
+  assert.equal(validateBookmarkVisibility(null).ok, false);
 });
 
 test("validateBookmarkContent trims content and enforces the maximum", () => {
