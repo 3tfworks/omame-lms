@@ -250,6 +250,24 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "付箋が見つかりません。" }, { status: 404 });
     }
 
+    if (visibility.value === "private") {
+      const { error: likesDeleteError } = await admin
+        .from("bookmark_likes")
+        .delete()
+        .eq("bookmark_id", bookmarkId.value);
+      if (likesDeleteError) {
+        console.error("[Bookmarks API] Failed to clear reactions from private bookmark:", likesDeleteError);
+        return NextResponse.json(
+          {
+            success: true,
+            visibility: data.visibility,
+            status: data.status,
+            warning: "付箋は非公開になりましたが、リアクションの整理に失敗しました。",
+          },
+        );
+      }
+    }
+
     return NextResponse.json({ success: true, visibility: data.visibility, status: data.status });
   } catch (error) {
     console.error("[Bookmarks API] Unhandled PATCH error:", error);
