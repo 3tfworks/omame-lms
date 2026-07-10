@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, FileText, BookOpen, CheckCircle2, Sparkles, ArrowRight, Trophy, Star, Trash2, HelpCircle, Lock, Users } from "lucide-react";
 import { getVideoById, getChapterByVideoId, getAdjacentVideos, curriculumData } from "@/lib/lmsData";
-import { BOOKMARK_CONTENT_MAX, type BookmarkStatus } from "@/lib/bookmarks";
+import { BOOKMARK_CONTENT_MAX, type BookmarkStatus, type BookmarkVisibility } from "@/lib/bookmarks";
 import { motion, AnimatePresence } from "framer-motion";
 
 import Player from '@vimeo/player';
@@ -120,6 +120,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [isAddingBookmark, setIsAddingBookmark] = useState(false);
   const [bookmarkTime, setBookmarkTime] = useState<number>(0);
   const [bookmarkContent, setBookmarkContent] = useState("");
+  const [bookmarkVisibility, setBookmarkVisibility] = useState<BookmarkVisibility>("private");
   const [isSubmitting, setIsSubmitting] = useState(false);
   type Bookmark = {
     id: string;
@@ -132,12 +133,15 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     createdAt: string;
     isOwn: boolean;
     status: BookmarkStatus;
+    visibility: BookmarkVisibility;
   };
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [bookmarksLoading, setBookmarksLoading] = useState(true);
   const [bookmarkError, setBookmarkError] = useState("");
   const [bookmarkNotice, setBookmarkNotice] = useState("");
   const [reactionProcessingId, setReactionProcessingId] = useState<string | null>(null);
+  const [bookmarkView, setBookmarkView] = useState<"private" | "shared">("private");
+  const [visibilityProcessingId, setVisibilityProcessingId] = useState<string | null>(null);
   const [isVideoCompleted, setIsVideoCompleted] = useState(false); // 完了状態のステート追加
 
   // 付箋一覧の取得
@@ -170,6 +174,12 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     return <div className="p-12 text-center">動画が見つかりませんでした</div>;
   }
 
+  const displayedBookmarks = bookmarks.filter((bookmark) =>
+    bookmarkView === "private"
+      ? bookmark.isOwn && bookmark.visibility === "private"
+      : bookmark.visibility === "shared",
+  );
+
   const submitBookmark = async () => {
     const content = bookmarkContent.trim();
     if (!content || content.length > BOOKMARK_CONTENT_MAX || isSubmitting) return;
@@ -185,6 +195,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
           videoId,
           timestampSeconds: bookmarkTime,
           content,
+          visibility: bookmarkVisibility,
         }),
       });
       const data = await response.json();
@@ -194,14 +205,62 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         [...current, data.bookmark].sort((a, b) => a.timeSeconds - b.timeSeconds),
       );
       setBookmarkContent("");
+      setBookmarkView(bookmarkVisibility);
       setIsAddingBookmark(false);
       setActiveTab("bookmarks");
-      setBookmarkNotice("付箋を投稿しました。承認されると、ほかの受講生にも公開されます。");
+      setBookmarkNotice(
+        bookmarkVisibility === "private"
+          ? "自分だけの付箋を保存しました。"
+          : "共有付箋を投稿しました。承認されると、ほかの受講生にも公開されます。",
+      );
     } catch (error) {
       console.error("Failed to post bookmark:", error);
       setBookmarkError(error instanceof Error ? error.message : "付箋を投稿できませんでした。");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const updateBookmarkVisibility = async (bookmark: Bookmark) => {
+    if (visibilityProcessingId) return;
+    const nextVisibility: BookmarkVisibility = bookmark.visibility === "private" ? "shared" : "private";
+    if (
+      nextVisibility === "shared" &&
+      !window.confirm("この付箋をみんなに共有しますか？承認後にほかの受講生へ公開されます。")
+    ) {
+      return;
+    }
+
+    setVisibilityProcessingId(bookmark.id);
+    setBookmarkError("");
+    setBookmarkNotice("");
+    try {
+      const response = await fetch("/api/bookmarks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookmarkId: bookmark.id, visibility: nextVisibility }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "付箋の公開範囲を変更できませんでした。");
+
+      setBookmarks((current) =>
+        current.map((item) =>
+          item.id === bookmark.id
+            ? { ...item, visibility: data.visibility, status: data.status ?? item.status, isLiked: false }
+            : item,
+        ),
+      );
+      setBookmarkView(nextVisibility);
+      setBookmarkNotice(
+        nextVisibility === "private"
+          ? "自分だけの付箋に戻しました。"
+          : "共有申請を受け付けました。承認後に公開されます。",
+      );
+    } catch (error) {
+      console.error("Failed to update bookmark visibility:", error);
+      setBookmarkError(error instanceof Error ? error.message : "付箋の公開範囲を変更できませんでした。");
+    } finally {
+      setVisibilityProcessingId(null);
     }
   };
 
@@ -226,7 +285,12 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   };
 
   const toggleBookmarkLike = async (bookmark: Bookmark) => {
-    if (reactionProcessingId || bookmark.isOwn || bookmark.status !== "approved") return;
+    if (
+      reactionProcessingId ||
+      bookmark.isOwn ||
+      bookmark.visibility !== "shared" ||
+      bookmark.status !== "approved"
+    ) return;
 
     const wasLiked = bookmark.isLiked;
     setReactionProcessingId(bookmark.id);
@@ -615,6 +679,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
             if (vimeoPlayer) {
               const seconds = await vimeoPlayer.getCurrentTime();
               setBookmarkTime(Math.floor(seconds));
+              setBookmarkVisibility("private");
               setIsAddingBookmark(true);
             }
           }}
@@ -680,10 +745,51 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               <Star size={20} />
               <span>{Math.floor(bookmarkTime / 60).toString().padStart(2, '0')}:{(bookmarkTime % 60).toString().padStart(2, '0')} に付箋を貼る</span>
             </div>
+            <fieldset className="mb-4">
+              <legend className="mb-2 text-sm font-bold text-stone-700">公開範囲</legend>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setBookmarkVisibility("private")}
+                  aria-pressed={bookmarkVisibility === "private"}
+                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                    bookmarkVisibility === "private"
+                      ? "border-amber-500 bg-amber-50 text-amber-950"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  <Lock size={18} className="mt-0.5 shrink-0" />
+                  <span>
+                    <span className="block text-sm font-bold">自分だけ</span>
+                    <span className="block text-xs font-medium opacity-70">承認不要ですぐ保存</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookmarkVisibility("shared")}
+                  aria-pressed={bookmarkVisibility === "shared"}
+                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                    bookmarkVisibility === "shared"
+                      ? "border-amber-500 bg-amber-50 text-amber-950"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  <Users size={18} className="mt-0.5 shrink-0" />
+                  <span>
+                    <span className="block text-sm font-bold">みんなに共有</span>
+                    <span className="block text-xs font-medium opacity-70">承認後にほかの受講生へ公開</span>
+                  </span>
+                </button>
+              </div>
+            </fieldset>
             <textarea 
               className="w-full border border-stone-300 rounded-xl p-4 focus:ring-2 focus:ring-[#b8a98f] focus:border-transparent transition-shadow resize-none mb-4"
               rows={3}
-              placeholder="このシーンの気づきやメモを入力してください（他の受講生にも共有されます）"
+              placeholder={
+                bookmarkVisibility === "private"
+                  ? "このシーンで自分が覚えておきたいことを入力してください"
+                  : "このシーンの気づきやメモを入力してください（承認後に共有されます）"
+              }
               value={bookmarkContent}
               onChange={(e) => setBookmarkContent(e.target.value)}
               maxLength={BOOKMARK_CONTENT_MAX}
@@ -725,7 +831,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
             className={`flex-1 min-w-[120px] py-4 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${activeTab === "bookmarks" ? "bg-[#faf9f6] text-stone-800 border-b-2 border-amber-700" : "text-stone-500 hover:bg-[#faf9f6]"}`}
           >
             <Star size={18} />
-            みんなの付箋
+            付箋
           </button>
           <button 
             onClick={() => setActiveTab("notes")}
@@ -780,10 +886,37 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-stone-800 flex items-center gap-2">
-                  <Star className="text-amber-500" size={24} />
-                  みんなの付箋
+                  {bookmarkView === "private" ? (
+                    <Lock className="text-amber-600" size={24} />
+                  ) : (
+                    <Users className="text-amber-600" size={24} />
+                  )}
+                  {bookmarkView === "private" ? "自分の付箋" : "みんなの付箋"}
                 </h3>
-                <span className="text-sm text-stone-500">{bookmarks.length}件の付箋</span>
+                <span className="text-sm text-stone-500">{displayedBookmarks.length}件の付箋</span>
+              </div>
+
+              <div className="grid grid-cols-2 rounded-xl border border-stone-200 bg-white p-1" aria-label="付箋の公開範囲">
+                <button
+                  type="button"
+                  onClick={() => setBookmarkView("private")}
+                  className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors ${
+                    bookmarkView === "private" ? "bg-stone-800 text-white" : "text-stone-500 hover:bg-stone-100"
+                  }`}
+                >
+                  <Lock size={16} />
+                  自分の付箋
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookmarkView("shared")}
+                  className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors ${
+                    bookmarkView === "shared" ? "bg-stone-800 text-white" : "text-stone-500 hover:bg-stone-100"
+                  }`}
+                >
+                  <Users size={16} />
+                  みんなの付箋
+                </button>
               </div>
 
               {bookmarkNotice && (
@@ -802,7 +935,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                   <div className="rounded-xl border border-stone-200 bg-white p-10 text-center text-sm font-bold text-stone-500">
                     付箋を読み込んでいます…
                   </div>
-                ) : bookmarks.length > 0 ? bookmarks.map((bm) => (
+                ) : displayedBookmarks.length > 0 ? displayedBookmarks.map((bm) => (
                   <div key={bm.id} className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm hover:border-[#b8a98f] transition-colors relative group">
                     <div className="flex justify-between items-start mb-3">
                       <button 
@@ -827,6 +960,12 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                         <span className="text-xs font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
                           {bm.author}
                         </span>
+                        {bm.visibility === "private" && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-600">
+                            <Lock size={12} />
+                            自分だけ
+                          </span>
+                        )}
                         {bm.isOwn && bm.status !== "approved" && (
                           <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                             bm.status === "pending"
@@ -839,22 +978,39 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                       </div>
                     </div>
                     <p className="text-stone-800 leading-relaxed font-medium mb-4">{bm.content}</p>
-                    <div className="flex justify-end border-t border-stone-100 pt-3">
-                      {bm.status === "approved" && !bm.isOwn ? (
+                    <div className="flex flex-wrap items-center justify-end gap-3 border-t border-stone-100 pt-3">
+                      {bm.isOwn && (
                         <button
                           type="button"
-                          onClick={() => toggleBookmarkLike(bm)}
-                          disabled={reactionProcessingId !== null}
-                          aria-pressed={bm.isLiked}
-                          className={`flex items-center gap-1.5 transition-colors group/btn disabled:opacity-50 ${
-                            bm.isLiked ? "text-rose-600" : "text-stone-400 hover:text-rose-500"
-                          }`}
+                          onClick={() => updateBookmarkVisibility(bm)}
+                          disabled={visibilityProcessingId !== null}
+                          className="inline-flex items-center gap-1.5 text-sm font-bold text-stone-500 transition-colors hover:text-amber-700 disabled:opacity-50"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={bm.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                          <span className="text-sm font-bold">助かった！ {bm.likes}</span>
+                          {bm.visibility === "private" ? <Users size={15} /> : <Lock size={15} />}
+                          {visibilityProcessingId === bm.id
+                            ? "変更中…"
+                            : bm.visibility === "private"
+                              ? "みんなに共有する"
+                              : "自分だけに戻す"}
                         </button>
-                      ) : (
-                        <span className="text-sm font-bold text-stone-400">助かった！ {bm.likes}</span>
+                      )}
+                      {bm.visibility === "shared" && (
+                        bm.status === "approved" && !bm.isOwn ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleBookmarkLike(bm)}
+                            disabled={reactionProcessingId !== null}
+                            aria-pressed={bm.isLiked}
+                            className={`flex items-center gap-1.5 transition-colors group/btn disabled:opacity-50 ${
+                              bm.isLiked ? "text-rose-600" : "text-stone-400 hover:text-rose-500"
+                            }`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={bm.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:fill-rose-100"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                            <span className="text-sm font-bold">助かった！ {bm.likes}</span>
+                          </button>
+                        ) : (
+                          <span className="text-sm font-bold text-stone-400">助かった！ {bm.likes}</span>
+                        )
                       )}
                     </div>
                   </div>
@@ -866,9 +1022,13 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                     
                     <div className="relative z-10">
                       <Star size={48} className="mx-auto mb-4 text-[#b8a98f] opacity-40" />
-                      <h4 className="font-bold text-stone-800 mb-2 text-lg">まだ付箋がありません</h4>
+                      <h4 className="font-bold text-stone-800 mb-2 text-lg">
+                        {bookmarkView === "private" ? "自分だけの付箋はまだありません" : "共有付箋はまだありません"}
+                      </h4>
                       <p className="text-stone-500 text-sm mb-6 leading-relaxed max-w-sm mx-auto">
-                        動画の気づきや疑問を書き留めて、他の受講生とシェアしましょう！えりな先生の目に留まるかもしれません✨
+                        {bookmarkView === "private"
+                          ? "動画の気づきや、あとで見返したいポイントを自分だけの付箋として残せます。"
+                          : "動画の気づきや疑問を共有して、みんなの学びに役立てましょう。"}
                       </p>
                       
                       <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
@@ -885,6 +1045,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                             if (vimeoPlayer) {
                               const seconds = await vimeoPlayer.getCurrentTime();
                               setBookmarkTime(Math.floor(seconds));
+                              setBookmarkVisibility(bookmarkView);
                               setIsAddingBookmark(true);
                               // 画面上部（付箋追加フォーム）へスクロールさせる
                               window.scrollTo({ top: 300, behavior: 'smooth' });
