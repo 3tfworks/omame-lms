@@ -279,9 +279,10 @@ export default function InviteClient({
               <p className="text-2xl md:text-3xl text-omame-primary font-medium leading-loose">
                 気になりましたか？
               </p>
-              <p className="text-omame-text/80 text-lg leading-loose max-w-xl mx-auto">
-                まずはLINEでつながりましょう。<br />
-                えりな先生からの最新情報や、特典動画をお届けします。
+              <p className="text-omame-text/85 text-lg leading-loose max-w-xl mx-auto">
+                ご紹介特典の受け取りには、<br className="md:hidden" />
+                <span className="font-bold text-omame-primary">LINE公式アカウントの友だち追加が必要です。</span><br />
+                えりな先生からの最新情報や、特典動画をLINEでお届けします。
               </p>
             </div>
 
@@ -309,12 +310,16 @@ export default function InviteClient({
                 <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white flex-shrink-0">
                   <path d="M12 2C6.48 2 2 6.19 2 11.33c0 2.92 1.45 5.52 3.73 7.24-.16.6-.53 2.17-.61 2.51-.1.41.15.4.31.29.13-.09 1.68-1.14 2.36-1.6.71.1 1.44.16 2.21.16 5.52 0 10-4.19 10-9.33S17.52 2 12 2z" />
                 </svg>
-                LINE 公式アカウントを友達追加する
+                【必須】LINE公式アカウントを友だち追加する
               </a>
+
+              <p className="-mt-5 mb-8 text-center text-sm font-bold leading-relaxed text-omame-deep md:-mt-7 md:mb-10">
+                ※LINE追加後、下のお名前・メールアドレス登録へお進みください。
+              </p>
 
               <div className="flex items-center gap-4 mb-8 md:mb-10">
                 <div className="flex-1 h-px bg-omame-gold/30" />
-                <span className="text-sm text-omame-text/50 font-sans font-bold tracking-wider shrink-0">さらに登録する</span>
+                <span className="text-sm text-omame-text/80 font-sans font-bold tracking-wider shrink-0">STEP2 お名前・メール登録へ</span>
                 <div className="flex-1 h-px bg-omame-gold/30" />
               </div>
 

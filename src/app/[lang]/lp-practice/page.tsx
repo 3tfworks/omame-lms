@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 };
 
 const applyHref = "#application";
+// Stripe決済リンクが確定したら、下の空文字にURLを入れてください。
+const stripePaymentUrl = "";
+const lineInquiryUrl = "https://lin.ee/RmeCAtQ";
 
 const worries = [
   "画面の真似をしているつもりだけど、指や身体の感覚がこれで良いのか自信がない",
@@ -69,15 +72,15 @@ const support = [
 const voices = [
   {
     quote: "「私は初めて、ピアノの弾き方を教えてもらえた」って思ったんです。",
-    body: "ずっと自分の弾き方に自信がなく、これでいいの？と迷ってばかりでした。月1回の講座とフォローアップLINEグループ＆お茶会の3本立て、本当に良かったです。先生の的確な言葉と例えで、私の中の「キーワード」が増えました。",
+    body: "自分では力を抜いているつもりだったのに、見ていただいたら、抜く場所も身体の使い方も少しずれていたことに気づきました。そこを直してもらってから、音が硬くならず、長く弾いても前ほど疲れなくなりました。LINEグループで他の方へのアドバイスも見られるので、「私だけじゃなかったんだ」と安心できたのも大きかったです。",
   },
   {
-    quote: "動画のアドバイスも凄く分かりやすくて、宝物です。",
-    body: "できていることにフォーカスするという先生の言葉が心に残っています。今までのレッスンとは真逆でした。楽に弾けるところが増え、どんどん楽しくなりました。",
+    quote: "動画添削のアドバイスも凄く分かりやすくて、宝物です。",
+    body: "動画を送る前は「このくらいで合っているかな」と思っていた部分が、先生の一言で全然違う方向に頑張っていたと分かりました。できているところも必ず拾ってくださるので、落ち込むよりも「次はここを変えてみよう」と思えました。録画を見返すたびに、身体の感覚を思い出せるのがありがたいです。",
   },
   {
     quote: "参加したのと変わらないくらいの、充実した学びをいただきました。",
-    body: "これまで言われても実際にはできなかったことが、具体的にどうすればよいか教えていただいたことで、格段に楽に弾けるようになりました。同じ目的を持つ仲間との出会いも大きな財産です。",
+    body: "アーカイブ参加の日もありましたが、他の方のレッスンを見ることで、自分の中にも同じ癖があることに何度も気づきました。一人で練習していたら、たぶん「できているつもり」のまま進んでいたと思います。お茶会やグループで同じ目的の方と話せたことで、練習が孤独な作業ではなくなりました。",
   },
 ];
 
@@ -100,7 +103,7 @@ const faqs = [
   },
   {
     q: "支払い方法を教えてください。",
-    a: "銀行振込、PayPay、クレジットカードを予定しています。カード払いの分割については、ご利用のカード会社へお申し込みください。",
+    a: "お申込みはStripeの決済リンクから行っていただく予定です。決済方法や分割についてご不明点がある場合は、事前にLINEでお気軽にご質問ください。",
   },
 ];
 
@@ -183,9 +186,11 @@ export default function PracticeLpPage() {
                 <br />
                 グループ実践レッスン
               </p>
-              <p className="mt-3 text-lg font-bold">
+              <p className="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[#f1d4a2]/70 bg-black/25 px-5 py-4 text-xl font-bold leading-relaxed text-white shadow-[0_12px_35px_rgba(0,0,0,0.25)] md:text-2xl">
                 お豆奏法 実践落とし込み講座
-                <span className="ml-2 text-base font-normal">第1期生募集</span>
+                <span className="text-lg font-bold text-[#f1d4a2] md:text-xl">
+                  第1期生募集
+                </span>
               </p>
             </div>
             <div className="mt-8 grid max-w-xl grid-cols-2 gap-3 text-sm md:grid-cols-4">
@@ -211,7 +216,7 @@ export default function PracticeLpPage() {
         <div className="mx-auto grid max-w-5xl gap-5 px-5 py-8 text-center md:grid-cols-3 md:px-8">
           <div className="flex items-center justify-center gap-3">
             <CalendarDays className="h-6 w-6 text-omame-gold" />
-            <p><b>2026年8月〜11月</b><br /><span className="text-sm">毎月第4木曜日</span></p>
+            <p><b>2026年9月〜12月</b><br /><span className="text-sm">毎月第4木曜日</span></p>
           </div>
           <div className="flex items-center justify-center gap-3 border-omame-gold/20 md:border-x">
             <Clock3 className="h-6 w-6 text-omame-gold" />
@@ -246,14 +251,14 @@ export default function PracticeLpPage() {
           <p className="mt-12 text-center text-xl font-bold leading-loose text-omame-deep md:text-2xl">
             あなたの「これで合ってる？」を、
             <br />
-            「これだ！」という身体の確信に変えます。
+            「これだ!」という身体の確信に変えます。
           </p>
         </div>
       </section>
 
       <section className="px-5 py-20 md:py-28">
         <div className="mx-auto max-w-3xl text-center">
-          <SectionTitle eyebrow="Why Direct Guidance?">{"動画を学んだからこそ、\n最後に必要なもの。"}</SectionTitle>
+          <SectionTitle eyebrow="Why Direct Guidance?">{"動画を学んだからこそ、\n必要なもの。"}</SectionTitle>
           <div className="mx-auto mt-10 max-w-3xl space-y-7 text-base leading-[2.2] md:text-lg">
             <p>
               動画教材は、お豆奏法の膨大なエッセンスを詰め込んだ
@@ -264,7 +269,7 @@ export default function PracticeLpPage() {
             <p>
               一人ひとりの骨格、手の大きさ、これまでの癖によって、
               <br className="hidden md:block" />
-              「身体への落とし込み方」は全員異なります。
+              「身体へ落とし込む感覚」は全員異なります。
             </p>
             <p>
               この実践講座では、動画で基礎知識を頭に入れたあなただからこそ
@@ -404,15 +409,24 @@ export default function PracticeLpPage() {
               <p className="text-sm font-medium tracking-widest text-[#956b2f]">講師</p>
               <h3 className="mt-1 text-2xl font-bold text-omame-deep">舘 依里奈</h3>
               <p className="mt-5 leading-[2]">
-                愛知県立明和高等学校音楽科、国立音楽大学音楽学部器楽学科ピアノ専攻卒業。その後渡仏し、パリ・エコールノルマル音楽院にて高等演奏資格（ディプロマ）取得。
+                国立音楽大学音楽学部器楽学科ピアノ専攻卒。パリエコールノルマル音楽院にて高等演奏資格（ディプロマ）取得。サン・ノム・ラ・ブルテッシュ国際ピアノコンクール、日本アンサンブルコンクール、第4回ピアノデュオコンクール、第5回近現代音楽コンクール、フランス音楽コンクール等、入賞入選多数。たちえりなピアノ奏法研究所主宰。
               </p>
               <p className="mt-4 leading-[2]">
-                長年の演奏・指導と研究を通して、一人ひとりが抱える問題点を見抜き、感覚的なことを具体的な言葉と実践へ落とし込む指導を行っています。
+                ピアノ演奏における様々な悩みのほとんど全てをたった1つのことで解決させる、魔法のような、それでいて、力学的根拠に基づいていると思われる唯一無二の「お豆奏法」提唱者。
               </p>
               <details className="mt-5 rounded-xl border border-omame-gold/20 bg-omame-bg p-4">
                 <summary className="cursor-pointer font-bold text-omame-deep">詳しいプロフィールを見る</summary>
                 <p className="mt-4 text-base leading-[2]">
-                  ソロ、伴奏、オペラのコレペティートルとして活動。フランスを拠点にソロ・室内楽・リサイタル等へ出演し、帰国後もクラシックに留まらず幅広いジャンルで演奏活動を行う。国際ピアノコンクールをはじめ入賞・入選多数。全日本演奏家協会正会員。
+                  生徒さんの「この弾き方を、教室だけに留めておくのはもったいない！！ピアノ演奏に悩み苦しんでいる人たちのために、是非この奏法を世界に広めてください！」という声に背中を押され、草の根運動的に、セミナー、公開レッスン等を全国で行っている。
+                </p>
+                <p className="mt-4 text-base leading-[2]">
+                  お豆奏法では、音楽家の職業病と言われ、世界中の医療機関や大学等で研究が進められているにもかかわらず未だ治療法が見つからない局所性ジストニアの患者も、半年足らずでほぼ症状が出ない状態にまで軽減することができると、お豆奏法を学ぶジストニア患者が増加中。
+                </p>
+                <p className="mt-4 text-base leading-[2]">
+                  その他にも、ヘバーデン結節、ブシャール結節、腱鞘炎、ドケルバン病、手根管症候群等、ピアノ演奏によって起こる様々な症状を短期間で激減させることができると好評を博している。
+                </p>
+                <p className="mt-4 text-base leading-[2]">
+                  全国にて展開されているコンサートシリーズ「お豆ピアノの世界」では、コンサート後に体調が良くなる方が続出。また、お豆奏法を学ぶと、家族関係や人生まで好転する、という声が多数上がっている。
                 </p>
               </details>
             </div>
@@ -450,7 +464,7 @@ export default function PracticeLpPage() {
               {[
                 ["名称", "お豆奏法【動画受講生限定】実践落とし込み講座（第1期）"],
                 ["開催", "Zoom（全回アーカイブあり）"],
-                ["期間", "2026年8月〜11月／毎月第4木曜日"],
+                ["期間", "2026年9月〜12月／毎月第4木曜日"],
                 ["時間", "午前10時〜12時"],
                 ["内容", "実践講座 全4回＋質問サポート＋動画添削 月2回＋お茶会 全3回"],
                 ["主催", "お豆奏法ラボ"],
@@ -465,29 +479,41 @@ export default function PracticeLpPage() {
               <p className="text-sm text-omame-text">
                 通常価格 <span className="line-through">198,000円</span>
               </p>
-              <p className="mt-2 text-sm font-bold text-[#956b2f]">第1期限定 50,000円引き</p>
+              <p className="mt-2 text-sm font-bold text-[#956b2f]">動画受講生限定フォロー価格 50,000円OFF</p>
               <p className="mt-1 text-4xl font-bold text-omame-deep">
                 148,000<span className="text-base">円</span>
               </p>
             </div>
             <p className="mt-5 text-center text-sm leading-loose text-omame-text/85">
-              銀行振込・PayPay・クレジットカード
+              お申込みはStripe決済リンクから受付予定です。
               <br />
-              ※カード払いのみ、カード会社への分割申込みが可能です。
+              ※決済方法や分割についてのご質問は、LINEよりお問い合わせください。
             </p>
           </div>
-          <div className="mt-9">
+          <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a
-              href="mailto:erina.t.piano@gmail.com?subject=お豆奏法実践落とし込み講座について"
+              href={stripePaymentUrl || "#application"}
+              target={stripePaymentUrl ? "_blank" : undefined}
+              rel={stripePaymentUrl ? "noopener noreferrer" : undefined}
               className="group inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-white px-8 py-4 font-bold text-omame-deep shadow-lg transition hover:-translate-y-0.5"
             >
-              メールで申込み・問い合わせ
+              {stripePaymentUrl ? "Stripe決済で申し込む" : "Stripe決済リンク準備中"}
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </a>
+            <a
+              href={lineInquiryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex min-h-14 items-center justify-center gap-2 rounded-full border border-white/35 px-8 py-4 font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-white/10"
+            >
+              LINEで質問する
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </a>
           </div>
-          <p className="mt-5 text-base text-white">erina.t.piano@gmail.com</p>
           <p className="mt-5 text-sm leading-loose text-white/85">
-            ※申込フォーム・定員・申込締切・キャンセル規定は公開前に確定し、本欄へ追記します。
+            ※Stripe決済リンク・定員・申込締切・キャンセル規定は公開前に確定し、本欄へ追記します。
+            <br />
+            ご不明点はLINEからお気軽にご質問ください。
           </p>
         </div>
       </section>
