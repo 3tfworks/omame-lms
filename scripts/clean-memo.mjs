@@ -117,7 +117,12 @@ export function cleanMemoText(text) {
     out.push(line);
   }
 
-  return out.join('\n');
+  return out
+    .join('\n')
+    .replace(
+      /腕元で鍵盤を下げられる位置に体を置くこと。/g,
+      '腕ごと鍵盤を下げられる位置に体を置くこと。',
+    );
 }
 
 // 直接実行されたとき: 既存の生成物をその場で整形して書き戻す。
