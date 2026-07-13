@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -189,6 +189,7 @@ export function YouTubeResearchConsole() {
   const [seed, setSeed] = useState("ピアノ 脱力");
   const [videoForm, setVideoForm] = useState(EMPTY_VIDEO_FORM);
   const [ideaForm, setIdeaForm] = useState(EMPTY_IDEA_FORM);
+  const loadRequestId = useRef(0);
   const deferredCommentsText = useDeferredValue(videoForm.comments_text);
 
   const generatedKeywords = useMemo(() => generateResearchKeywords(seed), [seed]);
@@ -209,12 +210,14 @@ export function YouTubeResearchConsole() {
   );
 
   const loadData = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
     setError("");
     try {
+      const query = new URLSearchParams({ mode: researchMode });
       const [response, runsResponse] = await Promise.all([
-        fetch("/api/admin/youtube-research", { cache: "no-store" }),
-        fetch("/api/admin/youtube-research/runs", { cache: "no-store" }),
+        fetch(`/api/admin/youtube-research?${query}`, { cache: "no-store" }),
+        fetch(`/api/admin/youtube-research/runs?${query}`, { cache: "no-store" }),
       ]);
       const [data, runsData] = await Promise.all([
         response.json().catch(() => ({})),
@@ -222,16 +225,19 @@ export function YouTubeResearchConsole() {
       ]);
       if (!response.ok) throw new Error(data.error || "データを取得できませんでした");
       if (!runsResponse.ok) throw new Error(runsData.error || "実行履歴を取得できませんでした");
+      if (requestId !== loadRequestId.current) return;
       setKeywords(data.keywords ?? []);
       setVideos(data.videos ?? []);
       setIdeas(data.ideas ?? []);
       setRuns(runsData.runs ?? []);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "データを取得できませんでした");
+      if (requestId === loadRequestId.current) {
+        setError(loadError instanceof Error ? loadError.message : "データを取得できませんでした");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
-  }, []);
+  }, [researchMode]);
 
   useEffect(() => {
     // Initial client-side synchronization with the admin API.
@@ -306,7 +312,10 @@ export function YouTubeResearchConsole() {
 
   async function saveVideo(event: React.FormEvent) {
     event.preventDefault();
-    const ok = await mutate("POST", { resource: "video", data: videoForm });
+    const ok = await mutate("POST", {
+      resource: "video",
+      data: { ...videoForm, content_format: researchMode },
+    });
     if (ok) {
       setVideoForm(EMPTY_VIDEO_FORM);
       setNotice("競合動画とコメント分析を保存しました");
@@ -315,7 +324,10 @@ export function YouTubeResearchConsole() {
 
   async function saveIdea(event: React.FormEvent) {
     event.preventDefault();
-    const ok = await mutate("POST", { resource: "idea", data: ideaForm });
+    const ok = await mutate("POST", {
+      resource: "idea",
+      data: { ...ideaForm, content_format: researchMode },
+    });
     if (ok) {
       setIdeaForm(EMPTY_IDEA_FORM);
       setNotice("動画企画を保存しました");
@@ -347,8 +359,17 @@ export function YouTubeResearchConsole() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function selectResearchMode(mode: ResearchMode) {
+    setResearchMode(mode);
+    setNotice("");
+    setError("");
+    if (mode === "classical_shorts" && tab === "keywords") setTab("videos");
+  }
+
   const tabs: Array<{ id: Tab; label: string; count: number; icon: typeof Search }> = [
-    { id: "keywords", label: "キーワード", count: keywords.length, icon: Search },
+    ...(researchMode === "standard"
+      ? [{ id: "keywords" as const, label: "キーワード", count: keywords.length, icon: Search }]
+      : []),
     { id: "videos", label: "競合・コメント", count: videos.length, icon: Video },
     { id: "ideas", label: "企画ボード", count: ideas.length, icon: Lightbulb },
   ];
@@ -370,14 +391,14 @@ export function YouTubeResearchConsole() {
             <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
               <button
                 type="button"
-                onClick={() => setResearchMode("standard")}
+                onClick={() => selectResearchMode("standard")}
                 className={`rounded-lg px-3 py-2 transition-colors ${researchMode === "standard" ? "bg-white text-stone-900" : "text-stone-300 hover:bg-white/10"}`}
               >
                 通常動画
               </button>
               <button
                 type="button"
-                onClick={() => setResearchMode("classical_shorts")}
+                onClick={() => selectResearchMode("classical_shorts")}
                 className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${researchMode === "classical_shorts" ? "bg-white text-stone-900" : "text-stone-300 hover:bg-white/10"}`}
               >
                 <Music2 className="h-3.5 w-3.5" /> 演奏Shorts
@@ -413,6 +434,7 @@ export function YouTubeResearchConsole() {
       </header>
 
       {runs[0] && <ResearchRunCard run={runs[0]} />}
+      {runs.length > 1 && <ResearchRunHistory runs={runs.slice(1, 6)} />}
 
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
         {tabs.map(({ id, label, count, icon: Icon }) => (
@@ -711,6 +733,33 @@ function ResearchRunCard({ run }: { run: ResearchRun }) {
         </div>
       )}
     </section>
+  );
+}
+
+function ResearchRunHistory({ runs }: { runs: ResearchRun[] }) {
+  return (
+    <details className="rounded-2xl border border-stone-200 bg-white shadow-sm">
+      <summary className="cursor-pointer px-5 py-4 text-sm font-bold text-stone-700">
+        このモードの過去の実行履歴（{runs.length}件）
+      </summary>
+      <div className="divide-y divide-stone-100 border-t border-stone-100">
+        {runs.map((run) => (
+          <div key={run.id} className="flex flex-col gap-2 px-5 py-3 text-xs text-stone-500 md:flex-row md:items-center md:justify-between">
+            <div>
+              <span className="font-bold text-stone-700">
+                {run.status === "completed" ? "完了" : run.status === "failed" ? "失敗" : "実行中"}
+              </span>
+              <span className="ml-3">{new Date(run.created_at).toLocaleString("ja-JP")}</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <span>動画 {run.stats.video_count ?? 0}件</span>
+              <span>コメント {run.stats.comment_count ?? 0}件</span>
+              <span>企画 {run.stats.idea_count ?? 0}件</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 

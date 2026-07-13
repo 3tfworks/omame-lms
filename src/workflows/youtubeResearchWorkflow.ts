@@ -64,7 +64,7 @@ async function persistEvidence(
   });
   const { error } = await createAdminClient()
     .from("youtube_research_videos")
-    .upsert(rows, { onConflict: "url" });
+    .upsert(rows, { onConflict: "url,content_format" });
   if (error) throw new Error(`動画データの保存に失敗しました: ${error.message}`);
 }
 

@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { authorizeAdminApi } from "@/lib/adminApiAuth";
 import { startYoutubeResearch } from "@/lib/startYoutubeResearch";
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await authorizeAdminApi();
   if ("error" in auth) return auth.error;
+  const mode = new URL(request.url).searchParams.get("mode") === "classical_shorts"
+    ? "classical_shorts"
+    : "standard";
   const { data, error } = await auth.supabaseAdmin
     .from("youtube_research_runs")
     .select("*")
+    .eq("research_mode", mode)
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

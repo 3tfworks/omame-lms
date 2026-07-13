@@ -58,6 +58,10 @@ function nullableDate(value: unknown): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function researchMode(value: unknown): "standard" | "classical_shorts" {
+  return value === "classical_shorts" ? "classical_shorts" : "standard";
+}
+
 function normalizeCreate(resource: Resource, data: Record<string, unknown>) {
   if (resource === "keyword") {
     const keyword = text(data.keyword, 200);
@@ -87,6 +91,7 @@ function normalizeCreate(resource: Resource, data: Record<string, unknown>) {
     const commentsText = text(data.comments_text, 100_000);
     return {
       value: {
+        content_format: researchMode(data.content_format),
         url,
         video_id: extractYouTubeVideoId(url),
         title,
@@ -121,6 +126,7 @@ function normalizeCreate(resource: Resource, data: Record<string, unknown>) {
 
   return {
     value: {
+      content_format: researchMode(data.content_format),
       title,
       pillar,
       status,
@@ -170,16 +176,25 @@ function normalizePatch(resource: Resource, data: Record<string, unknown>) {
   return value;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await authorizeAdmin();
     if (auth.error) return auth.error;
     const { supabaseAdmin } = auth;
+    const mode = researchMode(new URL(request.url).searchParams.get("mode"));
 
     const [keywordsResult, videosResult, ideasResult] = await Promise.all([
       supabaseAdmin.from(TABLES.keyword).select("*").order("created_at", { ascending: false }),
-      supabaseAdmin.from(TABLES.video).select("*").order("created_at", { ascending: false }),
-      supabaseAdmin.from(TABLES.idea).select("*").order("score_total", { ascending: false }),
+      supabaseAdmin
+        .from(TABLES.video)
+        .select("*")
+        .eq("content_format", mode)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from(TABLES.idea)
+        .select("*")
+        .eq("content_format", mode)
+        .order("score_total", { ascending: false }),
     ]);
 
     const error = keywordsResult.error || videosResult.error || ideasResult.error;
@@ -192,7 +207,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      keywords: keywordsResult.data ?? [],
+      keywords: mode === "standard" ? keywordsResult.data ?? [] : [],
       videos: videosResult.data ?? [],
       ideas: ideasResult.data ?? [],
     });
