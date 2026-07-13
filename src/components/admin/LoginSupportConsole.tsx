@@ -279,7 +279,7 @@ export function LoginSupportConsole() {
     );
     const guidance = paymentIssue
       ? "恐れ入りますが、購入画面からもう一度お手続きいただき、カード会社の本人認証画面まで完了してください。"
-      : "恐れ入りますが、迷惑メールフォルダをご確認のうえ、LINE内ブラウザではなくSafariまたはChromeでログインリンクを開いてください。";
+      : "ログインに関するメール（件名「【おうちで学べるお豆奏法基礎講座】ログイン用リンクのご案内」）が届いているか、受信トレイと迷惑メールフォルダをご確認ください。メール内の最新のログインリンクを、LINE内ブラウザではなくSafariまたはChromeで開いてください。";
     const reply = `${data.customer.email} 様\n\nお問い合わせありがとうございます。\n${data.diagnosis.detail}\n\n${guidance}`;
     await navigator.clipboard.writeText(reply);
     setNotice("案内文をコピーしました。");
