@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, PlayCircle, Tag } from "lucide-react";
+import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, LifeBuoy, PlayCircle, Tag } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -54,6 +54,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Users size={20} />
             ユーザー管理
+          </Link>
+          <Link
+            href="/ja/admin/support"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/support')
+                ? 'bg-stone-800 text-white'
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <LifeBuoy size={20} />
+            ログインサポート
           </Link>
           <Link
             href="/ja/admin/campaign"

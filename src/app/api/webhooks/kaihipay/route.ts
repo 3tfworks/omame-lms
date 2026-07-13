@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
+import { findAuthUserByEmail } from "@/lib/authUsers";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
@@ -44,14 +45,8 @@ export async function POST(request: Request) {
     const supabaseAdmin = createAdminClient();
 
     // 3. ユーザーが既に存在するかチェック
-    const { data: existingUsers, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (searchError) {
-       console.error("[Kaihipay Webhook] Error fetching users:", searchError);
-       return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
-
-    const isExistingUser = existingUsers.users.find(u => u.email === email);
+    // 全ページを検索し、ユーザー数が50名を超えても既存ユーザーを見落とさない。
+    const isExistingUser = await findAuthUserByEmail(supabaseAdmin, email);
 
     if (isExistingUser) {
       console.log(`[Kaihipay Webhook] User already exists: ${email}`);
@@ -167,7 +162,9 @@ export async function POST(request: Request) {
       // メールの送信に失敗しても、ユーザー作成自体は成功しているので200を返す
     }
 
-    console.log(`[Kaihipay Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
+    if (!otpError) {
+      console.log(`[Kaihipay Webhook] Successfully created user and requested Magic Link: ${email} (ID: ${userId})`);
+    }
 
     // 8. 成功レスポンスを返す（会費ペイ側でエラーにならないように200を返す）
     return NextResponse.json({ message: "Webhook processed successfully" }, { status: 200 });

@@ -178,7 +178,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // 保護されたルートへのアクセス制限
-  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin") || pathname.includes("/setup-name");
+  const isSupportRoute = /^\/[a-z]{2}\/support(?:\/|$)/.test(pathname);
+  const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin") || pathname.includes("/setup-name") || isSupportRoute;
   const isAdminRoute = pathname.includes("/admin");
   const lang = pathname.split('/')[1] || 'ja';
 
@@ -198,6 +199,28 @@ export async function proxy(request: NextRequest) {
     if (!profile || (profile.role !== "admin" && profile.role !== "owner")) {
       // admin/owner以外のユーザー → LMSへリダイレクト
       return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+    }
+  }
+
+  if (isSupportRoute && user) {
+    // 管理者は常時利用可。事務担当者は自分に付与されたサポート権限だけで利用する。
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    const isAdmin = profile?.role === "admin" || profile?.role === "owner";
+
+    if (!isAdmin) {
+      const { data: supportAgent } = await supabase
+        .from("support_agents")
+        .select("enabled, can_view_auth_status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!supportAgent?.enabled || !supportAgent.can_view_auth_status) {
+        return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
+      }
     }
   }
 

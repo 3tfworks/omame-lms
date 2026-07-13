@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
+import { findAuthUserByEmail } from "@/lib/authUsers";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -239,28 +240,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     // メール送信失敗でもユーザー作成自体は成功しているので処理は継続
   }
 
-  console.log(`[Stripe Webhook] Successfully created user and sent Magic Link: ${email} (ID: ${userId})`);
-}
-
-// auth.users を email で検索する。supabase-js v2 には getUserByEmail が無いため、
-// listUsers を全ページ走査して代替する（50名超でも取りこぼさないための堅牢化）。
-async function findAuthUserByEmail(
-  supabaseAdmin: ReturnType<typeof createAdminClient>,
-  email: string,
-) {
-  const target = email.trim().toLowerCase();
-  const perPage = 1000;
-  let page = 1;
-  for (;;) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-    if (error) {
-      console.error("[Stripe Webhook] Error fetching users:", error);
-      throw error;
-    }
-    const match = data.users.find((u) => u.email?.toLowerCase() === target);
-    if (match) return match;
-    // 次ページが無い、または最終ページ（取得件数が perPage 未満）なら終了
-    if (!data.nextPage || data.users.length < perPage) return null;
-    page = data.nextPage;
+  if (!otpError) {
+    console.log(`[Stripe Webhook] Successfully created user and requested Magic Link: ${email} (ID: ${userId})`);
   }
 }
