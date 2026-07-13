@@ -34,6 +34,18 @@ import {
 
 type Tab = "keywords" | "videos" | "ideas";
 type ApiResource = "keyword" | "video" | "idea";
+type ResearchRun = {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  trigger_source: "manual" | "schedule";
+  current_step: string;
+  seed_keywords: string[];
+  stats: Record<string, number>;
+  insights: { audience?: string[]; content_gaps?: string[] };
+  error_message: string;
+  created_at: string;
+  completed_at: string | null;
+};
 
 const PILLAR_LABELS: Record<ResearchPillar, string> = {
   pain: "悩み解決",
@@ -146,8 +158,10 @@ export function YouTubeResearchConsole() {
   const [keywords, setKeywords] = useState<ResearchKeyword[]>([]);
   const [videos, setVideos] = useState<ResearchVideo[]>([]);
   const [ideas, setIdeas] = useState<ResearchIdea[]>([]);
+  const [runs, setRuns] = useState<ResearchRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [automationLoading, setAutomationLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [seed, setSeed] = useState("ピアノ 脱力");
@@ -176,12 +190,20 @@ export function YouTubeResearchConsole() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/admin/youtube-research", { cache: "no-store" });
-      const data = await response.json().catch(() => ({}));
+      const [response, runsResponse] = await Promise.all([
+        fetch("/api/admin/youtube-research", { cache: "no-store" }),
+        fetch("/api/admin/youtube-research/runs", { cache: "no-store" }),
+      ]);
+      const [data, runsData] = await Promise.all([
+        response.json().catch(() => ({})),
+        runsResponse.json().catch(() => ({})),
+      ]);
       if (!response.ok) throw new Error(data.error || "データを取得できませんでした");
+      if (!runsResponse.ok) throw new Error(runsData.error || "実行履歴を取得できませんでした");
       setKeywords(data.keywords ?? []);
       setVideos(data.videos ?? []);
       setIdeas(data.ideas ?? []);
+      setRuns(runsData.runs ?? []);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "データを取得できませんでした");
     } finally {
@@ -194,6 +216,38 @@ export function YouTubeResearchConsole() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!runs.some((run) => run.status === "queued" || run.status === "running")) return;
+    const timer = window.setInterval(() => void loadData(), 4_000);
+    return () => window.clearInterval(timer);
+  }, [loadData, runs]);
+
+  async function startAutomation() {
+    setAutomationLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/admin/youtube-research/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keywords: keywords.slice(0, 5).map((item) => item.keyword),
+          videosPerKeyword: 8,
+          commentsPerVideo: 20,
+          ideaCount: 8,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "自動リサーチを開始できませんでした");
+      setNotice("全自動リサーチを開始しました。画面を閉じても処理は継続します。");
+      await loadData();
+    } catch (automationError) {
+      setError(automationError instanceof Error ? automationError.message : "開始に失敗しました");
+    } finally {
+      setAutomationLoading(false);
+    }
+  }
 
   async function mutate(method: "POST" | "PATCH" | "DELETE", payload: Record<string, unknown>) {
     setSaving(true);
@@ -287,7 +341,21 @@ export function YouTubeResearchConsole() {
               検索需要、競合コメント、お豆奏法との相性を一つの流れで整理し、撮影する企画を決めます。
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => void startAutomation()}
+              disabled={automationLoading || runs.some((run) => run.status === "queued" || run.status === "running")}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-950/30 hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {automationLoading || runs.some((run) => run.status === "queued" || run.status === "running") ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              全自動リサーチを実行
+            </button>
+            <div className="grid grid-cols-3 gap-2 text-center">
             {[
               [keywords.length, "キーワード"],
               [videos.length, "競合動画"],
@@ -298,9 +366,12 @@ export function YouTubeResearchConsole() {
                 <div className="mt-1 text-[11px] text-stone-400">{label}</div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </header>
+
+      {runs[0] && <ResearchRunCard run={runs[0]} />}
 
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
         {tabs.map(({ id, label, count, icon: Icon }) => (
@@ -531,6 +602,59 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return <span className="rounded-lg bg-stone-100 px-2.5 py-1 text-stone-600"><span className="text-stone-400">{label}</span> {value}</span>;
+}
+
+function ResearchRunCard({ run }: { run: ResearchRun }) {
+  const statusLabels = {
+    queued: "待機中",
+    running: "実行中",
+    completed: "完了",
+    failed: "失敗",
+  } as const;
+  const stepLabels: Record<string, string> = {
+    queued: "開始待ち",
+    collecting_youtube: "YouTube検索・コメント取得",
+    saving_evidence: "調査データ保存",
+    generating_ideas: "AI企画生成・採点",
+    saving_ideas: "企画ボード登録",
+    completed: "すべて完了",
+    failed: "処理失敗",
+    failed_to_start: "開始失敗",
+  };
+  const active = run.status === "queued" || run.status === "running";
+  return (
+    <section className={`rounded-2xl border p-5 shadow-sm ${run.status === "failed" ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50/60"}`}>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-white p-2 text-emerald-700 shadow-sm">
+            {active ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-bold text-stone-800">最新の全自動リサーチ</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-stone-600">{statusLabels[run.status]}</span>
+            </div>
+            <p className="mt-1 text-sm text-stone-600">{stepLabels[run.current_step] ?? run.current_step}</p>
+            <p className="mt-1 text-xs text-stone-400">{run.seed_keywords.join(" / ")}</p>
+          </div>
+        </div>
+        {run.status === "completed" && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Metric label="動画" value={`${run.stats.video_count ?? 0}件`} />
+            <Metric label="コメント" value={`${run.stats.comment_count ?? 0}件`} />
+            <Metric label="企画" value={`${run.stats.idea_count ?? 0}件`} />
+          </div>
+        )}
+      </div>
+      {run.error_message && <p className="mt-3 rounded-xl bg-white/80 p-3 text-sm font-medium text-red-700">{run.error_message}</p>}
+      {run.status === "completed" && (run.insights.audience?.length ?? 0) > 0 && (
+        <div className="mt-4 border-t border-emerald-200 pt-4 text-sm text-stone-600">
+          <span className="font-bold text-stone-700">今回見つかった視聴者ニーズ：</span>
+          {run.insights.audience?.slice(0, 3).join(" / ")}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function ScoreInput({ label, max, value, onChange }: { label: string; max: number; value: number; onChange: (value: number) => void }) {
