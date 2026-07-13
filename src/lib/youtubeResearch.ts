@@ -52,6 +52,7 @@ export type ResearchVideo = {
   comment_analysis: CommentAnalysis;
   created_at: string;
   updated_at: string;
+  content_format?: "standard" | "classical_shorts";
 };
 
 export type ResearchIdea = {
@@ -78,6 +79,15 @@ export type ResearchIdea = {
   scheduled_at: string | null;
   created_at: string;
   updated_at: string;
+  content_format: "standard" | "classical_shorts";
+  composer: string;
+  piece_title: string;
+  difficult_passage: string;
+  opening_overlay: string;
+  performance_segment: string;
+  shot_plan: string[];
+  target_duration_seconds: number;
+  rights_note: string;
 };
 
 const KEYWORD_MODIFIERS = [

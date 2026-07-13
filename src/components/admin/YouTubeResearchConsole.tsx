@@ -11,6 +11,7 @@ import {
   Lightbulb,
   Loader2,
   MessageCircleQuestion,
+  Music2,
   Plus,
   RefreshCw,
   Search,
@@ -34,6 +35,7 @@ import {
 
 type Tab = "keywords" | "videos" | "ideas";
 type ApiResource = "keyword" | "video" | "idea";
+type ResearchMode = "standard" | "classical_shorts";
 type ResearchRun = {
   id: string;
   status: "queued" | "running" | "completed" | "failed";
@@ -45,6 +47,7 @@ type ResearchRun = {
   error_message: string;
   created_at: string;
   completed_at: string | null;
+  research_mode?: ResearchMode;
 };
 
 const PILLAR_LABELS: Record<ResearchPillar, string> = {
@@ -130,6 +133,15 @@ function downloadIdeasCsv(ideas: ResearchIdea[]) {
     "CTA",
     "キーワード",
     "参考URL",
+    "形式",
+    "作曲家",
+    "曲名",
+    "難所",
+    "冒頭テロップ",
+    "演奏区間",
+    "目標秒数",
+    "カット割り",
+    "権利確認",
   ];
   const rows = ideas.map((idea) => [
     idea.title,
@@ -143,6 +155,15 @@ function downloadIdeasCsv(ideas: ResearchIdea[]) {
     idea.cta,
     idea.source_keyword,
     idea.source_url,
+    idea.content_format,
+    idea.composer,
+    idea.piece_title,
+    idea.difficult_passage,
+    idea.opening_overlay,
+    idea.performance_segment,
+    idea.target_duration_seconds,
+    idea.shot_plan?.join(" → ") ?? "",
+    idea.rights_note,
   ]);
   const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -162,6 +183,7 @@ export function YouTubeResearchConsole() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [automationLoading, setAutomationLoading] = useState(false);
+  const [researchMode, setResearchMode] = useState<ResearchMode>("standard");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [seed, setSeed] = useState("ピアノ 脱力");
@@ -232,7 +254,10 @@ export function YouTubeResearchConsole() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          keywords: keywords.slice(0, 5).map((item) => item.keyword),
+          researchMode,
+          keywords: researchMode === "standard"
+            ? keywords.slice(0, 5).map((item) => item.keyword)
+            : undefined,
           videosPerKeyword: 8,
           commentsPerVideo: 20,
           ideaCount: 8,
@@ -240,7 +265,7 @@ export function YouTubeResearchConsole() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "自動リサーチを開始できませんでした");
-      setNotice("全自動リサーチを開始しました。画面を閉じても処理は継続します。");
+      setNotice(`${researchMode === "classical_shorts" ? "クラシック演奏Shorts" : "通常動画"}の全自動リサーチを開始しました。画面を閉じても処理は継続します。`);
       await loadData();
     } catch (automationError) {
       setError(automationError instanceof Error ? automationError.message : "開始に失敗しました");
@@ -342,6 +367,22 @@ export function YouTubeResearchConsole() {
             </p>
           </div>
           <div className="space-y-3">
+            <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setResearchMode("standard")}
+                className={`rounded-lg px-3 py-2 transition-colors ${researchMode === "standard" ? "bg-white text-stone-900" : "text-stone-300 hover:bg-white/10"}`}
+              >
+                通常動画
+              </button>
+              <button
+                type="button"
+                onClick={() => setResearchMode("classical_shorts")}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${researchMode === "classical_shorts" ? "bg-white text-stone-900" : "text-stone-300 hover:bg-white/10"}`}
+              >
+                <Music2 className="h-3.5 w-3.5" /> 演奏Shorts
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => void startAutomation()}
@@ -353,7 +394,7 @@ export function YouTubeResearchConsole() {
               ) : (
                 <Sparkles className="h-4 w-4" />
               )}
-              全自動リサーチを実行
+              {researchMode === "classical_shorts" ? "演奏Shortsを自動企画" : "全自動リサーチを実行"}
             </button>
             <div className="grid grid-cols-3 gap-2 text-center">
             {[
@@ -572,9 +613,24 @@ export function YouTubeResearchConsole() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-start">
                   <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl ${idea.score_total >= 70 ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-600"}`}><span className="text-xl font-bold">{idea.score_total}</span><span className="text-[9px]">SCORE</span></div>
                   <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex flex-wrap gap-2"><span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{PILLAR_LABELS[idea.pillar]}</span>{idea.source_keyword && <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] text-stone-500">{idea.source_keyword}</span>}</div>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">{PILLAR_LABELS[idea.pillar]}</span>
+                      {idea.content_format === "classical_shorts" && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700">クラシック演奏Shorts</span>}
+                      {idea.source_keyword && <span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] text-stone-500">{idea.source_keyword}</span>}
+                    </div>
                     <h4 className="font-bold leading-relaxed text-stone-800">{idea.title}</h4>
                     {idea.hook && <p className="mt-2 text-sm leading-relaxed text-stone-500"><span className="font-bold text-stone-700">冒頭：</span>{idea.hook}</p>}
+                    {idea.content_format === "classical_shorts" && (
+                      <div className="mt-3 grid gap-2 rounded-xl bg-violet-50/70 p-3 text-xs leading-relaxed text-stone-600 sm:grid-cols-2">
+                        <p><span className="font-bold text-violet-800">曲：</span>{[idea.composer, idea.piece_title].filter(Boolean).join(" / ")}</p>
+                        <p><span className="font-bold text-violet-800">目標：</span>{idea.target_duration_seconds || 30}秒</p>
+                        <p><span className="font-bold text-violet-800">難所：</span>{idea.difficult_passage}</p>
+                        <p><span className="font-bold text-violet-800">冒頭テロップ：</span>{idea.opening_overlay}</p>
+                        <p className="sm:col-span-2"><span className="font-bold text-violet-800">演奏区間：</span>{idea.performance_segment}</p>
+                        {idea.shot_plan?.length > 0 && <p className="sm:col-span-2"><span className="font-bold text-violet-800">カット割り：</span>{idea.shot_plan.join(" → ")}</p>}
+                        {idea.rights_note && <p className="sm:col-span-2 text-amber-800"><span className="font-bold">権利確認：</span>{idea.rights_note}</p>}
+                      </div>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <select value={idea.status} onChange={(e) => void updateIdeaStatus(idea.id, e.target.value as ResearchStatus)} className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-600">{RESEARCH_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}</select>
@@ -632,6 +688,7 @@ function ResearchRunCard({ run }: { run: ResearchRun }) {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-bold text-stone-800">最新の全自動リサーチ</h3>
+              {run.research_mode === "classical_shorts" && <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">演奏Shorts</span>}
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-stone-600">{statusLabels[run.status]}</span>
             </div>
             <p className="mt-1 text-sm text-stone-600">{stepLabels[run.current_step] ?? run.current_step}</p>

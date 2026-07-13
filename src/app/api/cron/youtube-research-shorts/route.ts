@@ -7,10 +7,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const run = await startYoutubeResearch({ triggerSource: "schedule", researchMode: "standard" });
+    const run = await startYoutubeResearch({
+      triggerSource: "schedule",
+      researchMode: "classical_shorts",
+      videosPerKeyword: 8,
+      commentsPerVideo: 15,
+      ideaCount: 8,
+    });
     return NextResponse.json({ run }, { status: 202 });
   } catch (error) {
-    console.error("[YouTube Research Cron] failed", error);
+    console.error("[YouTube Research Shorts Cron] failed", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed" },
       { status: 500 },

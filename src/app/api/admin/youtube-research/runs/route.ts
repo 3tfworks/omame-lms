@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       videosPerKeyword: Number(body.videosPerKeyword) || undefined,
       commentsPerVideo: Number(body.commentsPerVideo) || undefined,
       ideaCount: Number(body.ideaCount) || undefined,
+      researchMode: body.researchMode === "classical_shorts" ? "classical_shorts" : "standard",
     });
     return NextResponse.json({ run: result }, { status: 202 });
   } catch (error) {

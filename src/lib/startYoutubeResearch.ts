@@ -1,9 +1,19 @@
 import { start } from "workflow/api";
-import { normalizeYouTubeResearchConfig } from "@/lib/youtubeDataApi";
+import {
+  normalizeYouTubeResearchConfig,
+  type YouTubeResearchMode,
+} from "@/lib/youtubeDataApi";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { youtubeResearchWorkflow } from "@/workflows/youtubeResearchWorkflow";
 
 const DEFAULT_KEYWORDS = ["ピアノ 脱力", "ピアノ 力を抜く", "ピアノ 音が硬い"];
+const CLASSICAL_SHORTS_KEYWORDS = [
+  "クラシック ピアノ shorts",
+  "ピアノ 弾いてみた shorts",
+  "ショパン ピアノ shorts",
+  "ピアノ 難所 shorts",
+  "クラシック ピアノ 脱力",
+];
 
 export async function startYoutubeResearch(input: {
   createdBy?: string;
@@ -12,10 +22,14 @@ export async function startYoutubeResearch(input: {
   videosPerKeyword?: number;
   commentsPerVideo?: number;
   ideaCount?: number;
+  researchMode?: YouTubeResearchMode;
 }) {
   const supabase = createAdminClient();
+  const researchMode = input.researchMode === "classical_shorts"
+    ? "classical_shorts"
+    : "standard";
   let keywords = input.keywords ?? [];
-  if (keywords.length === 0) {
+  if (keywords.length === 0 && researchMode === "standard") {
     const { data } = await supabase
       .from("youtube_research_keywords")
       .select("keyword")
@@ -24,9 +38,12 @@ export async function startYoutubeResearch(input: {
       .limit(5);
     keywords = (data ?? []).map((item) => item.keyword);
   }
-  if (keywords.length === 0) keywords = DEFAULT_KEYWORDS;
+  if (keywords.length === 0) {
+    keywords = researchMode === "classical_shorts" ? CLASSICAL_SHORTS_KEYWORDS : DEFAULT_KEYWORDS;
+  }
 
   const config = normalizeYouTubeResearchConfig({
+    researchMode,
     keywords,
     videosPerKeyword: input.videosPerKeyword,
     commentsPerVideo: input.commentsPerVideo,
@@ -38,6 +55,7 @@ export async function startYoutubeResearch(input: {
       status: "queued",
       trigger_source: input.triggerSource,
       current_step: "queued",
+      research_mode: config.researchMode,
       seed_keywords: config.keywords,
       config,
       created_by: input.createdBy ?? null,

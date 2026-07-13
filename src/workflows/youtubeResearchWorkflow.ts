@@ -29,7 +29,11 @@ async function collectEvidence(config: YouTubeResearchConfig) {
   return collectYouTubeVideos(config, apiKey);
 }
 
-async function persistEvidence(runId: string, videos: CollectedYouTubeVideo[]) {
+async function persistEvidence(
+  runId: string,
+  videos: CollectedYouTubeVideo[],
+  config: YouTubeResearchConfig,
+) {
   "use step";
   console.log(`[YouTube Research] persisting ${videos.length} videos`);
   if (videos.length === 0) return;
@@ -37,6 +41,7 @@ async function persistEvidence(runId: string, videos: CollectedYouTubeVideo[]) {
     const commentsText = video.comments.join("\n");
     return {
       source_run_id: runId,
+      content_format: config.researchMode,
       url: video.url,
       video_id: video.videoId,
       title: video.title,
@@ -63,10 +68,13 @@ async function persistEvidence(runId: string, videos: CollectedYouTubeVideo[]) {
   if (error) throw new Error(`動画データの保存に失敗しました: ${error.message}`);
 }
 
-async function generatePlan(videos: CollectedYouTubeVideo[], ideaCount: number) {
+async function generatePlan(videos: CollectedYouTubeVideo[], config: YouTubeResearchConfig) {
   "use step";
-  console.log(`[YouTube Research] generating ${ideaCount} ideas`);
-  return generateYouTubeResearchPlan(rankResearchVideos(videos), ideaCount);
+  console.log(`[YouTube Research] generating ${config.ideaCount} ${config.researchMode} ideas`);
+  return generateYouTubeResearchPlan(
+    rankResearchVideos(videos, config.researchMode),
+    config,
+  );
 }
 
 async function persistPlan(
@@ -79,7 +87,8 @@ async function persistPlan(
   const titles = plan.ideas.map((idea) => idea.title);
   const { data: existing } = await supabase
     .from("youtube_research_ideas")
-    .select("title")
+    .select("title, content_format")
+    .eq("content_format", plan.ideas[0]?.content_format ?? "standard")
     .in("title", titles);
   const existingTitles = new Set((existing ?? []).map((idea) => idea.title));
   const rows = plan.ideas.filter((idea) => !existingTitles.has(idea.title)).map((idea) => ({
@@ -124,10 +133,10 @@ export async function youtubeResearchWorkflow(
     if (videos.length === 0) throw new Error("YouTube検索結果が0件でした");
 
     await updateRun(runId, { current_step: "saving_evidence" });
-    await persistEvidence(runId, videos);
+    await persistEvidence(runId, videos, config);
 
     await updateRun(runId, { current_step: "generating_ideas" });
-    const plan = await generatePlan(videos, config.ideaCount);
+    const plan = await generatePlan(videos, config);
 
     await updateRun(runId, { current_step: "saving_ideas" });
     const savedIdeaCount = await persistPlan(runId, plan);

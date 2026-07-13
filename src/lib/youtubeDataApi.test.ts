@@ -16,12 +16,21 @@ test("normalizes research limits and removes duplicate keywords", () => {
       ideaCount: 1,
     }),
     {
+      researchMode: "standard",
       keywords: ["ピアノ 脱力", "音が硬い"],
       videosPerKeyword: 10,
       commentsPerVideo: 0,
       ideaCount: 3,
     },
   );
+});
+
+test("normalizes classical Shorts mode", () => {
+  const config = normalizeYouTubeResearchConfig({
+    researchMode: "classical_shorts",
+    keywords: ["ショパン shorts"],
+  });
+  assert.equal(config.researchMode, "classical_shorts");
 });
 
 test("parses YouTube ISO 8601 durations", () => {
@@ -54,4 +63,29 @@ test("ranks recent videos by views per day", () => {
   ]);
   assert.equal(ranked[0].videoId, "b");
   assert.ok(ranked[0].viewsPerDay > ranked[1].viewsPerDay);
+});
+
+test("Shorts ranking rewards engagement", () => {
+  const base: CollectedYouTubeVideo = {
+    videoId: "a",
+    url: "https://youtube.com/shorts/a",
+    title: "A",
+    description: "",
+    channelId: "c",
+    channelName: "C",
+    publishedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+    thumbnailUrl: "",
+    viewCount: 10_000,
+    likeCount: 100,
+    commentCount: 10,
+    channelSubscribers: 10_000,
+    durationSeconds: 30,
+    searchKeyword: "クラシック shorts",
+    comments: [],
+  };
+  const ranked = rankResearchVideos([
+    base,
+    { ...base, videoId: "b", likeCount: 1_000, commentCount: 100 },
+  ], "classical_shorts");
+  assert.equal(ranked[0].videoId, "b");
 });

@@ -1,11 +1,15 @@
 const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
 
 export type YouTubeResearchConfig = {
+  researchMode: YouTubeResearchMode;
   keywords: string[];
   videosPerKeyword: number;
   commentsPerVideo: number;
   ideaCount: number;
 };
+
+export const YOUTUBE_RESEARCH_MODES = ["standard", "classical_shorts"] as const;
+export type YouTubeResearchMode = (typeof YOUTUBE_RESEARCH_MODES)[number];
 
 export type CollectedYouTubeVideo = {
   videoId: string;
@@ -55,6 +59,9 @@ export function normalizeYouTubeResearchConfig(
     new Set((input.keywords ?? []).map((keyword) => keyword.trim()).filter(Boolean)),
   ).slice(0, 5);
   return {
+    researchMode: YOUTUBE_RESEARCH_MODES.includes(input.researchMode as YouTubeResearchMode)
+      ? (input.researchMode as YouTubeResearchMode)
+      : "standard",
     keywords,
     videosPerKeyword: clampInteger(input.videosPerKeyword ?? 8, 1, 10),
     commentsPerVideo: clampInteger(input.commentsPerVideo ?? 20, 0, 50),
@@ -142,6 +149,7 @@ export async function collectYouTubeVideos(
           relevanceLanguage: "ja",
           regionCode: "JP",
           safeSearch: "moderate",
+          ...(config.researchMode === "classical_shorts" ? { videoDuration: "short" } : {}),
         },
         apiKey,
       );
@@ -203,10 +211,15 @@ export async function collectYouTubeVideos(
     }));
     collected.push(...batch);
   }
-  return collected;
+  return config.researchMode === "classical_shorts"
+    ? collected.filter((video) => video.durationSeconds > 0 && video.durationSeconds <= 180)
+    : collected;
 }
 
-export function rankResearchVideos(videos: CollectedYouTubeVideo[]) {
+export function rankResearchVideos(
+  videos: CollectedYouTubeVideo[],
+  researchMode: YouTubeResearchMode = "standard",
+) {
   const now = Date.now();
   return [...videos]
     .map((video) => {
@@ -214,7 +227,15 @@ export function rankResearchVideos(videos: CollectedYouTubeVideo[]) {
       const viewsPerDay = video.viewCount / ageDays;
       const subscriberOutlier =
         video.channelSubscribers > 0 ? video.viewCount / video.channelSubscribers : 0;
-      return { ...video, viewsPerDay, subscriberOutlier };
+      const engagementRate = video.viewCount > 0
+        ? (video.likeCount + video.commentCount) / video.viewCount
+        : 0;
+      const shortsScore = Math.log10(viewsPerDay + 1) * 0.55
+        + Math.log10(subscriberOutlier + 1) * 0.25
+        + Math.min(engagementRate, 0.2) * 10;
+      return { ...video, viewsPerDay, subscriberOutlier, engagementRate, shortsScore };
     })
-    .sort((a, b) => b.viewsPerDay - a.viewsPerDay || b.subscriberOutlier - a.subscriberOutlier);
+    .sort((a, b) => researchMode === "classical_shorts"
+      ? b.shortsScore - a.shortsScore || b.viewsPerDay - a.viewsPerDay
+      : b.viewsPerDay - a.viewsPerDay || b.subscriberOutlier - a.subscriberOutlier);
 }
