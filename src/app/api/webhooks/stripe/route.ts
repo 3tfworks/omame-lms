@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import { findAuthUserByEmail } from "@/lib/authUsers";
+import { getPurchaseRole } from "@/lib/purchaseRole";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -12,7 +13,7 @@ import crypto from "crypto";
 // - event.type で分岐できる構造（将来サブスク: invoice.paid / customer.subscription.* 等を追加する）
 // - checkout.session.completed:
 //     a. Supabase Auth でユーザー作成（既存ならスキップ）
-//     b. public.users に INSERT（role は "user" で統一）
+//     b. public.users に INSERT（サロン価格購入は "salon_member"、通常購入は "user"）
 //     c. metadata.referrer_id があればアフィリエイト報酬を記録
 //     d. referrer_id が無い場合は email で invite_leads を検索してフォールバック
 //     e. Magic Link を送信
@@ -98,6 +99,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   }
 
   const supabaseAdmin = createAdminClient();
+  const purchaseRole = getPurchaseRole(session.metadata?.price_type);
 
   // 1. 既存ユーザーかチェック（listUsers を全ページ走査。50名超でも取りこぼさない）
   const existing = await findAuthUserByEmail(supabaseAdmin, email);
@@ -125,15 +127,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
 
   // 3. public.users を upsert（onConflict: id）。
   //    新規・既存にかかわらず毎回実行し、「auth はあるが public.users が欠落」状態を
-  //    再処理で自己修復できるようにする。既存行は ignoreDuplicates で DO NOTHING とし、
-  //    role を上書きしない（salon_member / instructor 等の降格事故を防ぐ）。
+  //    再処理で自己修復できるようにする。新規のサロン価格購入者は salon_member で登録する。
+  //    既存行はまず DO NOTHING とし、サロン価格購入時だけ user → salon_member に昇格する。
+  //    owner / admin / instructor / 既存 salon_member などの権限は上書きしない。
   const { error: dbError } = await supabaseAdmin
     .from("users")
-    .upsert({ id: userId, email, role: "user" }, { onConflict: "id", ignoreDuplicates: true });
+    .upsert({ id: userId, email, role: purchaseRole }, { onConflict: "id", ignoreDuplicates: true });
 
   if (dbError) {
     console.error("[Stripe Webhook] Error upserting public.users:", dbError);
     throw dbError;
+  }
+
+  if (purchaseRole === "salon_member") {
+    const { error: upgradeError } = await supabaseAdmin
+      .from("users")
+      .update({ role: "salon_member" })
+      .eq("id", userId)
+      .eq("role", "user");
+
+    if (upgradeError) {
+      console.error("[Stripe Webhook] Error upgrading salon member role:", upgradeError);
+      throw upgradeError;
+    }
   }
 
   // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
