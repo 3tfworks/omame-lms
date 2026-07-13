@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clipboard,
   Clock3,
+  CreditCard,
   KeyRound,
   Loader2,
   Mail,
@@ -83,6 +84,23 @@ type SupportData = {
     nextAction: string;
   };
   trackingConfigured: boolean;
+  stripeLookup: {
+    configured: boolean;
+    available: boolean;
+    payments: Array<{
+      checkoutSessionId: string;
+      paymentIntentId: string | null;
+      status: "succeeded" | "unpaid" | "three_d_secure_failed" | "expired";
+      sessionStatus: "open" | "complete" | "expired" | null;
+      paymentStatus: "paid" | "unpaid" | "no_payment_required";
+      paymentIntentStatus: string | null;
+      amountTotal: number | null;
+      currency: string | null;
+      productType: "general" | "salon" | null;
+      createdAt: string;
+      expiresAt: string | null;
+    }>;
+  };
 };
 
 const diagnosisStyles: Record<DiagnosisLevel, string> = {
@@ -110,6 +128,34 @@ const emailEventLabels: Record<string, string> = {
   "email.clicked": "リンククリック検知",
 };
 
+const stripeStatusLabels: Record<SupportData["stripeLookup"]["payments"][number]["status"], string> = {
+  succeeded: "決済成功",
+  unpaid: "未払い",
+  three_d_secure_failed: "3Dセキュア失敗",
+  expired: "期限切れ",
+};
+
+const stripeStatusStyles: Record<SupportData["stripeLookup"]["payments"][number]["status"], string> = {
+  succeeded: "bg-emerald-100 text-emerald-800",
+  unpaid: "bg-amber-100 text-amber-900",
+  three_d_secure_failed: "bg-rose-100 text-rose-800",
+  expired: "bg-stone-200 text-stone-700",
+};
+
+const stripeStatusDetails: Record<SupportData["stripeLookup"]["payments"][number]["status"], string> = {
+  succeeded: "Stripeで支払いが完了しています。",
+  unpaid: "支払いはまだ成立していません。",
+  three_d_secure_failed: "本人認証が完了していません。認証失敗・途中中断を含みます。",
+  expired: "決済画面の有効期限が切れ、支払いは成立していません。",
+};
+
+const stripeNextActions: Record<SupportData["stripeLookup"]["payments"][number]["status"], string> = {
+  succeeded: "顧客登録とログインメールの状態を続けて確認",
+  unpaid: "決済を最後まで完了するか、購入画面から再度手続きするよう案内",
+  three_d_secure_failed: "購入画面から再決済し、カード会社の本人認証まで完了するよう案内",
+  expired: "購入画面からもう一度決済するよう案内",
+};
+
 function formatDate(value: string | null | undefined) {
   if (!value) return "記録なし";
   return new Date(value).toLocaleString("ja-JP", {
@@ -119,6 +165,19 @@ function formatDate(value: string | null | undefined) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatAmount(amount: number | null, currency: string | null) {
+  if (amount === null || !currency) return "金額不明";
+  try {
+    return new Intl.NumberFormat("ja-JP", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${amount.toLocaleString("ja-JP")} ${currency.toUpperCase()}`;
+  }
 }
 
 function StatusItem({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
@@ -215,7 +274,13 @@ export function LoginSupportConsole() {
 
   const copyReply = async () => {
     if (!data) return;
-    const reply = `${data.customer.email} 様\n\nお問い合わせありがとうございます。\n${data.diagnosis.detail}\n\n恐れ入りますが、迷惑メールフォルダをご確認のうえ、LINE内ブラウザではなくSafariまたはChromeでログインリンクを開いてください。`;
+    const paymentIssue = ["three_d_secure_failed", "checkout_expired", "payment_unpaid"].includes(
+      data.diagnosis.code,
+    );
+    const guidance = paymentIssue
+      ? "恐れ入りますが、購入画面からもう一度お手続きいただき、カード会社の本人認証画面まで完了してください。"
+      : "恐れ入りますが、迷惑メールフォルダをご確認のうえ、LINE内ブラウザではなくSafariまたはChromeでログインリンクを開いてください。";
+    const reply = `${data.customer.email} 様\n\nお問い合わせありがとうございます。\n${data.diagnosis.detail}\n\n${guidance}`;
     await navigator.clipboard.writeText(reply);
     setNotice("案内文をコピーしました。");
   };
@@ -303,6 +368,67 @@ export function LoginSupportConsole() {
               メール履歴テーブルがまだ利用できません。DBマイグレーションとResend Webhook設定後に配信状況が表示されます。
             </div>
           )}
+
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-omame-gold" />
+                <h3 className="font-bold text-stone-800">Stripe決済状況</h3>
+              </div>
+              <span className="text-xs text-stone-400">最新10件</span>
+            </div>
+
+            {!data.stripeLookup.available ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                {data.stripeLookup.configured
+                  ? "Stripeへの照会に失敗しました。時間をおいて更新し、続く場合はシステム担当へ連絡してください。"
+                  : "Stripe秘密鍵が設定されていないため、決済状況を確認できません。"}
+              </div>
+            ) : data.stripeLookup.payments.length > 0 ? (
+              <div className="space-y-3">
+                {data.stripeLookup.payments.map((payment) => (
+                  <article
+                    key={payment.checkoutSessionId}
+                    className="rounded-xl border border-stone-200 bg-stone-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full px-3 py-1 text-xs font-bold ${stripeStatusStyles[payment.status]}`}>
+                            {stripeStatusLabels[payment.status]}
+                          </span>
+                          <span className="text-sm font-bold text-stone-800">
+                            {formatAmount(payment.amountTotal, payment.currency)}
+                          </span>
+                          {payment.productType && (
+                            <span className="text-xs text-stone-500">
+                              {payment.productType === "salon" ? "サロン価格" : "通常価格"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-3 text-sm text-stone-700">{stripeStatusDetails[payment.status]}</p>
+                        <p className="mt-2 text-xs font-bold text-stone-600">
+                          次の対応：{stripeNextActions[payment.status]}
+                        </p>
+                      </div>
+                      <time className="shrink-0 text-xs text-stone-400">{formatDate(payment.createdAt)}</time>
+                    </div>
+                    <details className="mt-3 text-xs text-stone-500">
+                      <summary className="cursor-pointer font-medium">システム担当向けID</summary>
+                      <div className="mt-2 space-y-1 break-all rounded-lg bg-white p-3 font-mono">
+                        <p>Checkout: {payment.checkoutSessionId}</p>
+                        <p>PaymentIntent: {payment.paymentIntentId || "なし"}</p>
+                      </div>
+                    </details>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl bg-stone-50 p-4 text-sm text-stone-500">
+                このメールアドレスに一致するStripe Checkoutの履歴はありません。
+              </p>
+            )}
+          </section>
 
           <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2">

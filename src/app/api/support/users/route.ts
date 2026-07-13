@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { findAuthUserByEmail, normalizeEmail } from "@/lib/authUsers";
 import { getSupportAccess } from "@/lib/supportAuth";
+import { lookupStripePaymentsByEmail } from "@/lib/stripeSupport";
+import type { StripePaymentSummary, StripeSupportLookup } from "@/lib/stripeSupportStatus";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 type EmailEvent = {
@@ -19,8 +21,10 @@ function buildDiagnosis(args: {
   bannedUntil?: string;
   lastSignInAt?: string;
   emailEvents: EmailEvent[];
+  stripePayments: StripePaymentSummary[];
 }) {
   const latest = args.emailEvents[0];
+  const latestPayment = args.stripePayments[0];
   const failedEvents = new Set(["email.failed", "email.bounced", "email.suppressed"]);
   const currentMessageEvents = latest?.provider_email_id
     ? args.emailEvents.filter((event) => event.provider_email_id === latest.provider_email_id)
@@ -30,6 +34,46 @@ function buildDiagnosis(args: {
   const currentFailure = currentMessageEvents.find((event) => failedEvents.has(event.event_type));
   const currentDelivered = currentMessageEvents.find((event) => event.event_type === "email.delivered");
   const currentClicked = currentMessageEvents.find((event) => event.event_type === "email.clicked");
+
+  if (latestPayment?.status === "succeeded" && (!args.hasAuthUser || !args.hasProfile)) {
+    return {
+      code: "payment_succeeded_registration_missing",
+      level: "system",
+      title: "決済成功後の顧客登録が未完了です",
+      detail: "Stripeでは決済が成功していますが、顧客プロフィールまたはSupabase Authがありません。購入Webhookの不整合が疑われます。",
+      nextAction: "再決済を案内せず、システム担当へエスカレーション",
+    };
+  }
+
+  if (!args.hasAuthUser && !args.hasProfile && latestPayment?.status === "three_d_secure_failed") {
+    return {
+      code: "three_d_secure_failed",
+      level: "customer",
+      title: "3Dセキュア認証が完了していません",
+      detail: "Stripeの本人認証が完了せず、決済は成立していません。認証失敗・途中中断のどちらも含まれます。",
+      nextAction: "購入画面から再決済し、本人認証まで完了するよう案内",
+    };
+  }
+
+  if (!args.hasAuthUser && !args.hasProfile && latestPayment?.status === "expired") {
+    return {
+      code: "checkout_expired",
+      level: "customer",
+      title: "決済画面の有効期限が切れています",
+      detail: "Stripe Checkoutは期限切れで、支払いは成立していません。会員登録とログインメール送信も行われていません。",
+      nextAction: "購入画面からもう一度決済するよう案内",
+    };
+  }
+
+  if (!args.hasAuthUser && !args.hasProfile && latestPayment?.status === "unpaid") {
+    return {
+      code: "payment_unpaid",
+      level: "customer",
+      title: "決済がまだ完了していません",
+      detail: "Stripeに購入操作の記録はありますが、支払いは成立していません。会員登録とログインメール送信は決済成功後に行われます。",
+      nextAction: "決済画面を完了するか、購入画面から再度手続きするよう案内",
+    };
+  }
 
   if (!args.hasAuthUser && !args.hasProfile) {
     return {
@@ -147,6 +191,19 @@ export async function GET(request: Request) {
 
   try {
     const admin = createAdminClient();
+    const stripeLookupPromise: Promise<StripeSupportLookup> = lookupStripePaymentsByEmail(email).catch(
+      (error) => {
+        console.warn(
+          "[Support Users API] Stripe lookup unavailable:",
+          error instanceof Error ? error.message : error,
+        );
+        return {
+          configured: Boolean(process.env.STRIPE_SECRET_KEY),
+          available: false,
+          payments: [],
+        };
+      },
+    );
     const authUser = await findAuthUserByEmail(admin, email);
 
     let profileQuery = admin
@@ -193,10 +250,11 @@ export async function GET(request: Request) {
           .maybeSingle()
       : Promise.resolve({ data: null, error: null });
 
-    const [callbacksResult, actionsResult, agentResult] = await Promise.all([
+    const [callbacksResult, actionsResult, agentResult, stripeLookup] = await Promise.all([
       callbackPromise,
       actionsPromise,
       agentPromise,
+      stripeLookupPromise,
     ]);
 
     const events = (emailEvents || []) as EmailEvent[];
@@ -207,6 +265,7 @@ export async function GET(request: Request) {
       bannedUntil: authUser?.banned_until,
       lastSignInAt: authUser?.last_sign_in_at,
       emailEvents: events,
+      stripePayments: stripeLookup.payments,
     });
 
     return NextResponse.json({
@@ -238,6 +297,7 @@ export async function GET(request: Request) {
       },
       diagnosis,
       trackingConfigured,
+      stripeLookup,
     });
   } catch (error) {
     console.error("[Support Users API] Failed:", error);
