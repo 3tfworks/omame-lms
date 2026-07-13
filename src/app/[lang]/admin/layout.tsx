@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, LifeBuoy, PlayCircle, Tag } from "lucide-react";
+import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, LifeBuoy, PlayCircle, Tag, Video } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -32,8 +32,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link
             href="/ja/admin"
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
-              pathname.endsWith('/admin') 
-                ? 'bg-stone-800 text-white' 
+              pathname.endsWith('/admin')
+                ? 'bg-stone-800 text-white'
                 : 'text-stone-400 hover:bg-stone-800 hover:text-white'
             }`}
           >
@@ -47,8 +47,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link
             href="/ja/admin/users"
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
-              pathname.includes('/admin/users') 
-                ? 'bg-stone-800 text-white' 
+              pathname.includes('/admin/users')
+                ? 'bg-stone-800 text-white'
                 : 'text-stone-400 hover:bg-stone-800 hover:text-white'
             }`}
           >
@@ -91,16 +91,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link
             href="/ja/admin/affiliate"
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
-              pathname.includes('/admin/affiliate') 
-                ? 'bg-stone-800 text-white' 
+              pathname.includes('/admin/affiliate')
+                ? 'bg-stone-800 text-white'
                 : 'text-stone-400 hover:bg-stone-800 hover:text-white'
             }`}
           >
             <Handshake size={20} />
             アフィリエイト管理
           </Link>
+          <Link
+            href="/ja/admin/youtube-research"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold ${
+              pathname.includes('/admin/youtube-research')
+                ? 'bg-stone-800 text-white'
+                : 'text-stone-400 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Video size={20} />
+            YouTubeリサーチ
+          </Link>
         </nav>
-        
+
         <div className="p-4 border-t border-stone-800 space-y-2">
           <Link href="/ja/lms" className="w-full flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-stone-800 hover:text-white rounded-xl transition-colors font-medium">
             <PlayCircle size={20} />

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:bookmarks": "node --experimental-strip-types --test src/lib/bookmarks.test.ts"
+    "test:bookmarks": "node --experimental-strip-types --test src/lib/bookmarks.test.ts",
+    "test:youtube-research": "node --experimental-strip-types --test src/lib/youtubeResearch.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -28,6 +29,7 @@
     "@types/vimeo__player": "^2.18.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "supabase": "^2.109.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
