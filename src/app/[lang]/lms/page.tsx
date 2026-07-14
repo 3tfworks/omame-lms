@@ -1,12 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, Sparkles, BookOpen, ChevronRight, Trophy, Search } from "lucide-react";
+import { Play, Sparkles, BarChart3, ChevronRight, Trophy, Search } from "lucide-react";
 import { currentTenantConfig } from "@/lib/tenantConfig";
 import { Watermark } from "@/components/decorations/Watermark";
 import { PixieDust } from "@/components/decorations/PixieDust";
 import { createClient } from "@/utils/supabase/server";
-import { curriculumData } from "@/lib/lmsData";
+import { curriculumData, type ChapterData, type VideoData } from "@/lib/lmsData";
 import { BookmarkGuide } from "@/components/help/BookmarkGuide";
 
 export default async function LMSDashboard() {
@@ -15,19 +15,23 @@ export default async function LMSDashboard() {
   const userId = session?.user?.id;
 
   // 全動画数を lmsData から計算
-  let totalVideos = 0;
-  curriculumData.forEach((chapter) => {
-    totalVideos += chapter.videos.length;
-  });
+  const curriculumVideoIds = curriculumData.flatMap((chapter) =>
+    chapter.videos.map((video) => video.id)
+  );
+  const totalVideos = curriculumVideoIds.length;
 
   // ユーザーの完了動画数を取得 (user_progress から取得)
   let completedVideos = 0;
   if (userId) {
-    const { count } = await supabase
+    const { count, error: progressCountError } = await supabase
       .from("user_progress")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId)
-      .eq("is_completed", true);
+      .eq("is_completed", true)
+      .in("video_id", curriculumVideoIds);
+    if (progressCountError) {
+      console.error("Failed to count completed videos:", progressCountError);
+    }
     completedVideos = count || 0;
   }
 
@@ -35,20 +39,25 @@ export default async function LMSDashboard() {
   const progressPercent = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
 
   // 「前回の続きから学ぶ」または「最初の動画」のデータを lmsData から取得
-  let nextVideoInfo = null;
+  let nextVideoInfo: { chapter: ChapterData; video: VideoData } | null = null;
   let isFirstTime = false;
 
   if (userId) {
     // 最後に視聴した動画を取得 (video_id は文字列 "video-xxx" などになっている前提)
-    const { data: lastWatched } = await supabase
+    const { data: watchedVideos, error: watchedVideosError } = await supabase
       .from("user_progress")
       .select("video_id")
       .eq("user_id", userId)
-      .order("last_watched_at", { ascending: false })
-      .limit(1)
-      .single();
+      .in("video_id", curriculumVideoIds)
+      .order("last_watched_at", { ascending: false, nullsFirst: false })
+      .limit(1);
 
-    if (lastWatched && lastWatched.video_id) {
+    if (watchedVideosError) {
+      console.error("Failed to load last watched video:", watchedVideosError);
+    }
+
+    const lastWatched = watchedVideos?.[0];
+    if (lastWatched?.video_id) {
       // lmsData から該当動画を探す
       for (const chapter of curriculumData) {
         const video = chapter.videos.find(v => v.id === lastWatched.video_id);
@@ -228,12 +237,12 @@ export default async function LMSDashboard() {
             </div>
 
             <Link 
-              href="/ja/lms/notes"
+              href="/ja/lms/progress"
               className="flex items-center justify-between p-4 bg-[#faf9f6] hover:bg-[#f4f0e6] rounded-xl transition-colors border border-stone-200"
             >
               <div className="flex items-center gap-3">
-                <BookOpen size={20} className="text-stone-600" />
-                <span className="font-bold text-stone-700">マイノートを確認</span>
+                <BarChart3 size={20} className="text-stone-600" />
+                <span className="font-bold text-stone-700">学習状況を詳しく見る</span>
               </div>
               <ChevronRight size={18} className="text-stone-400" />
             </Link>

@@ -113,7 +113,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [noteText, setNoteText] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   const [noteStatus, setNoteStatus] = useState<{ text: string; type: string }>({ text: "", type: "" });
-  const noteTextRef = React.useRef("");
   
   // Vimeo Player と付箋用ステート
   const [vimeoPlayer, setVimeoPlayer] = useState<Player | null>(null);
@@ -242,6 +241,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
             user_id: user.id,
             video_id: videoId,
             is_completed: nextCompleted,
+            completed_at: nextCompleted ? new Date().toISOString() : null,
             last_watched_at: new Date().toISOString(),
           },
           { onConflict: "user_id,video_id" }
@@ -437,51 +437,28 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  // マイノート（user_notes）へ upsert 保存する。
-  // silent=true は行動リスト連携の自動保存用（成功トーストを出さない）。
-  const saveNote = async (content: string, silent = false) => {
+  // マイノートはユーザーが明示的に保存した自由記述だけを保持する。
+  const saveNote = async (content: string) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      if (!silent) setNoteStatus({ text: "ログインが必要です", type: "error" });
+      setNoteStatus({ text: "ログインが必要です", type: "error" });
       return;
     }
-    if (!silent) {
-      setNoteSaving(true);
-      setNoteStatus({ text: "", type: "" });
-    }
+    setNoteSaving(true);
+    setNoteStatus({ text: "", type: "" });
     const { error } = await supabase
       .from("user_notes")
       .upsert(
         { user_id: user.id, video_id: videoId, content, updated_at: new Date().toISOString() },
         { onConflict: "user_id,video_id" }
       );
-    if (!silent) {
-      setNoteSaving(false);
-      setNoteStatus(
-        error
-          ? { text: "保存に失敗しました", type: "error" }
-          : { text: "ノートを保存しました", type: "success" }
-      );
-    } else if (error) {
-      console.error("マイノートの自動保存に失敗:", error);
-    }
-  };
-
-  // 行動リストのチェックON時に、完了ログをマイノート本文へ追記して自動保存する。
-  // ・重複ガード: 同じ完了ログ文言が既に本文に含まれていれば追記しない（文字列一致）。
-  // ・チェックOFF（action_item_progress の削除）には連動させない＝完了ログは残したまま。
-  const handleTaskCheck = (taskText: string) => {
-    const prev = noteTextRef.current;
-    const marker = `✅ 【完了】${taskText}`;
-    if (prev.includes(marker)) return; // 既に同じ完了ログがある → 何もしない
-    const today = new Date();
-    const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
-    const newRecord = `${marker}（${dateStr}）`;
-    const updated = prev ? `${prev}\n${newRecord}\n` : `${newRecord}\n`;
-    setNoteText(updated);
-    noteTextRef.current = updated;
-    saveNote(updated, true);
+    setNoteSaving(false);
+    setNoteStatus(
+      error
+        ? { text: "保存に失敗しました", type: "error" }
+        : { text: "ノートを保存しました", type: "success" }
+    );
   };
 
   // 行動リストのチェック状態（item_key の集合）。Supabase に presence 方式で永続化する。
@@ -506,11 +483,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     return () => { active = false; };
   }, [videoId]);
 
-  // ノート本文の最新値を ref に同期（行動リスト自動保存時に最新本文を参照するため）
-  React.useEffect(() => {
-    noteTextRef.current = noteText;
-  }, [noteText]);
-
   // ページ表示時に、この動画の既存マイノートを取得して textarea に復元する
   React.useEffect(() => {
     let active = true;
@@ -525,7 +497,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         .maybeSingle();
       if (!error && data && active) {
         setNoteText(data.content || "");
-        noteTextRef.current = data.content || "";
       }
     }
     loadNote();
@@ -533,7 +504,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   }, [videoId]);
 
   // 楽観的更新つきトグル: UI を即反映 → Supabase へ保存（presence 方式の insert / delete）。失敗時は元に戻す。
-  const toggleActionItem = async (itemKey: string, text: string) => {
+  const toggleActionItem = async (itemKey: string) => {
     const wasChecked = checkedItems.has(itemKey);
 
     // 1) 楽観的更新
@@ -543,9 +514,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       else next.add(itemKey);
       return next;
     });
-    // チェックON にしたときだけ、マイノートへ完了記録を追記（既存挙動を維持）
-    if (!wasChecked) handleTaskCheck(text);
-
     // 2) 保存
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -685,7 +653,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               key={i}
               text={text}
               checked={checkedItems.has(itemKey)}
-              onToggle={() => toggleActionItem(itemKey, text)}
+              onToggle={() => toggleActionItem(itemKey)}
             />
           );
           lastType = 'action';

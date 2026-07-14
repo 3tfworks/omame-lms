@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound, AlertCircle } from "lucide-react";
+import { AlertCircle, BarChart3, BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound } from "lucide-react";
 import { curriculumData, type ChapterData } from "@/lib/lmsData";
 import ReferralPopup from "@/components/ReferralPopup";
 import { LineLogo } from "@/components/ui/LineLogo";
@@ -123,6 +123,10 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <Link href="/ja/lms/notes" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <BookOpen size={20} />
               マイノートを見る
+            </Link>
+            <Link href="/ja/lms/progress" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
+              <BarChart3 size={20} />
+              現在の学習状況
             </Link>
             <Link href="/ja/lms/mypage" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <UserRound size={20} />
