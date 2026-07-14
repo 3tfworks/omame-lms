@@ -75,7 +75,7 @@ function CustomVideoPlayer({ vimeoId, onReady }: { vimeoId: string, onReady: (pl
     // vimeoIdだけを数値として抽出（https://vimeo.com/...等のURLの可能性も考慮）
     const cleanId = vimeoId.split('?')[0].split('/').pop() || vimeoId;
 
-    const options: any = {
+    const options: NonNullable<ConstructorParameters<typeof Player>[1]> & { t?: number } = {
       id: parseInt(cleanId),
       responsive: true,
       title: false,
@@ -96,7 +96,7 @@ function CustomVideoPlayer({ vimeoId, onReady }: { vimeoId: string, onReady: (pl
     return () => {
       player.destroy();
     };
-  }, [vimeoId]);
+  }, [onReady, vimeoId]);
 
   return <div ref={containerRef} className="w-full h-full"></div>;
 }
@@ -117,6 +117,9 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   
   // Vimeo Player と付箋用ステート
   const [vimeoPlayer, setVimeoPlayer] = useState<Player | null>(null);
+  const handleVimeoReady = React.useCallback((player: Player) => {
+    setVimeoPlayer(player);
+  }, []);
   const [isAddingBookmark, setIsAddingBookmark] = useState(false);
   const [bookmarkTime, setBookmarkTime] = useState<number>(0);
   const [bookmarkContent, setBookmarkContent] = useState("");
@@ -143,6 +146,121 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   const [bookmarkView, setBookmarkView] = useState<"private" | "shared">("private");
   const [visibilityProcessingId, setVisibilityProcessingId] = useState<string | null>(null);
   const [isVideoCompleted, setIsVideoCompleted] = useState(false); // 完了状態のステート追加
+  const [isProgressLoading, setIsProgressLoading] = useState(true);
+  const [isProgressSaving, setIsProgressSaving] = useState(false);
+  const [progressError, setProgressError] = useState("");
+
+  // Load the persisted completion state and record this video as the most
+  // recently watched one. Upsert also creates the first progress row.
+  React.useEffect(() => {
+    let active = true;
+
+    async function loadVideoProgress() {
+      setIsProgressLoading(true);
+      setProgressError("");
+
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        if (active) {
+          setProgressError("ログイン状態を確認できませんでした。ページを再読み込みしてください。");
+          setIsProgressLoading(false);
+        }
+        console.error("Failed to get user for video progress:", authError);
+        return;
+      }
+      if (!user) {
+        if (active) {
+          setProgressError("ログイン状態を確認できませんでした。再度ログインしてください。");
+          setIsProgressLoading(false);
+        }
+        return;
+      }
+
+      const { data, error: loadError } = await supabase
+        .from("user_progress")
+        .select("is_completed")
+        .eq("user_id", user.id)
+        .eq("video_id", videoId)
+        .maybeSingle();
+
+      if (loadError) {
+        if (active) {
+          setProgressError("学習進捗を読み込めませんでした。ページを再読み込みしてください。");
+          setIsProgressLoading(false);
+        }
+        console.error("Failed to load video progress:", loadError);
+        return;
+      }
+
+      const completed = data?.is_completed ?? false;
+      const { error: saveWatchError } = await supabase
+        .from("user_progress")
+        .upsert(
+          {
+            user_id: user.id,
+            video_id: videoId,
+            is_completed: completed,
+            last_watched_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,video_id" }
+        );
+
+      if (!active) return;
+      setIsVideoCompleted(completed);
+      setIsProgressLoading(false);
+      if (saveWatchError) {
+        setProgressError("視聴履歴を保存できませんでした。");
+        console.error("Failed to save watch history:", saveWatchError);
+      }
+    }
+
+    loadVideoProgress();
+    return () => { active = false; };
+  }, [videoId]);
+
+  const toggleVideoCompleted = async () => {
+    if (isProgressLoading || isProgressSaving) return;
+
+    const nextCompleted = !isVideoCompleted;
+    setIsProgressSaving(true);
+    setProgressError("");
+
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        setProgressError("ログイン状態を確認できませんでした。再度ログインしてください。");
+        if (authError) console.error("Failed to get user for video completion:", authError);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("user_progress")
+        .upsert(
+          {
+            user_id: user.id,
+            video_id: videoId,
+            is_completed: nextCompleted,
+            last_watched_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,video_id" }
+        );
+
+      if (error) {
+        setProgressError("完了状態を保存できませんでした。もう一度お試しください。");
+        console.error("Failed to save video completion:", error);
+        return;
+      }
+
+      setIsVideoCompleted(nextCompleted);
+    } catch (error) {
+      setProgressError("完了状態を保存できませんでした。通信状態を確認してもう一度お試しください。");
+      console.error("Unexpected error while saving video completion:", error);
+    } finally {
+      setIsProgressSaving(false);
+    }
+  };
 
   // 付箋一覧の取得
   React.useEffect(() => {
@@ -169,16 +287,6 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
       active = false;
     };
   }, [videoId]);
-  
-  if (!videoData) {
-    return <div className="p-12 text-center">動画が見つかりませんでした</div>;
-  }
-
-  const displayedBookmarks = bookmarks.filter((bookmark) =>
-    bookmarkView === "private"
-      ? bookmark.isOwn && bookmark.visibility === "private"
-      : bookmark.visibility === "shared",
-  );
 
   const submitBookmark = async () => {
     const content = bookmarkContent.trim();
@@ -391,7 +499,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         .select("item_key")
         .eq("video_id", videoId);
       if (!error && data && active) {
-        setCheckedItems(new Set(data.map((row: any) => row.item_key)));
+        setCheckedItems(new Set(data.map((row: { item_key: string }) => row.item_key)));
       }
     }
     loadProgress();
@@ -480,9 +588,9 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
   // ・親に space-y-* は付けず、各要素の種別と「直前要素の種別(lastType)」から mt を構造的に決める。
   //   → 番号見出しの前は大きく空け、見出し直下の bullet と bullet 同士は詰める＝グループ感を出す。
   const renderMemoContent = () => {
-    if (!videoData.memoContent) return null;
+    if (!videoData?.memoContent) return null;
 
-    const parsedElements = [];
+    const parsedElements: React.ReactNode[] = [];
     let currentSection = ''; // 'action' | 'summary' | 'flow' | ''
     let actionIndex = 0; // 行動リスト内の項目連番（item_key の採番に使用）
     // 直前に積んだ要素の種別。間隔（mt）を文脈に応じて決めるために使う。
@@ -654,6 +762,16 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
     return parsedElements;
   };
 
+  if (!videoData) {
+    return <div className="p-12 text-center">動画が見つかりませんでした</div>;
+  }
+
+  const displayedBookmarks = bookmarks.filter((bookmark) =>
+    bookmarkView === "private"
+      ? bookmark.isOwn && bookmark.visibility === "private"
+      : bookmark.visibility === "shared",
+  );
+
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
       {/* 戻るボタンとタイトル */}
@@ -669,7 +787,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
 
       {/* 動画プレイヤー枠 */}
       <div className="bg-stone-900 rounded-2xl overflow-hidden shadow-lg border border-stone-200 aspect-video relative">
-        <CustomVideoPlayer vimeoId={videoData.vimeoId} onReady={(player) => setVimeoPlayer(player)} />
+        <CustomVideoPlayer vimeoId={videoData.vimeoId} onReady={handleVimeoReady} />
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
@@ -690,18 +808,25 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
         </button>
 
         <button 
-          onClick={() => setIsVideoCompleted(!isVideoCompleted)}
-          className={`font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm w-full sm:w-auto group ${isVideoCompleted ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-stone-800 text-stone-50 hover:bg-stone-700'}`}
+          type="button"
+          onClick={toggleVideoCompleted}
+          disabled={isProgressLoading || isProgressSaving}
+          className={`font-bold py-3 px-8 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm w-full sm:w-auto group disabled:cursor-wait disabled:opacity-70 ${isVideoCompleted ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-stone-800 text-stone-50 hover:bg-stone-700'}`}
           title={isVideoCompleted ? "未完了の状態に戻す" : "完了にする"}
         >
           <CheckCircle2 size={20} />
-          {isVideoCompleted ? (
+          {isProgressLoading ? '進捗を確認中…' : isProgressSaving ? '保存中…' : isVideoCompleted ? (
             <span className="flex items-center gap-2">
               完了しました <span className="text-emerald-200 text-xs font-normal opacity-0 group-hover:opacity-100 transition-opacity">（クリックで取消）</span>
             </span>
           ) : 'この動画を「完了」にする'}
         </button>
       </div>
+      {progressError && (
+        <p role="alert" aria-live="polite" className="text-right text-sm font-medium text-red-600">
+          {progressError}
+        </p>
+      )}
 
       {/* ① コンパクト版：前後ナビゲーション（プレイヤー直下） */}
       <div className="flex justify-between items-center mt-2">
