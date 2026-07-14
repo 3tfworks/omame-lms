@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AlertCircle, BarChart3, BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound } from "lucide-react";
+import { AlertCircle, BarChart3, Bell, BookOpen, PlayCircle, Search, Home, Menu, X, CheckCircle2, ChevronDown, ChevronRight, Sparkles, Handshake, Star, UserRound } from "lucide-react";
 import { curriculumData, type ChapterData } from "@/lib/lmsData";
 import ReferralPopup from "@/components/ReferralPopup";
 import { LineLogo } from "@/components/ui/LineLogo";
@@ -53,6 +53,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [profile, setProfile] = useState<{ role: string; legal_name: string | null; display_name: string | null; referral_prompt_shown: boolean } | null>(null);
   const [showReferralPopup, setShowReferralPopup] = useState(false);
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -72,6 +73,23 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
     fetchProfile();
     window.addEventListener("omame-profile-updated", fetchProfile);
     return () => window.removeEventListener("omame-profile-updated", fetchProfile);
+  }, []);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch("/api/announcements/unread-count");
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadAnnouncements(data.unreadCount ?? 0);
+        }
+      } catch (error) {
+        console.error("お知らせ未読件数の取得エラー:", error);
+      }
+    };
+    fetchUnreadCount();
+    window.addEventListener("omame-announcements-updated", fetchUnreadCount);
+    return () => window.removeEventListener("omame-announcements-updated", fetchUnreadCount);
   }, []);
 
   const needsLegalName = Boolean(
@@ -111,6 +129,15 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <Link href="/ja/lms/guide" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <Sparkles size={20} />
               はじめての方へ
+            </Link>
+            <Link href="/ja/lms/announcements" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
+              <Bell size={20} />
+              <span className="flex-1">お知らせ</span>
+              {unreadAnnouncements > 0 ? (
+                <span className="min-w-6 rounded-full bg-red-500 px-2 py-0.5 text-center text-xs font-bold text-white" aria-label={`未読${unreadAnnouncements}件`}>
+                  {unreadAnnouncements > 99 ? "99+" : unreadAnnouncements}
+                </span>
+              ) : null}
             </Link>
             <Link href="/ja/lms/search" className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:bg-neutral-50 rounded-lg font-medium transition-colors">
               <Search size={20} />

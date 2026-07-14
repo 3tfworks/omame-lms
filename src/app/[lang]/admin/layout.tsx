@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, LifeBuoy, PlayCircle, Tag, Video } from "lucide-react";
+import { Bell, MessageSquare, CheckSquare, Users, LogOut, Calendar, Handshake, LifeBuoy, PlayCircle, Tag, Video } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,6 +18,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
+          <Link
+            href="/ja/admin/announcements"
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors ${pathname.includes('/admin/announcements') ? 'bg-stone-800 text-white' : 'text-stone-400 hover:bg-stone-800 hover:text-white'}`}
+          >
+            <Bell size={20} />
+            お知らせ管理
+          </Link>
           <Link
             href="/ja/admin/bookmarks"
             className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-colors ${

@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, Sparkles, BarChart3, ChevronRight, Trophy, Search } from "lucide-react";
+import { Bell, Play, Sparkles, BarChart3, ChevronRight, Trophy, Search } from "lucide-react";
+import { formatAnnouncementDate, type Announcement } from "@/lib/announcements";
 import { currentTenantConfig } from "@/lib/tenantConfig";
 import { Watermark } from "@/components/decorations/Watermark";
 import { PixieDust } from "@/components/decorations/PixieDust";
@@ -37,6 +38,22 @@ export default async function LMSDashboard() {
 
   // 進捗率を計算
   const progressPercent = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
+
+  let latestAnnouncements: Announcement[] = [];
+  let readAnnouncementIds = new Set<string>();
+  if (userId) {
+    const [announcementsResult, readsResult] = await Promise.all([
+      supabase
+        .from("announcements")
+        .select("id, title, body, audience, is_important, is_published, published_at, created_at, updated_at")
+        .order("is_important", { ascending: false })
+        .order("published_at", { ascending: false })
+        .limit(3),
+      supabase.from("announcement_reads").select("announcement_id").eq("user_id", userId),
+    ]);
+    latestAnnouncements = (announcementsResult.data ?? []) as Announcement[];
+    readAnnouncementIds = new Set((readsResult.data ?? []).map((row) => row.announcement_id));
+  }
 
   // 「前回の続きから学ぶ」または「最初の動画」のデータを lmsData から取得
   let nextVideoInfo: { chapter: ChapterData; video: VideoData } | null = null;
@@ -249,6 +266,27 @@ export default async function LMSDashboard() {
           </div>
         </div>
       </section>
+
+      {latestAnnouncements.length > 0 ? (
+        <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-stone-100 bg-[#faf9f6] px-6 py-4">
+            <h2 className="flex items-center gap-2 font-bold text-stone-800"><Bell size={19} className="text-amber-600" />最新のお知らせ</h2>
+            <Link href="/ja/lms/announcements" className="flex items-center gap-1 text-sm font-bold text-stone-500 hover:text-amber-800">一覧を見る<ChevronRight size={16} /></Link>
+          </div>
+          <ul className="divide-y divide-stone-100">
+            {latestAnnouncements.map((item) => (
+              <li key={item.id}>
+                <Link href={`/ja/lms/announcements/${item.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-amber-50/50">
+                  {!readAnnouncementIds.has(item.id) ? <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" aria-label="未読" /> : <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-stone-200" aria-hidden="true" />}
+                  <div className="min-w-0 flex-1"><p className="truncate font-bold text-stone-700">{item.title}</p><time dateTime={item.published_at} className="mt-1 block text-xs text-stone-400">{formatAnnouncementDate(item.published_at)}</time></div>
+                  {item.is_important ? <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800">重要</span> : null}
+                  <ChevronRight size={18} className="shrink-0 text-stone-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {/* お豆ナビ検索（大きな入口） */}
       <section>
