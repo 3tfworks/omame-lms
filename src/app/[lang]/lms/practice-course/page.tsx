@@ -2,15 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, CheckCircle2, Sparkles, Heart, Star, Music, MoveRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { ChevronLeft, CheckCircle2, Sparkles, Heart, Star, Music, MoveRight } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -302,17 +302,17 @@ export default function PracticeCoursePage() {
           <motion.div variants={fadeInUp} className="flex flex-col items-center justify-center space-y-6">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-500" />
-              <a
-                href="#apply-dummy" // TODO: 本番のURLが決まり次第差し替え
+              <Link
+                href="/ja/lp-practice"
                 className="relative flex items-center gap-4 bg-stone-900 text-white font-bold py-6 px-12 rounded-full text-xl hover:bg-stone-800 transition-all shadow-2xl hover:-translate-y-1 overflow-hidden"
               >
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                基礎実践講座に申し込む
+                基礎実践講座の詳細を見る
                 <MoveRight size={24} className="group-hover:translate-x-2 transition-transform duration-300" />
-              </a>
+              </Link>
             </div>
             <p className="text-sm text-stone-500 font-medium bg-white/50 px-4 py-2 rounded-full">
-              ※ 詳細ページ（仮URL）へ移動します
+              講座内容・サポート・料金をご確認いただけます
             </p>
           </motion.div>
 
