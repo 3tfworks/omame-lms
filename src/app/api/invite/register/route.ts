@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getValidReferrer } from "@/lib/invite";
 
 export async function POST(request: Request) {
   let body: { name?: string; email?: string; referrerId?: string };
@@ -22,19 +23,9 @@ export async function POST(request: Request) {
 
   const adminClient = createAdminClient();
 
-  const { data: referrer, error: referrerError } = await adminClient
-    .from("users")
-    .select("id, role")
-    .eq("id", referrerId)
-    .single();
-
-  if (referrerError || !referrer) {
-    return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
-  }
-
-  if (referrer.role !== "salon_member" && referrer.role !== "owner" && referrer.role !== "admin") {
-    return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
-  }
+  // 役割だけでなく、現行のお豆メッセンジャー規約への同意も確認する。
+  const referrer = await getValidReferrer(referrerId);
+  if (!referrer) return NextResponse.json({ error: "Referrer not found" }, { status: 404 });
 
   const { error: insertError } = await adminClient
     .from("invite_leads")

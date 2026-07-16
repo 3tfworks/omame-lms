@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Handshake, Download, RefreshCw, CheckCircle2, Clock, Settings, Save, Percent } from "lucide-react";
+import { Handshake, Download, RefreshCw, CheckCircle2, Clock, Settings, Save, Percent, FileCheck2, XCircle } from "lucide-react";
 
 type AffiliateReward = {
   id: string;
@@ -9,11 +9,15 @@ type AffiliateReward = {
   reward_rate: number;
   status: string;
   created_at: string;
+  eligible_for_payout_at: string;
+  paid_at: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
   referrer: {
     id: string;
     email: string;
     display_name: string | null;
-    bank_info: any | null;
+    bank_info: BankInfo | null;
   };
   buyer: {
     email: string;
@@ -21,14 +25,43 @@ type AffiliateReward = {
   };
 };
 
+type BankInfo = {
+  bankName?: string;
+  branchName?: string;
+  accountType?: string;
+  accountNumber?: string;
+  accountName?: string;
+};
+
 type RewardRateConfig = {
   default: number;
 };
+
+type TermsAcceptance = {
+  user_id: string;
+  terms_version: string;
+  accepted_at: string;
+  user: { email: string; display_name: string | null } | null;
+};
+
+function getPayoutReadyRewards(rewards: AffiliateReward[], now: number): AffiliateReward[] {
+  const eligible = rewards.filter(
+    reward => reward.status === "pending" && new Date(reward.eligible_for_payout_at).getTime() <= now,
+  );
+  const totals = new Map<string, number>();
+  for (const reward of eligible) {
+    totals.set(reward.referrer.id, (totals.get(reward.referrer.id) ?? 0) + reward.amount);
+  }
+  return eligible.filter(reward => (totals.get(reward.referrer.id) ?? 0) >= 5_000);
+}
 
 export default function AdminAffiliatePage() {
   const [rewards, setRewards] = useState<AffiliateReward[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [termsAcceptances, setTermsAcceptances] = useState<TermsAcceptance[]>([]);
+  const [termsVersion, setTermsVersion] = useState("");
+  const [currentTime, setCurrentTime] = useState(0);
 
   const [rateConfig, setRateConfig] = useState<RewardRateConfig>({ default: 35 });
   const [savingRate, setSavingRate] = useState(false);
@@ -44,6 +77,9 @@ export default function AdminAffiliatePage() {
         if (data.rewardRateConfig) {
           setRateConfig({ default: data.rewardRateConfig.default ?? 35 });
         }
+        setTermsAcceptances(data.termsAcceptances || []);
+        setTermsVersion(data.termsVersion || "");
+        setCurrentTime(Date.now());
       }
     } catch (e) {
       console.error(e);
@@ -73,38 +109,41 @@ export default function AdminAffiliatePage() {
   };
 
   useEffect(() => {
+    // Initial client-side synchronization with the admin API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRewards();
   }, []);
 
-  const handleStatusChange = async (rewardId: string, newStatus: string) => {
+  const handleStatusChange = async (rewardId: string, newStatus: string, cancellationReason?: string) => {
     setUpdatingId(rewardId);
     try {
       const res = await fetch("/api/admin/affiliate", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rewardId, newStatus }),
+        body: JSON.stringify({ rewardId, newStatus, cancellationReason }),
       });
       if (res.ok) {
         await fetchRewards();
       } else {
-        alert("ステータスの更新に失敗しました");
+        const data = await res.json().catch(() => null);
+        alert(data?.error || "ステータスの更新に失敗しました");
       }
-    } catch (e) {
+    } catch {
       alert("通信エラーが発生しました");
     }
     setUpdatingId(null);
   };
 
   const handleDownloadCSV = () => {
-    // 未払いのものだけを抽出（または全て抽出するかは要件次第だが、一旦全部出力しつつフィルタもできるように）
-    const pendingRewards = rewards.filter(r => r.status === 'pending');
+    const now = Date.now();
+    const pendingRewards = getPayoutReadyRewards(rewards, now);
     if (pendingRewards.length === 0) {
-      alert("未払いの成果はありません");
+      alert("支払可能な報酬（紹介者ごとの合計5,000円以上）はありません");
       return;
     }
 
     // CSVヘッダー
-    const headers = ["成果ID", "発生日", "紹介者名", "紹介者Email", "購入者Email", "報酬率", "報酬金額", "銀行名", "支店名", "口座種別", "口座番号", "口座名義"];
+    const headers = ["成果ID", "発生日", "紹介者名", "紹介者Email", "購入者Email", "報酬率", "報酬金額", "振込手数料", "銀行名", "支店名", "口座種別", "口座番号", "口座名義"];
     
     // CSVデータ行
     const rows = pendingRewards.map(r => {
@@ -117,6 +156,7 @@ export default function AdminAffiliatePage() {
         r.buyer.email,
         `${r.reward_rate}%`,
         r.amount,
+        "紹介者負担（報酬から差引）",
         bank.bankName || "",
         bank.branchName || "",
         bank.accountType || "",
@@ -145,6 +185,9 @@ export default function AdminAffiliatePage() {
   }
 
   const pendingTotal = rewards.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0);
+  const payoutReadyRewards = getPayoutReadyRewards(rewards, currentTime);
+  const payoutReadyTotal = payoutReadyRewards.reduce((sum, r) => sum + r.amount, 0);
+  const payoutReadyIds = new Set(payoutReadyRewards.map(reward => reward.id));
 
   return (
     <div>
@@ -163,6 +206,7 @@ export default function AdminAffiliatePage() {
           <div className="text-right">
             <p className="text-xs text-stone-500 font-bold mb-1">未払い報酬合計</p>
             <p className="text-2xl font-bold text-amber-600">¥{pendingTotal.toLocaleString()}</p>
+            <p className="mt-1 text-xs text-emerald-700">支払可能 ¥{payoutReadyTotal.toLocaleString()}</p>
           </div>
           <button
             onClick={handleDownloadCSV}
@@ -171,6 +215,37 @@ export default function AdminAffiliatePage() {
             <Download className="w-4 h-4" />
             未払いリスト(CSV)
           </button>
+        </div>
+      </div>
+
+      <div className="mb-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-emerald-100 bg-emerald-50 px-6 py-4">
+          <FileCheck2 className="h-5 w-5 text-emerald-700" />
+          <h3 className="font-bold text-omame-deep">紹介プログラム規約の同意記録</h3>
+        </div>
+        <div className="p-6">
+          <p className="text-sm leading-7 text-stone-600">
+            現行規約：{termsVersion || "未設定"} ／ 同意済み：{termsAcceptances.length}人
+          </p>
+          {termsAcceptances.length > 0 && (
+            <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-stone-200">
+              <table className="w-full min-w-[620px] text-sm">
+                <thead className="sticky top-0 bg-stone-50 text-left text-stone-600">
+                  <tr><th className="px-4 py-3">紹介者</th><th className="px-4 py-3">メール</th><th className="px-4 py-3">同意日時</th><th className="px-4 py-3">規約版</th></tr>
+                </thead>
+                <tbody>
+                  {termsAcceptances.map((acceptance) => (
+                    <tr key={`${acceptance.user_id}-${acceptance.terms_version}`} className="border-t border-stone-100">
+                      <td className="px-4 py-3 font-bold text-stone-800">{acceptance.user?.display_name || "未設定"}</td>
+                      <td className="px-4 py-3 text-stone-600">{acceptance.user?.email || "不明"}</td>
+                      <td className="px-4 py-3 text-stone-600">{new Date(acceptance.accepted_at).toLocaleString("ja-JP")}</td>
+                      <td className="px-4 py-3 text-stone-500">{acceptance.terms_version}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -286,18 +361,56 @@ export default function AdminAffiliatePage() {
                           戻す
                         </button>
                       </div>
+                    ) : reward.status === "cancelled" ? (
+                      <div className="space-y-2">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+                          <XCircle className="h-3.5 w-3.5" />
+                          取消済
+                        </span>
+                        <p className="max-w-[220px] text-xs leading-5 text-stone-500">
+                          {reward.cancellation_reason || "返金・決済取消等のため"}
+                        </p>
+                        <button
+                          onClick={() => handleStatusChange(reward.id, "pending")}
+                          disabled={updatingId === reward.id}
+                          className="text-xs text-stone-500 underline"
+                        >
+                          未払いに戻す
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-3.5 h-3.5" />
                           未払い
                         </span>
+                        {payoutReadyIds.has(reward.id) ? (
+                          <button
+                            onClick={() => handleStatusChange(reward.id, 'paid')}
+                            disabled={updatingId === reward.id}
+                            className="text-xs bg-omame-primary text-white px-2 py-1 rounded hover:bg-omame-deep transition-colors ml-2"
+                          >
+                            支払完了にする
+                          </button>
+                        ) : new Date(reward.eligible_for_payout_at).getTime() > currentTime ? (
+                          <span className="text-xs text-stone-500">
+                            {new Date(reward.eligible_for_payout_at).toLocaleDateString("ja-JP")}以降
+                          </span>
+                        ) : (
+                          <span className="text-xs text-stone-500">合計5,000円以上で振込</span>
+                        )}
                         <button
-                          onClick={() => handleStatusChange(reward.id, 'paid')}
+                          onClick={() => {
+                            const reason = window.prompt(
+                              "取消理由を入力してください",
+                              "返金・カード決済の取消・規約違反等のため",
+                            );
+                            if (reason !== null) handleStatusChange(reward.id, "cancelled", reason);
+                          }}
                           disabled={updatingId === reward.id}
-                          className="text-xs bg-omame-primary text-white px-2 py-1 rounded hover:bg-omame-deep transition-colors ml-2"
+                          className="ml-1 text-xs text-red-600 underline"
                         >
-                          支払完了にする
+                          取消
                         </button>
                       </div>
                     )}

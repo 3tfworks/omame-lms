@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Heart, Mail, User, ArrowDown } from "lucide-react";
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 1, ease: "easeOut" } },
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
 };
@@ -23,12 +23,14 @@ export default function InviteClient({
   referrerName,
   regularPrice,
   referralPrice,
+  referralDiscountActive,
 }: {
   lang: string;
   userId: string;
   referrerName: string | null;
   regularPrice: number;
   referralPrice: number;
+  referralDiscountActive: boolean;
 }) {
   const router = useRouter();
 
@@ -288,15 +290,27 @@ export default function InviteClient({
 
             <div className="bg-[#FAFAF8] px-5 py-7 md:p-14 rounded-3xl shadow-2xl border border-omame-gold/30">
               <div className="mb-8 border border-emerald-200 bg-emerald-50 px-5 py-4 text-center font-sans">
-                <p className="font-bold text-emerald-800">ご紹介特典 10%OFF</p>
-                <p className="mt-2 text-sm text-emerald-700">
-                  <span className="line-through">{regularPrice.toLocaleString("ja-JP")}円</span>
-                  <span className="mx-2">→</span>
-                  <strong className="text-lg">{referralPrice.toLocaleString("ja-JP")}円</strong>
-                </p>
-                <p className="mt-2 text-xs text-emerald-700">
-                  クーポンコードの入力は不要です。この紹介ページから自動で適用されます。
-                </p>
+                {referralDiscountActive ? (
+                  <>
+                    <p className="font-bold text-emerald-800">ご紹介特典 10%OFF（2026年8月31日まで）</p>
+                    <p className="mt-2 text-sm text-emerald-700">
+                      <span className="line-through">{regularPrice.toLocaleString("ja-JP")}円</span>
+                      <span className="mx-2">→</span>
+                      <strong className="text-lg">{referralPrice.toLocaleString("ja-JP")}円</strong>
+                    </p>
+                    <p className="mt-2 text-xs text-emerald-700">
+                      クーポンコードの入力は不要です。この紹介ページから自動で適用されます。
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bold text-emerald-800">ご紹介者から届いた専用ページです</p>
+                    <p className="mt-2 text-lg font-bold text-emerald-900">
+                      受講料 {regularPrice.toLocaleString("ja-JP")}円（税込）
+                    </p>
+                    <p className="mt-2 text-xs text-emerald-700">講座本体の価格は公式サイトと同一です。</p>
+                  </>
+                )}
               </div>
 
               {/* LINE友達追加ボタン */}

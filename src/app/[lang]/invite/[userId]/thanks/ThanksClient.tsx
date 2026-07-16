@@ -9,12 +9,14 @@ export default function ThanksClient({
   referrerName,
   regularPrice,
   referralPrice,
+  referralDiscountActive,
 }: {
   lang: string;
   userId: string;
   referrerName: string | null;
   regularPrice: number;
   referralPrice: number;
+  referralDiscountActive: boolean;
 }) {
   const salesPageUrl = `/${lang}/lp-v2?ref=${userId}`;
 
@@ -55,16 +57,26 @@ export default function ThanksClient({
             {referrerName ? `${referrerName}さんからのご紹介` : "ご紹介特典"}
           </p>
           <p className="text-lg font-bold text-stone-800 mb-3">
-            紹介特典10%OFFでお申し込み
+            {referralDiscountActive ? "紹介特典10%OFFでお申し込み" : "ご紹介ページからお申し込み"}
           </p>
           <p className="text-sm text-stone-500 leading-relaxed mb-6">
-            <span className="line-through">{regularPrice.toLocaleString("ja-JP")}円</span>
-            <span className="mx-2">→</span>
-            <strong className="text-xl text-stone-800">
-              {referralPrice.toLocaleString("ja-JP")}円
-            </strong>
+            {referralDiscountActive ? (
+              <>
+                <span className="line-through">{regularPrice.toLocaleString("ja-JP")}円</span>
+                <span className="mx-2">→</span>
+                <strong className="text-xl text-stone-800">
+                  {referralPrice.toLocaleString("ja-JP")}円
+                </strong>
+              </>
+            ) : (
+              <strong className="text-xl text-stone-800">
+                {regularPrice.toLocaleString("ja-JP")}円（税込）
+              </strong>
+            )}
             <br />
-            クーポンコードは不要です。販売ページからお申し込みへ進むと自動で割引されます。
+            {referralDiscountActive
+              ? "クーポンコードは不要です。販売ページからお申し込みへ進むと自動で割引されます。"
+              : "講座本体の価格は公式サイトと同一です。"}
           </p>
           <a
             href={salesPageUrl}

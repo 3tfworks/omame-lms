@@ -1,6 +1,7 @@
 import { getProductPricing, type PriceType } from "@/lib/pricing";
 import { getValidReferrer } from "@/lib/invite";
 import { cookies } from "next/headers";
+import { getReferralPrice, isReferralDiscountActive } from "@/lib/affiliateProgram";
 
 import { Section01Hero } from "./sections/Section01Hero";
 import { Section02Empathy } from "./sections/Section02Empathy";
@@ -38,7 +39,7 @@ export default async function LpV2Page({
   const { lang } = await params;
   const [pricing, resolvedSearchParams, cookieStore] = await Promise.all([
     getProductPricing(priceType),
-    searchParams ?? Promise.resolve({}),
+    searchParams ?? Promise.resolve<{ ref?: string }>({}),
     cookies(),
   ]);
   const referrerId =
@@ -47,8 +48,8 @@ export default async function LpV2Page({
       : cookieStore.get("referrer_id")?.value?.trim();
   const validReferrer =
     priceType === "general" && referrerId ? await getValidReferrer(referrerId) : null;
-  const showReferralDiscount = Boolean(validReferrer);
-  const referralPrice = Math.floor(pricing.salePrice * 0.9);
+  const showReferralDiscount = Boolean(validReferrer) && isReferralDiscountActive();
+  const referralPrice = getReferralPrice(pricing.salePrice);
 
   return (
     <main className="w-full overflow-x-hidden bg-omame-bg text-omame-text">

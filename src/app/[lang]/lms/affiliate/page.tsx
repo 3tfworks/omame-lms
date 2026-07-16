@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Handshake, Copy, CheckCircle2, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift, ChevronDown } from "lucide-react";
+import { Handshake, Copy, CheckCircle2, Wallet, Banknote, Save, AlertCircle, Mail, Heart, Sparkles, Gift, ChevronDown, ShieldCheck, ExternalLink } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import {
+  AFFILIATE_CONFIRMATIONS,
+  AFFILIATE_TERMS_VERSION,
+  type AffiliateConfirmationState,
+} from "@/lib/affiliateProgram";
 
 type AffiliateStats = {
   totalReferrals: number;
@@ -29,6 +35,15 @@ export default function AffiliatePage() {
   const [userId, setUserId] = useState<string>("");
   const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [currentRate, setCurrentRate] = useState<CurrentRate | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAcceptedAt, setTermsAcceptedAt] = useState<string | null>(null);
+  const [confirmations, setConfirmations] = useState<AffiliateConfirmationState>(() =>
+    Object.fromEntries(AFFILIATE_CONFIRMATIONS.map(({ id }) => [id, false])) as AffiliateConfirmationState,
+  );
+  const [acceptingTerms, setAcceptingTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
+  const [fullTermsAccepted, setFullTermsAccepted] = useState(false);
+  const [referralDiscountActive, setReferralDiscountActive] = useState(false);
   const [bankInfo, setBankInfo] = useState<BankInfo>({
     bankName: "", branchName: "", accountType: "普通", accountNumber: "", accountName: ""
   });
@@ -53,6 +68,9 @@ export default function AffiliatePage() {
           setUserId(data.userId);
           setStats(data.stats);
           setCurrentRate(data.currentRate ?? null);
+          setTermsAccepted(data.terms?.accepted === true);
+          setTermsAcceptedAt(data.terms?.acceptedAt ?? null);
+          setReferralDiscountActive(data.referralDiscountActive === true);
           if (data.bankInfo) {
             setBankInfo(data.bankInfo);
           }
@@ -87,6 +105,35 @@ export default function AffiliatePage() {
       setReferralMessage({ text: "通信エラーが発生しました", type: "error" });
     }
     setSavingReferral(false);
+  };
+
+  const allTermsConfirmed =
+    AFFILIATE_CONFIRMATIONS.every(({ id }) => confirmations[id]) && fullTermsAccepted;
+  const handleAcceptTerms = async () => {
+    if (!allTermsConfirmed) return;
+    setAcceptingTerms(true);
+    setTermsError("");
+    try {
+      const res = await fetch("/api/user/affiliate/terms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          termsVersion: AFFILIATE_TERMS_VERSION,
+          confirmations,
+          fullTermsAccepted,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setTermsError(data?.error || "同意内容を保存できませんでした。");
+      } else {
+        setTermsAccepted(true);
+        setTermsAcceptedAt(data.acceptedAt ?? new Date().toISOString());
+      }
+    } catch {
+      setTermsError("通信エラーが発生しました。時間をおいてもう一度お試しください。");
+    }
+    setAcceptingTerms(false);
   };
 
   const affiliateUrl = userId ? `https://omamepiano.com/ja/invite/${userId}` : "";
@@ -149,6 +196,106 @@ export default function AffiliatePage() {
     );
   }
 
+  if (!termsAccepted) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="rounded-xl bg-amber-100 p-2 text-amber-700 shadow-sm">
+            <Heart className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="font-serif text-2xl font-bold text-omame-deep">お豆メッセンジャー</h1>
+            <p className="mt-1 text-sm font-bold text-stone-500">紹介リンク・特典</p>
+          </div>
+        </div>
+
+        <section className="overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-7 text-center sm:px-10">
+            <ShieldCheck className="mx-auto h-10 w-10 text-amber-700" />
+            <p className="mt-3 text-xs font-bold tracking-[0.22em] text-amber-700">1分で確認できます</p>
+            <h2 className="mt-2 text-2xl font-bold text-stone-900">参加前に必ずご確認ください</h2>
+            <p className="mt-3 text-sm leading-relaxed text-stone-600">
+              大切な4つのルールを確認すると、紹介リンクを利用できます。
+            </p>
+          </div>
+
+          <div className="space-y-4 p-5 sm:p-8">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900">
+              <p className="font-bold">価格・報酬のご案内</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {referralDiscountActive && <li>2026年8月31日まで、紹介された方は受講料10%OFF</li>}
+                {referralDiscountActive && <li>紹介報酬50%は期間限定キャンペーン</li>}
+                <li>2026年9月1日以降は、公式・紹介経由ともに29,800円</li>
+                {!referralDiscountActive && currentRate && <li>現在の紹介報酬率は{currentRate.rate}%</li>}
+                <li>紹介リンクをクリックしてから30日以内の購入が対象</li>
+              </ul>
+            </div>
+
+            {AFFILIATE_CONFIRMATIONS.map((item) => (
+              <label
+                key={item.id}
+                className={`block cursor-pointer rounded-2xl border p-5 transition-colors ${
+                  confirmations[item.id] ? "border-amber-400 bg-amber-50/60" : "border-stone-200 bg-white"
+                }`}
+              >
+                <span className="block font-bold text-stone-900">{item.title}</span>
+                <span className="mt-2 block text-sm leading-7 text-stone-600">{item.body}</span>
+                <span className="mt-4 flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-bold text-stone-800">
+                  <input
+                    type="checkbox"
+                    checked={confirmations[item.id]}
+                    onChange={(event) =>
+                      setConfirmations((current) => ({ ...current, [item.id]: event.target.checked }))
+                    }
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-amber-600"
+                  />
+                  <span>{item.checkbox}</span>
+                </span>
+              </label>
+            ))}
+
+            <div className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5 text-sm font-bold leading-7 text-stone-700">
+              <input
+                type="checkbox"
+                checked={fullTermsAccepted}
+                onChange={(event) => setFullTermsAccepted(event.target.checked)}
+                aria-label="お豆メッセンジャープログラム利用規約に同意する"
+                className="mt-1 h-5 w-5 shrink-0 accent-amber-600"
+              />
+              <span>
+                <Link
+                  href="/ja/lms/affiliate/terms"
+                  target="_blank"
+                  className="mx-1 inline-flex items-center gap-1 font-bold text-amber-800 underline underline-offset-4"
+                >
+                  お豆メッセンジャープログラム利用規約
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+                を確認し、内容に同意します。
+              </span>
+            </div>
+
+            {termsError && (
+              <p className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">{termsError}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleAcceptTerms}
+              disabled={!allTermsConfirmed || acceptingTerms}
+              className="w-full rounded-xl bg-stone-900 px-6 py-4 text-base font-bold text-white transition-colors hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {acceptingTerms ? "同意内容を保存しています…" : "同意して紹介リンクを利用する"}
+            </button>
+            <p className="text-center text-xs leading-6 text-stone-400">
+              同意した日時と規約バージョンを、運営側で記録します。
+            </p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       
@@ -161,6 +308,16 @@ export default function AffiliatePage() {
           <h1 className="text-2xl font-bold text-omame-deep font-serif">お豆メッセンジャー</h1>
           <p className="mt-1 text-sm font-bold text-stone-500">紹介リンク・特典</p>
         </div>
+      </div>
+
+      <div className="mb-6 flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900 sm:flex-row sm:items-center sm:justify-between">
+        <p className="font-bold">
+          規約同意済み
+          {termsAcceptedAt ? `（${new Date(termsAcceptedAt).toLocaleDateString("ja-JP")}）` : ""}
+        </p>
+        <Link href="/ja/lms/affiliate/terms" className="font-bold underline underline-offset-4">
+          利用規約を確認する
+        </Link>
       </div>
 
       {/* ファーストビュー：今すぐやること */}
@@ -194,7 +351,9 @@ export default function AffiliatePage() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl bg-emerald-50 p-5 text-center text-emerald-800">
             <p className="text-sm font-bold">紹介されたお友達</p>
-            <p className="mt-1 text-2xl font-black">受講料 10%OFF</p>
+            <p className="mt-1 text-2xl font-black">
+              {referralDiscountActive ? "受講料 10%OFF" : "公式と同じ 29,800円"}
+            </p>
           </div>
           <div className="rounded-2xl bg-rose-50 p-5 text-center text-rose-800">
             <p className="text-sm font-bold">紹介したあなた</p>

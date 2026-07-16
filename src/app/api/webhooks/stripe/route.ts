@@ -5,6 +5,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import { findAuthUserByEmail } from "@/lib/authUsers";
 import { getPurchaseRole } from "@/lib/purchaseRole";
+import { getValidReferrer } from "@/lib/invite";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -58,6 +59,26 @@ export async function POST(request: Request) {
         }
         break;
       }
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId = getStripeId(charge.payment_intent);
+        if (paymentIntentId) {
+          await cancelAffiliateReward(paymentIntentId, "購入者への返金のため");
+        }
+        break;
+      }
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const chargeId = getStripeId(dispute.charge);
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          const paymentIntentId = getStripeId(charge.payment_intent);
+          if (paymentIntentId) {
+            await cancelAffiliateReward(paymentIntentId, "カード会社による支払いの取消のため");
+          }
+        }
+        break;
+      }
       default:
         console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
     }
@@ -67,6 +88,28 @@ export async function POST(request: Request) {
     console.error("[Stripe Webhook] Unhandled error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+function getStripeId(value: string | { id: string } | null): string | null {
+  if (typeof value === "string") return value;
+  return value?.id ?? null;
+}
+
+async function cancelAffiliateReward(paymentIntentId: string, reason: string) {
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin
+    .from("affiliate_rewards")
+    .update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+      cancellation_reason: reason,
+    })
+    .eq("stripe_payment_intent_id", paymentIntentId)
+    .neq("status", "cancelled");
+  if (error) throw error;
+  console.log(
+    `[Stripe Webhook] Affiliate reward cancelled: payment_intent=${paymentIntentId}, reason=${reason}`,
+  );
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string) {
@@ -200,6 +243,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       if (leadId) {
         await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", leadId);
       }
+    } else if (referrerId && !(await getValidReferrer(referrerId))) {
+      console.warn(
+        `[Stripe Webhook] Affiliate reward skipped because referrer is not currently eligible: referrer=${referrerId}, session=${session.id}`,
+      );
+      if (leadId) {
+        await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", leadId);
+      }
     } else if (referrerId && paymentAmount > 0) {
       // 報酬率は決済成立日時（Checkout Session の作成時刻＝unix秒）を基準に判定する。
       const { rate: rewardRate } = await getAffiliateRewardRate(
@@ -212,6 +262,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       const { error: rewardError } = await supabaseAdmin.from("affiliate_rewards").upsert(
         {
           stripe_event_id: eventId,
+          stripe_checkout_session_id: session.id,
+          stripe_payment_intent_id: getStripeId(session.payment_intent),
           referrer_id: referrerId,
           buyer_id: userId,
           amount: rewardAmount,

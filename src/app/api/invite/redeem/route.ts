@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
+import { getValidReferrer } from "@/lib/invite";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -40,12 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "自分自身のコードは使用できません" }, { status: 400 });
   }
 
-  const { data: referrer } = await adminClient
-    .from("users")
-    .select("id")
-    .eq("id", code)
-    .single();
-
+  const referrer = await getValidReferrer(code);
   if (!referrer) {
     return NextResponse.json({ error: "コードが見つかりません。招待URLをご確認ください" }, { status: 404 });
   }

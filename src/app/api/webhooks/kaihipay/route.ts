@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
+import { getValidReferrer } from "@/lib/invite";
 import { findAuthUserByEmail } from "@/lib/authUsers";
 import crypto from "crypto";
 
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
           .limit(1)
           .maybeSingle();
 
-        if (lead) {
+        if (lead && await getValidReferrer(lead.referrer_id)) {
           // 会費ペイの payload に確実な決済日時が無いため、webhook 受信時刻を基準に判定する。
           const { rate: rewardRate } = await getAffiliateRewardRate(
             new Date(),
@@ -140,6 +141,11 @@ export async function POST(request: Request) {
 
             console.log(`[Kaihipay Webhook] Affiliate reward recorded: referrer=${lead.referrer_id}, amount=${rewardAmount}, rate=${rewardRate}%`);
           }
+        } else if (lead) {
+          console.warn(
+            `[Kaihipay Webhook] Affiliate reward skipped because referrer is not currently eligible: referrer=${lead.referrer_id}`,
+          );
+          await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", lead.id);
         }
       }
     } catch (affiliateErr) {

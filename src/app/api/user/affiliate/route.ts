@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
+import { AFFILIATE_TERMS_VERSION, isReferralDiscountActive } from "@/lib/affiliateProgram";
 
 // 振込先口座情報のサーバ側バリデーション。
 // クライアントの HTML5 検証は API 直叩きで回避できるため、保存前にサーバでも必ず検査する。
@@ -88,7 +89,7 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    if (!profile || (profile.role !== "salon_member" && profile.role !== "owner")) {
+    if (!profile || !["salon_member", "owner", "admin"].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -103,7 +104,7 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch rewards" }, { status: 500 });
     }
 
-    const totalReferrals = rewards ? rewards.length : 0;
+    const totalReferrals = rewards ? rewards.filter(r => r.status !== "cancelled").length : 0;
     // 「これまでに受け取ったギフト」= 振込済（paid）のみを集計する。
     const totalEarned = rewards
       ? rewards.filter(r => r.status === 'paid').reduce((sum, r) => sum + r.amount, 0)
@@ -116,11 +117,27 @@ export async function GET() {
     // 現在の報酬率（紹介者ダッシュボードの動的表示用）。
     const currentRate = await getAffiliateRewardRate();
 
+    const { data: acceptance, error: acceptanceError } = await supabase
+      .from("affiliate_terms_acceptances")
+      .select("accepted_at")
+      .eq("user_id", user.id)
+      .eq("terms_version", AFFILIATE_TERMS_VERSION)
+      .maybeSingle();
+    if (acceptanceError) {
+      console.error("[Affiliate API] Terms acceptance read error:", acceptanceError);
+    }
+
     return NextResponse.json({
       userId: user.id,
       bankInfo: profile.bank_info || null,
       displayName: profile.display_name ?? null,
       referralDisplayName: profile.referral_display_name ?? null,
+      terms: {
+        version: AFFILIATE_TERMS_VERSION,
+        accepted: Boolean(acceptance),
+        acceptedAt: acceptance?.accepted_at ?? null,
+      },
+      referralDiscountActive: isReferralDiscountActive(),
       stats: {
         totalReferrals,
         totalEarned,
@@ -161,7 +178,7 @@ export async function PATCH(request: Request) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || (profile.role !== "salon_member" && profile.role !== "owner")) {
+    if (!profile || !["salon_member", "owner", "admin"].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/utils/supabase/admin";
+import { hasAcceptedCurrentAffiliateTerms } from "@/lib/affiliateConsent";
 
 // 招待を出せる紹介者の role（invite/register の検証条件・アフィリエイトページ表示条件と一致させる）
 const VALID_REFERRER_ROLES = ["salon_member", "owner", "admin"];
@@ -34,6 +35,7 @@ export async function getValidReferrer(userId: string): Promise<ValidReferrer | 
 
     if (error || !data) return null;
     if (!VALID_REFERRER_ROLES.includes(data.role)) return null;
+    if (!(await hasAcceptedCurrentAffiliateTerms(data.id, supabase))) return null;
 
     return {
       id: data.id,

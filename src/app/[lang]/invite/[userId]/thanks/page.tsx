@@ -2,6 +2,7 @@ import InvalidReferralPage from "@/components/InvalidReferralPage";
 import { getValidReferrer } from "@/lib/invite";
 import { getProductPricing } from "@/lib/pricing";
 import ThanksClient from "./ThanksClient";
+import { getReferralPrice, isReferralDiscountActive } from "@/lib/affiliateProgram";
 
 export default async function ThanksPage({
   params,
@@ -15,7 +16,7 @@ export default async function ThanksPage({
   ]);
   if (!referrer) return <InvalidReferralPage lang={lang} />;
 
-  const referralPrice = Math.floor(pricing.salePrice * 0.9);
+  const referralPrice = getReferralPrice(pricing.salePrice);
 
   return (
     <ThanksClient
@@ -24,6 +25,7 @@ export default async function ThanksPage({
       referrerName={referrer.displayName}
       regularPrice={pricing.salePrice}
       referralPrice={referralPrice}
+      referralDiscountActive={isReferralDiscountActive()}
     />
   );
 }

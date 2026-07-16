@@ -3,8 +3,7 @@ import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { getProductPricing, type PriceType } from "@/lib/pricing";
 import { getValidReferrer } from "@/lib/invite";
-
-const REFERRAL_DISCOUNT_PERCENT = 10;
+import { isReferralDiscountActive, REFERRAL_DISCOUNT_PERCENT } from "@/lib/affiliateProgram";
 
 // Stripe Checkout Session を作成する API。
 // POST { priceType?: "general" | "salon", referrerId?: string } を受け取り、
@@ -74,8 +73,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const referralDiscountActive = isReferralDiscountActive();
     const referralCouponId = process.env.STRIPE_REFERRAL_COUPON_ID?.trim();
-    if (validReferrer && !referralCouponId) {
+    if (validReferrer && referralDiscountActive && !referralCouponId) {
       console.error("[checkout/stripe] Missing STRIPE_REFERRAL_COUPON_ID");
       return NextResponse.json(
         { error: "紹介割引を準備中です。時間をおいてもう一度お試しください。" },
@@ -87,7 +87,9 @@ export async function POST(request: Request) {
     const metadata: Record<string, string> = { price_type: priceType };
     if (validReferrer) {
       metadata.referrer_id = validReferrer.id;
-      metadata.referral_discount_percent = String(REFERRAL_DISCOUNT_PERCENT);
+      if (referralDiscountActive) {
+        metadata.referral_discount_percent = String(REFERRAL_DISCOUNT_PERCENT);
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
       ],
       metadata,
       // 紹介購入は10%OFFを自動適用し、別コードとの重複を防ぐ。
-      ...(validReferrer && referralCouponId
+      ...(validReferrer && referralDiscountActive && referralCouponId
         ? { discounts: [{ coupon: referralCouponId }] }
         : { allow_promotion_codes: true }),
       success_url: `${siteUrl}/ja/lms?checkout=success`,
