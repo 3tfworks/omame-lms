@@ -196,7 +196,7 @@ export default function PracticeCoursePage() {
                 <p className="text-amber-400 text-sm font-bold tracking-[0.2em] mb-4">4ヶ月間の集中プログラム</p>
                 <h2 className="text-3xl lg:text-5xl font-bold leading-tight tracking-tight">
                   お豆奏法<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">基礎実践講座</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">実践落とし込み講座</span>
                 </h2>
               </div>
             </div>
@@ -307,7 +307,7 @@ export default function PracticeCoursePage() {
                 className="relative flex items-center gap-4 bg-stone-900 text-white font-bold py-6 px-12 rounded-full text-xl hover:bg-stone-800 transition-all shadow-2xl hover:-translate-y-1 overflow-hidden"
               >
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                基礎実践講座の詳細を見る
+                お豆奏法 実践落とし込み講座の詳細を見る
                 <MoveRight size={24} className="group-hover:translate-x-2 transition-transform duration-300" />
               </Link>
             </div>

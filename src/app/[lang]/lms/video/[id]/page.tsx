@@ -1287,7 +1287,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
               </p>
               
               <div className="bg-white rounded-xl p-6 mb-8 border border-stone-200 shadow-sm max-w-md mx-auto text-left">
-                <h3 className="font-bold text-stone-800 mb-4 text-center">基礎実践講座で学べること</h3>
+                <h3 className="font-bold text-stone-800 mb-4 text-center">お豆奏法 実践落とし込み講座で学べること</h3>
                 <div className="space-y-3">
                   {[
                     "実際の楽曲でのお豆奏法の応用方法",
@@ -1308,7 +1308,7 @@ export default function VideoPlayerPage({ params }: { params: Promise<{ id: stri
                 className="inline-flex items-center gap-3 bg-stone-800 text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-stone-700 transition-all shadow-lg group"
               >
                 <Sparkles size={20} className="text-amber-400" />
-                基礎実践講座の詳細を見る
+                お豆奏法 実践落とし込み講座の詳細を見る
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               

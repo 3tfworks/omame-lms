@@ -188,7 +188,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {/* アップセル：基礎実践講座バナー（常設） */}
+          {/* アップセル：お豆奏法 実践落とし込み講座バナー（常設） */}
           <div className="border-t border-amber-200/50 pt-5">
             <Link
               href="/ja/lms/practice-course"
@@ -199,7 +199,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
                 <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Next Step</span>
               </div>
               <p className="text-sm font-bold text-stone-800 leading-snug mb-1">
-                基礎実践講座のご案内
+                お豆奏法 実践落とし込み講座のご案内
               </p>
               <p className="text-xs text-stone-500 leading-relaxed">
                 学んだ原理を、実際のレッスンで確かめてみませんか？
