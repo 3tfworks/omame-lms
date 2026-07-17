@@ -218,7 +218,7 @@ export default function PracticeCoursePage() {
           variants={staggerContainer}
         >
           <motion.p variants={fadeInUp} className="text-center text-lg text-stone-600 mb-8">
-            この講座では、<br />オンラインで実際にやり取りをしながら、
+            お豆奏法 実践落とし込み講座では、<br />オンラインで実際にやり取りをしながら、
           </motion.p>
 
           <motion.div variants={fadeInUp} className="bg-white rounded-3xl p-8 lg:p-12 shadow-xl shadow-amber-900/5 border border-amber-100 mb-12 relative">
