@@ -6,6 +6,7 @@ import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import { findAuthUserByEmail } from "@/lib/authUsers";
 import { getPurchaseRole } from "@/lib/purchaseRole";
 import { getValidReferrer } from "@/lib/invite";
+import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -207,13 +208,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     let referrerId = referrerIdFromMeta;
     let leadId: string | null = null;
 
-    // metadata に referrer_id が無ければ email で invite_leads をフォールバック検索
+    // metadata に referrer_id が無ければ、決済開始前30日以内に登録された
+    // invite_leads だけを email でフォールバック検索する。
     if (!referrerId) {
+      const attributionCutoff = getAffiliateAttributionCutoff(
+        new Date(session.created * 1000),
+      ).toISOString();
       const { data: lead } = await supabaseAdmin
         .from("invite_leads")
         .select("id, referrer_id")
         .eq("email", email.trim().toLowerCase())
         .eq("converted", false)
+        .gte("created_at", attributionCutoff)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

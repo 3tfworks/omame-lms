@@ -223,11 +223,11 @@ export default function AffiliatePage() {
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900">
               <p className="font-bold">価格・報酬のご案内</p>
               <ul className="mt-2 list-disc space-y-1 pl-5">
-                {referralDiscountActive && <li>2026年8月31日まで、紹介された方は受講料10%OFF</li>}
+                {referralDiscountActive && <li>10%割引で購入できる期限は、2026年8月31日まで</li>}
                 {referralDiscountActive && <li>紹介報酬50%は期間限定キャンペーン</li>}
                 <li>2026年9月1日以降は、公式・紹介経由ともに29,800円</li>
                 {!referralDiscountActive && currentRate && <li>現在の紹介報酬率は{currentRate.rate}%</li>}
-                <li>紹介リンクをクリックしてから30日以内の購入が対象</li>
+                <li>紹介として確認できるのは、紹介リンクを最後に開いてから30日以内の購入</li>
               </ul>
             </div>
 
@@ -373,7 +373,8 @@ export default function AffiliatePage() {
         <div className="p-6">
           <p className="text-sm text-stone-600 mb-4 leading-relaxed">
             まずはこのリンクをコピーして、LINEやメッセージでお友達へ送ってください。<br/>
-            リンクをクリックしてから30日以内の受講スタートが対象となります。
+            お友達が購入するときは、このリンクをもう一度開き、表示されたページからそのまま申し込んでもらってください。<br/>
+            紹介として確認できるのは、このリンクを最後に開いてから30日以内の購入です。
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <input

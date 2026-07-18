@@ -3,6 +3,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { getAffiliateRewardRate } from "@/lib/affiliateRate";
 import { getValidReferrer } from "@/lib/invite";
 import { findAuthUserByEmail } from "@/lib/authUsers";
+import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
@@ -104,11 +105,15 @@ export async function POST(request: Request) {
         0;
 
       if (paymentAmount > 0) {
+        // 会費ペイの通知には確実な決済日時がないため、通知受信時刻から30日以内に
+        // 登録された紹介フォームだけを成果の候補にする。
+        const attributionCutoff = getAffiliateAttributionCutoff().toISOString();
         const { data: lead } = await supabaseAdmin
           .from("invite_leads")
           .select("id, referrer_id")
           .eq("email", email.trim().toLowerCase())
           .eq("converted", false)
+          .gte("created_at", attributionCutoff)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
