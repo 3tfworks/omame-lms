@@ -3,11 +3,13 @@
 import { FormEvent, useState } from "react";
 import {
   AlertTriangle,
+  BookOpen,
   CheckCircle2,
   Clipboard,
   Clock3,
   CreditCard,
   KeyRound,
+  HelpCircle,
   Loader2,
   Mail,
   RefreshCw,
@@ -370,10 +372,100 @@ export function LoginSupportConsole() {
         </p>
       </header>
 
+      <section aria-labelledby="support-quick-guide" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <HelpCircle className="mt-0.5 h-6 w-6 shrink-0 text-emerald-700" />
+          <div className="min-w-0 flex-1">
+            <h3 id="support-quick-guide" className="text-lg font-bold text-emerald-950">
+              ログインの問い合わせが来たら
+            </h3>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {[
+                ["1", "メールで確認", "問い合わせに書かれているメールアドレスで、まず登録状態を確認します。"],
+                ["2", "購入情報から探す", "登録が見つからなければ、氏名・購入日・金額から実際の購入を探します。"],
+                ["3", "表示された対応を実施", "調査結果の「次の対応」を確認し、再送または案内文のコピーを行います。"],
+              ].map(([number, title, description]) => (
+                <div key={number} className="rounded-xl border border-emerald-200 bg-white p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">
+                      {number}
+                    </span>
+                    <p className="font-bold text-stone-800">{title}</p>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600">{description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details className="group rounded-2xl border border-stone-200 bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center gap-3 p-5 font-bold text-stone-800 hover:bg-stone-50">
+          <BookOpen className="h-5 w-5 text-omame-gold" />
+          <span className="flex-1">詳しい使い方を見る</span>
+          <span aria-hidden="true" className="text-lg text-stone-400 transition-transform group-open:rotate-45">＋</span>
+        </summary>
+        <div className="border-t border-stone-200 p-5">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-xl bg-stone-50 p-4">
+              <h4 className="font-bold text-stone-800">登録が見つかった場合</h4>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm leading-relaxed text-stone-600">
+                <li>顧客登録とメール配信の状態を確認します。</li>
+                <li>画面に表示された「次の対応」に従います。</li>
+                <li>必要ならログインメールを再送し、案内文をコピーして返信します。</li>
+              </ol>
+            </div>
+            <div className="rounded-xl bg-stone-50 p-4">
+              <h4 className="font-bold text-stone-800">登録が見つからない場合</h4>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm leading-relaxed text-stone-600">
+                <li>お客様に氏名・購入日・金額を確認します。</li>
+                <li>下の「購入情報から探す」を使用します。</li>
+                <li>氏名・日時・金額が一致する購入だけを選びます。</li>
+              </ol>
+            </div>
+            <div className="rounded-xl bg-amber-50 p-4">
+              <h4 className="font-bold text-amber-950">購入メールが違っていた場合</h4>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-amber-900">
+                <li>再購入は案内しません。</li>
+                <li>購入時のメールアドレスの受信箱と迷惑メールを確認してもらいます。</li>
+                <li>必要なら購入時のメールアドレスへログインメールを再送します。</li>
+                <li>登録メールの変更希望は管理者へ依頼します。</li>
+              </ul>
+            </div>
+            <div className="rounded-xl bg-rose-50 p-4">
+              <h4 className="font-bold text-rose-950">「システム調査が必要」と表示された場合</h4>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-rose-900">
+                <li>再購入やメールアドレス変更は行いません。</li>
+                <li>購入日時・金額・表示されたメールアドレスを控えます。</li>
+                <li>管理者またはシステム担当へ連絡します。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <aside aria-label="大切な注意" className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-amber-950">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0" />
+          <div>
+            <h3 className="font-bold">大切な注意</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
+              <li>「決済成功」と表示されている場合は、再購入を案内しないでください。</li>
+              <li>登録メールアドレスの変更は、事務担当者では行わないでください。</li>
+              <li>氏名・購入日・金額が一致しない購入は選択しないでください。</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
       <form onSubmit={handleSubmit} className="rounded-2xl border border-omame-gold/20 bg-white p-4 shadow-sm">
         <label htmlFor="support-email" className="mb-2 block text-sm font-bold text-stone-700">
           問い合わせに記載されたメールアドレス
         </label>
+        <p className="mb-3 text-sm text-stone-500">
+          お問い合わせ本文に書かれているメールアドレスを、そのまま入力してください。
+        </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Mail className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" />
@@ -730,6 +822,9 @@ export function LoginSupportConsole() {
                 </button>
               )}
             </div>
+            <p className="mt-3 text-xs leading-relaxed text-stone-500">
+              「顧客向け案内文をコピー」では、現在表示している調査結果に合わせた返信文がコピーされます。
+            </p>
             <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-stone-400">
               <Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               再送は60秒に1回までです。操作した担当者・対象・結果は監査ログに保存され、ログインリンク本体は保存しません。
