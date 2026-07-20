@@ -97,10 +97,29 @@ type SupportData = {
       amountTotal: number | null;
       currency: string | null;
       productType: "general" | "salon" | null;
+      customerEmail: string | null;
+      customerName: string | null;
+      managedPurchase: boolean;
       createdAt: string;
       expiresAt: string | null;
     }>;
   };
+};
+
+type PurchaseCandidate = {
+  chargeId: string;
+  paymentIntentId: string | null;
+  checkoutSessionId: string | null;
+  createdAt: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paid: boolean;
+  customerEmail: string | null;
+  customerName: string | null;
+  productType: "general" | "salon" | null;
+  managedPurchase: boolean;
+  emailMatchesInquiry: boolean | null;
 };
 
 const diagnosisStyles: Record<DiagnosisLevel, string> = {
@@ -193,8 +212,14 @@ function StatusItem({ label, value, ok }: { label: string; value: string; ok?: b
 
 export function LoginSupportConsole() {
   const [email, setEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
+  const [purchaseAmount, setPurchaseAmount] = useState("");
+  const [purchaseCandidates, setPurchaseCandidates] = useState<PurchaseCandidate[]>([]);
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseCandidate | null>(null);
   const [data, setData] = useState<SupportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -212,7 +237,6 @@ export function LoginSupportConsole() {
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error || "顧客情報を取得できませんでした。");
       setData(result);
-      setEmail(normalized);
     } catch (fetchError) {
       setData(null);
       setError(fetchError instanceof Error ? fetchError.message : "通信エラーが発生しました。");
@@ -221,8 +245,50 @@ export function LoginSupportConsole() {
     }
   };
 
+  const searchPurchases = async () => {
+    if (!purchaseDate || (!customerName.trim() && !purchaseAmount.trim())) {
+      setError("購入日と、氏名または金額を入力してください。");
+      return;
+    }
+    setPurchaseLoading(true);
+    setError("");
+    setNotice("");
+    setData(null);
+    setSelectedPurchase(null);
+    try {
+      const params = new URLSearchParams({ date: purchaseDate });
+      if (email.trim()) params.set("email", email.trim());
+      if (customerName.trim()) params.set("name", customerName.trim());
+      if (purchaseAmount.trim()) params.set("amount", purchaseAmount.trim());
+      const response = await fetch(`/api/support/purchase-search?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error || "購入記録を検索できませんでした。");
+      setPurchaseCandidates(result.candidates || []);
+      if (!result.candidates?.length) {
+        setNotice("入力した条件に一致する購入記録は見つかりませんでした。");
+      }
+    } catch (fetchError) {
+      setPurchaseCandidates([]);
+      setError(fetchError instanceof Error ? fetchError.message : "通信エラーが発生しました。");
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
+  const selectPurchase = async (candidate: PurchaseCandidate) => {
+    if (!candidate.customerEmail) {
+      setError("この決済にはメールアドレスが記録されていません。システム担当へ確認してください。");
+      return;
+    }
+    setSelectedPurchase(candidate);
+    await search(candidate.customerEmail);
+  };
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
+    setSelectedPurchase(null);
     void search();
   };
 
@@ -274,6 +340,12 @@ export function LoginSupportConsole() {
 
   const copyReply = async () => {
     if (!data) return;
+    if (selectedPurchase?.customerEmail && selectedPurchase.emailMatchesInquiry === false) {
+      const reply = `お問い合わせありがとうございます。\n\nご購入は正常に完了しています。\nご購入時に入力されたメールアドレスは「${selectedPurchase.customerEmail}」です。\nログインのご案内も、こちらのメールアドレスへ送信されています。\n\n受信箱と迷惑メールフォルダをご確認ください。見つからない場合は、ログインメールを再送いたします。\n再度購入していただく必要はございませんので、ご安心ください。`;
+      await navigator.clipboard.writeText(reply);
+      setNotice("メールアドレス相違の案内文をコピーしました。");
+      return;
+    }
     const paymentIssue = ["three_d_secure_failed", "checkout_expired", "payment_unpaid"].includes(
       data.diagnosis.code,
     );
@@ -294,13 +366,13 @@ export function LoginSupportConsole() {
         <p className="text-xs font-bold uppercase tracking-[0.25em] text-omame-gold">Login Support</p>
         <h2 className="text-2xl font-bold text-omame-deep">ログインサポート</h2>
         <p className="text-sm leading-relaxed text-stone-500">
-          登録状態・最終ログイン・メール配信状況をまとめて確認し、問い合わせの原因を切り分けます。
+          問い合わせメールだけでなく、氏名・購入日・金額から実際の購入メールを探し、登録と配信状況を確認します。
         </p>
       </header>
 
       <form onSubmit={handleSubmit} className="rounded-2xl border border-omame-gold/20 bg-white p-4 shadow-sm">
         <label htmlFor="support-email" className="mb-2 block text-sm font-bold text-stone-700">
-          顧客のメールアドレス
+          問い合わせに記載されたメールアドレス
         </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
@@ -326,6 +398,98 @@ export function LoginSupportConsole() {
         </div>
       </form>
 
+      <section className="rounded-2xl border border-sky-200 bg-sky-50 p-4 shadow-sm">
+        <div>
+          <h3 className="font-bold text-sky-950">購入時のメールアドレスが違う可能性がある場合</h3>
+          <p className="mt-1 text-sm leading-relaxed text-sky-800">
+            お客様の氏名・購入日・金額からStripeの購入記録を探します。購入日は必須で、氏名か金額のどちらかも入力してください。
+          </p>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <label className="text-sm font-bold text-stone-700">
+            お客様の氏名
+            <input
+              type="text"
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="例：河越 敦子"
+              className="mt-2 h-11 w-full rounded-xl border border-sky-200 bg-white px-3 font-normal outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+          </label>
+          <label className="text-sm font-bold text-stone-700">
+            購入日（必須）
+            <input
+              type="date"
+              value={purchaseDate}
+              onChange={(event) => setPurchaseDate(event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-sky-200 bg-white px-3 font-normal outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+          </label>
+          <label className="text-sm font-bold text-stone-700">
+            購入金額（円）
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={purchaseAmount}
+              onChange={(event) => setPurchaseAmount(event.target.value)}
+              placeholder="例：9800"
+              className="mt-2 h-11 w-full rounded-xl border border-sky-200 bg-white px-3 font-normal outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          onClick={() => void searchPurchases()}
+          disabled={purchaseLoading}
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-800 px-5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50"
+        >
+          {purchaseLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+          購入情報から探す
+        </button>
+      </section>
+
+      {purchaseCandidates.length > 0 && (
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <h3 className="font-bold text-stone-800">購入候補が見つかりました</h3>
+          <p className="mt-1 text-sm text-stone-500">氏名・日時・金額を確認し、該当する購入を選んでください。</p>
+          <div className="mt-4 space-y-3">
+            {purchaseCandidates.map((candidate) => (
+              <article key={candidate.chargeId} className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="grid flex-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
+                    <StatusItem label="購入者名" value={candidate.customerName || "記録なし"} />
+                    <StatusItem label="購入日時" value={formatDate(candidate.createdAt)} />
+                    <StatusItem label="金額" value={formatAmount(candidate.amount, candidate.currency)} />
+                    <StatusItem label="購入メール" value={candidate.customerEmail || "記録なし"} />
+                    <StatusItem
+                      label="決済状態"
+                      value={candidate.paid ? "決済成功" : `未完了（${candidate.status}）`}
+                      ok={candidate.paid}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void selectPurchase(candidate)}
+                    disabled={!candidate.customerEmail || loading}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-stone-900 px-5 text-sm font-bold text-white hover:bg-stone-700 disabled:opacity-40"
+                  >
+                    <Search className="h-4 w-4" />
+                    この購入を確認
+                  </button>
+                </div>
+                {candidate.emailMatchesInquiry === false && (
+                  <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    問い合わせメールと購入時のメールアドレスが異なります。
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       {error && (
         <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -341,6 +505,24 @@ export function LoginSupportConsole() {
 
       {data && (
         <>
+          {selectedPurchase?.customerEmail && selectedPurchase.emailMatchesInquiry === false && (
+            <section className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-amber-950">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0" />
+                <div>
+                  <h3 className="text-lg font-bold">購入時のメールアドレスが異なります</h3>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <StatusItem label="問い合わせメール" value={email.trim().toLowerCase() || "入力なし"} />
+                    <StatusItem label="購入時のメール" value={selectedPurchase.customerEmail} />
+                  </div>
+                  <p className="mt-3 text-sm font-bold">
+                    ログインメールは購入時のメールへ送信されます。再決済は案内しないでください。
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className={`rounded-2xl border p-5 ${diagnosisStyles[data.diagnosis.level]}`}>
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
@@ -405,10 +587,21 @@ export function LoginSupportConsole() {
                               {payment.productType === "salon" ? "サロン価格" : "通常価格"}
                             </span>
                           )}
+                          {!payment.managedPurchase && (
+                            <span className="rounded-full bg-stone-200 px-2 py-1 text-xs font-bold text-stone-600">
+                              旧商品・現行登録の診断対象外
+                            </span>
+                          )}
                         </div>
-                        <p className="mt-3 text-sm text-stone-700">{stripeStatusDetails[payment.status]}</p>
+                        <p className="mt-3 text-sm text-stone-700">
+                          {payment.managedPurchase
+                            ? stripeStatusDetails[payment.status]
+                            : "過去商品の決済です。現行講座の顧客登録とは別に扱います。"}
+                        </p>
                         <p className="mt-2 text-xs font-bold text-stone-600">
-                          次の対応：{stripeNextActions[payment.status]}
+                          次の対応：{payment.managedPurchase
+                            ? stripeNextActions[payment.status]
+                            : "申告された購入日・氏名・金額から今回の購入を検索"}
                         </p>
                       </div>
                       <time className="shrink-0 text-xs text-stone-400">{formatDate(payment.createdAt)}</time>

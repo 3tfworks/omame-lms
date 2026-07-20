@@ -14,6 +14,9 @@ export type StripePaymentSummary = {
   amountTotal: number | null;
   currency: string | null;
   productType: "general" | "salon" | null;
+  customerEmail: string | null;
+  customerName: string | null;
+  managedPurchase: boolean;
   createdAt: string;
   expiresAt: string | null;
 };

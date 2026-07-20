@@ -24,7 +24,9 @@ function buildDiagnosis(args: {
   stripePayments: StripePaymentSummary[];
 }) {
   const latest = args.emailEvents[0];
-  const latestPayment = args.stripePayments[0];
+  // 現行システムが発行したCheckoutだけを登録診断に使う。
+  // metadataのない旧商品決済を、現行講座のWebhook障害と誤判定しないため。
+  const latestPayment = args.stripePayments.find((payment) => payment.managedPurchase);
   const failedEvents = new Set(["email.failed", "email.bounced", "email.suppressed"]);
   const currentMessageEvents = latest?.provider_email_id
     ? args.emailEvents.filter((event) => event.provider_email_id === latest.provider_email_id)

@@ -84,6 +84,9 @@ export async function lookupStripePaymentsByEmail(email: string): Promise<Stripe
       amountTotal: session.amount_total,
       currency: session.currency,
       productType: getProductType(session),
+      customerEmail: session.customer_details?.email || session.customer_email || null,
+      customerName: session.customer_details?.name || null,
+      managedPurchase: Boolean(getProductType(session)),
       createdAt: new Date(session.created * 1000).toISOString(),
       expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
     };

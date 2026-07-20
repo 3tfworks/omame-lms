@@ -12,7 +12,8 @@
     "lint": "eslint",
     "test:bookmarks": "node --experimental-strip-types --test src/lib/bookmarks.test.ts",
     "test:youtube-research": "node --experimental-strip-types --test src/lib/youtubeResearch.test.ts src/lib/youtubeDataApi.test.ts",
-    "test:affiliate-program": "node --experimental-strip-types --test src/lib/affiliateProgram.test.ts src/lib/affiliateAttribution.test.ts"
+    "test:affiliate-program": "node --experimental-strip-types --test src/lib/affiliateProgram.test.ts src/lib/affiliateAttribution.test.ts",
+    "test:support": "node --experimental-strip-types --test src/lib/stripeSupportStatus.test.ts src/lib/purchaseSupport.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
