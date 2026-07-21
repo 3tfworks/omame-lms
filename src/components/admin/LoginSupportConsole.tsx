@@ -383,13 +383,17 @@ export function LoginSupportConsole() {
 
   const copyReply = async () => {
     if (!data) return;
-    const customerDisplayName =
-      data.customer.profile?.legal_name || data.customer.profile?.display_name || "お客様";
-    const emailChangeGuidance = `今後のご案内を確実にお受け取りいただくため、登録メールアドレスをGmailへ変更することもできます。\n\n変更をご希望の場合は、本人確認のため、次の内容をご返信ください。\n・お名前\n・現在の登録メールアドレス\n・購入日\n・購入金額\n・変更を希望するGmailアドレス\n\n確認が取れましたら、登録メールアドレスを変更し、新しいGmailアドレスへログインのご案内をお送りします。\n※パスワードやクレジットカード番号をお尋ねすることはありません。`;
+    const registeredCustomerName =
+      data.customer.profile?.legal_name || data.customer.profile?.display_name;
+    const customerDisplayName = registeredCustomerName || "●●●";
+    const copiedMessage = registeredCustomerName
+      ? "案内文をコピーしました。"
+      : "案内文をコピーしました。送信前に「●●●」をお客様のお名前へ置き換えてください。";
+    const emailChangeGuidance = `今後のご案内を確実にお受け取りいただくため、登録メールアドレスを別のメールアドレスへ変更することもできます。\n\n変更をご希望の場合は、本人確認のため、次の内容をご返信ください。\n・お名前\n・現在の登録メールアドレス\n・購入日\n・購入金額\n・変更を希望する新しいメールアドレス\n\n確認が取れましたら、登録メールアドレスを変更し、新しいメールアドレスへログインのご案内をお送りします。\n※パスワードやクレジットカード番号をお尋ねすることはありません。`;
     if (selectedPurchase?.customerEmail && selectedPurchase.emailMatchesInquiry === false) {
       const reply = `${customerDisplayName} 様\n\nお問い合わせいただき、ありがとうございます。\nログインのご案内が確認できず、ご不便をおかけしております。\n\nお調べしたところ、ご購入は正常に完了しておりますので、再度購入していただく必要はございません。どうぞご安心ください。\n\nご購入時に登録されているメールアドレスは「${selectedPurchase.customerEmail}」です。ログインのご案内も、こちらのアドレスへ送信されています。まずは受信トレイと迷惑メールフォルダをご確認ください。\n\n${emailChangeGuidance}\n\nどうぞよろしくお願いいたします。`;
       await navigator.clipboard.writeText(reply);
-      setNotice("メールアドレス相違の案内文をコピーしました。");
+      setNotice(copiedMessage);
       return;
     }
     const paymentIssue = ["three_d_secure_failed", "checkout_expired", "payment_unpaid"].includes(
@@ -401,7 +405,7 @@ export function LoginSupportConsole() {
     const changeOption = paymentIssue ? "" : `\n\n${emailChangeGuidance}`;
     const reply = `${customerDisplayName} 様\n\nお問い合わせいただき、ありがとうございます。\nログインのご案内が確認できず、ご不便をおかけしております。\n\n${guidance}${changeOption}\n\nご不明な点がございましたら、そのままご返信ください。\nどうぞよろしくお願いいたします。`;
     await navigator.clipboard.writeText(reply);
-    setNotice("案内文をコピーしました。");
+    setNotice(copiedMessage);
   };
 
   const profileRole = data?.customer.profile?.role;
@@ -891,7 +895,7 @@ export function LoginSupportConsole() {
                     type="email"
                     value={newEmail}
                     onChange={(event) => setNewEmail(event.target.value)}
-                    placeholder="new-address@gmail.com"
+                    placeholder="new-address@example.com"
                     autoComplete="off"
                     className="mt-2 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 font-normal outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
                   />
@@ -934,7 +938,7 @@ export function LoginSupportConsole() {
               </div>
             )}
             <p className="mt-3 text-xs leading-relaxed text-stone-500">
-              「顧客向け案内文をコピー」では、現在表示している調査結果に合わせた返信文がコピーされます。
+              「顧客向け案内文をコピー」では、現在表示している調査結果に合わせた返信文がコピーされます。「●●●」が含まれている場合は、送信前にお客様のお名前へ置き換えてください。
             </p>
             <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-stone-400">
               <Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
