@@ -383,8 +383,11 @@ export function LoginSupportConsole() {
 
   const copyReply = async () => {
     if (!data) return;
+    const customerDisplayName =
+      data.customer.profile?.legal_name || data.customer.profile?.display_name || "お客様";
+    const emailChangeGuidance = `今後のご案内を確実にお受け取りいただくため、登録メールアドレスをGmailへ変更することもできます。\n\n変更をご希望の場合は、本人確認のため、次の内容をご返信ください。\n・お名前\n・現在の登録メールアドレス\n・購入日\n・購入金額\n・変更を希望するGmailアドレス\n\n確認が取れましたら、登録メールアドレスを変更し、新しいGmailアドレスへログインのご案内をお送りします。\n※パスワードやクレジットカード番号をお尋ねすることはありません。`;
     if (selectedPurchase?.customerEmail && selectedPurchase.emailMatchesInquiry === false) {
-      const reply = `お問い合わせありがとうございます。\n\nご購入は正常に完了しています。\nご購入時に入力されたメールアドレスは「${selectedPurchase.customerEmail}」です。\nログインのご案内も、こちらのメールアドレスへ送信されています。\n\n受信箱と迷惑メールフォルダをご確認ください。見つからない場合は、ログインメールを再送いたします。\n再度購入していただく必要はございませんので、ご安心ください。`;
+      const reply = `${customerDisplayName} 様\n\nお問い合わせいただき、ありがとうございます。\nログインのご案内が確認できず、ご不便をおかけしております。\n\nお調べしたところ、ご購入は正常に完了しておりますので、再度購入していただく必要はございません。どうぞご安心ください。\n\nご購入時に登録されているメールアドレスは「${selectedPurchase.customerEmail}」です。ログインのご案内も、こちらのアドレスへ送信されています。まずは受信トレイと迷惑メールフォルダをご確認ください。\n\n${emailChangeGuidance}\n\nどうぞよろしくお願いいたします。`;
       await navigator.clipboard.writeText(reply);
       setNotice("メールアドレス相違の案内文をコピーしました。");
       return;
@@ -394,8 +397,9 @@ export function LoginSupportConsole() {
     );
     const guidance = paymentIssue
       ? "恐れ入りますが、購入画面からもう一度お手続きいただき、カード会社の本人認証画面まで完了してください。"
-      : "ログインに関するメール（件名「【おうちで学べるお豆奏法基礎講座】ログイン用リンクのご案内」）が届いているか、受信トレイと迷惑メールフォルダをご確認ください。メール内の最新のログインリンクを、LINE内ブラウザではなくSafariまたはChromeで開いてください。";
-    const reply = `${data.customer.email} 様\n\nお問い合わせありがとうございます。\n${data.diagnosis.detail}\n\n${guidance}`;
+      : `確認したところ、ログインのご案内メールは、ご登録のメールアドレス「${data.customer.email}」宛てに送信されています。\n\nメールが受信側のサーバーまで届いていても、メールサービス側の振り分けによって受信トレイに表示されないことがあります。お手数ですが、受信トレイと迷惑メールフォルダで、次の件名のメールをご確認ください。\n\n「【おうちで学べるお豆奏法基礎講座】ログイン用リンクのご案内」\n\nメールが見つかりましたら、メール内の最新のログインリンクを、LINE内の画面ではなくSafariまたはChromeで開いてください。`;
+    const changeOption = paymentIssue ? "" : `\n\n${emailChangeGuidance}`;
+    const reply = `${customerDisplayName} 様\n\nお問い合わせいただき、ありがとうございます。\nログインのご案内が確認できず、ご不便をおかけしております。\n\n${guidance}${changeOption}\n\nご不明な点がございましたら、そのままご返信ください。\nどうぞよろしくお願いいたします。`;
     await navigator.clipboard.writeText(reply);
     setNotice("案内文をコピーしました。");
   };
@@ -424,7 +428,7 @@ export function LoginSupportConsole() {
               {[
                 ["1", "メールで確認", "問い合わせに書かれているメールアドレスで、まず登録状態を確認します。"],
                 ["2", "購入情報から探す", "登録が見つからなければ、氏名・購入日・金額から実際の購入を探します。"],
-                ["3", "表示された対応を実施", "調査結果の「次の対応」を確認し、再送または案内文のコピーを行います。"],
+                ["3", "表示された対応を実施", "再送・登録メールの変更・案内文のコピーから、必要な対応を行います。"],
               ].map(([number, title, description]) => (
                 <div key={number} className="rounded-xl border border-emerald-200 bg-white p-4">
                   <div className="flex items-center gap-2">
@@ -455,6 +459,7 @@ export function LoginSupportConsole() {
                 <li>顧客登録とメール配信の状態を確認します。</li>
                 <li>画面に表示された「次の対応」に従います。</li>
                 <li>必要ならログインメールを再送し、案内文をコピーして返信します。</li>
+                <li>別のメールアドレスへの変更希望がある場合は、本人確認後に変更します。</li>
               </ol>
             </div>
             <div className="rounded-xl bg-stone-50 p-4">
@@ -471,7 +476,8 @@ export function LoginSupportConsole() {
                 <li>再購入は案内しません。</li>
                 <li>購入時のメールアドレスの受信箱と迷惑メールを確認してもらいます。</li>
                 <li>必要なら購入時のメールアドレスへログインメールを再送します。</li>
-                <li>登録メールの変更希望は管理者へ依頼します。</li>
+                <li>変更希望がある場合は、氏名・現在の登録メール・購入日・購入金額・変更先メールを確認します。</li>
+                <li>本人確認後、「登録メールアドレスを変更」から変更し、新しいアドレスへログインメールを再送します。</li>
               </ul>
             </div>
             <div className="rounded-xl bg-rose-50 p-4">
@@ -493,7 +499,8 @@ export function LoginSupportConsole() {
             <h3 className="font-bold">大切な注意</h3>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
               <li>「決済成功」と表示されている場合は、再購入を案内しないでください。</li>
-              <li>登録メールアドレスの変更は、事務担当者では行わないでください。</li>
+              <li>登録メールアドレスは、お客様本人の希望と購入情報が確認できた場合だけ変更してください。</li>
+              <li>パスワードやクレジットカード番号など、本人確認に不要な情報は尋ねないでください。</li>
               <li>氏名・購入日・金額が一致しない購入は選択しないでください。</li>
             </ul>
           </div>
