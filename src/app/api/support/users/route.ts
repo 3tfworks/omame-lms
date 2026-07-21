@@ -238,12 +238,15 @@ export async function GET(request: Request) {
           .order("created_at", { ascending: false })
           .limit(10)
       : Promise.resolve({ data: [], error: null });
-    const actionsPromise = admin
+    let actionsQuery = admin
       .from("support_action_logs")
       .select("action, result, detail, created_at, actor_user_id")
-      .eq("target_email", email)
       .order("created_at", { ascending: false })
       .limit(10);
+    actionsQuery = targetUserId
+      ? actionsQuery.eq("target_user_id", targetUserId)
+      : actionsQuery.eq("target_email", email);
+    const actionsPromise = actionsQuery;
     const agentPromise = targetUserId && access.canManageAgents
       ? admin
           .from("support_agents")
@@ -275,6 +278,7 @@ export async function GET(request: Request) {
         role: access.role,
         isAdmin: access.isAdmin,
         canResend: access.canResend,
+        canChangeEmail: access.canRepair,
         canManageAgents: access.canManageAgents,
       },
       customer: {

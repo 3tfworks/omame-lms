@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import {
   AlertTriangle,
+  AtSign,
   BookOpen,
   CheckCircle2,
   Clipboard,
@@ -27,6 +28,7 @@ type SupportData = {
     role: string;
     isAdmin: boolean;
     canResend: boolean;
+    canChangeEmail: boolean;
     canManageAgents: boolean;
   };
   customer: {
@@ -225,6 +227,9 @@ export function LoginSupportConsole() {
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [customerConfirmed, setCustomerConfirmed] = useState(false);
+  const [showEmailChange, setShowEmailChange] = useState(false);
 
   const search = async (targetEmail = email) => {
     const normalized = targetEmail.trim().toLowerCase();
@@ -239,6 +244,9 @@ export function LoginSupportConsole() {
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error || "顧客情報を取得できませんでした。");
       setData(result);
+      setNewEmail("");
+      setCustomerConfirmed(false);
+      setShowEmailChange(false);
     } catch (fetchError) {
       setData(null);
       setError(fetchError instanceof Error ? fetchError.message : "通信エラーが発生しました。");
@@ -335,6 +343,39 @@ export function LoginSupportConsole() {
       setNotice(result.message);
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : `アクセスの${verb}に失敗しました。`);
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const changeCustomerEmail = async () => {
+    if (!data || !newEmail.trim() || !customerConfirmed) return;
+    const normalized = newEmail.trim().toLowerCase();
+    const confirmed = window.confirm(
+      `登録メールアドレスを変更します。\n\n現在：${data.customer.email}\n変更後：${normalized}\n\n入力間違いがないことを確認しましたか？`,
+    );
+    if (!confirmed) return;
+
+    setActionLoading("change-email");
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/support/change-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentEmail: data.customer.email,
+          newEmail: normalized,
+          customerConfirmed,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error || "メールアドレスの変更に失敗しました。");
+      setEmail(result.email);
+      await search(result.email);
+      setNotice(result.message);
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "メールアドレスの変更に失敗しました。");
     } finally {
       setActionLoading("");
     }
@@ -798,6 +839,15 @@ export function LoginSupportConsole() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowEmailChange((shown) => !shown)}
+                disabled={!data.requester.canChangeEmail || !data.customer.auth || !data.customer.profile || Boolean(actionLoading)}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-5 text-sm font-bold text-sky-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <AtSign className="h-4 w-4" />
+                登録メールアドレスを変更
+              </button>
+              <button
+                type="button"
                 onClick={() => void copyReply()}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-5 text-sm font-bold text-stone-700 hover:bg-stone-50"
               >
@@ -822,6 +872,60 @@ export function LoginSupportConsole() {
                 </button>
               )}
             </div>
+            {showEmailChange && (
+              <div className="mt-4 rounded-xl border-2 border-sky-200 bg-sky-50 p-4">
+                <h4 className="font-bold text-sky-950">登録メールアドレスの変更</h4>
+                <p className="mt-2 text-sm leading-relaxed text-sky-900">
+                  お客様本人から変更希望を受けた場合だけ使用してください。購入権限や学習履歴はそのまま引き継がれます。
+                </p>
+                <label className="mt-4 block text-sm font-bold text-stone-700">
+                  新しいメールアドレス
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(event) => setNewEmail(event.target.value)}
+                    placeholder="new-address@gmail.com"
+                    autoComplete="off"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-sky-200 bg-white px-3 font-normal outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                  />
+                </label>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-sky-200 bg-white p-3 text-sm text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={customerConfirmed}
+                    onChange={(event) => setCustomerConfirmed(event.target.checked)}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>お客様本人から、登録メールアドレスを変更したいという希望を確認しました。</span>
+                </label>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => void changeCustomerEmail()}
+                    disabled={!newEmail.trim() || !customerConfirmed || Boolean(actionLoading)}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-800 px-5 text-sm font-bold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {actionLoading === "change-email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <AtSign className="h-4 w-4" />}
+                    入力内容を確認して変更
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmailChange(false);
+                      setNewEmail("");
+                      setCustomerConfirmed(false);
+                    }}
+                    disabled={Boolean(actionLoading)}
+                    className="min-h-11 rounded-xl border border-stone-200 bg-white px-5 text-sm font-bold text-stone-600"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-sky-800">
+                  変更後は、新しいメールアドレスで検索し直されます。続けて「ログインメールを再送」を押してください。Stripeの過去の決済記録は変更されません。
+                </p>
+              </div>
+            )}
             <p className="mt-3 text-xs leading-relaxed text-stone-500">
               「顧客向け案内文をコピー」では、現在表示している調査結果に合わせた返信文がコピーされます。
             </p>

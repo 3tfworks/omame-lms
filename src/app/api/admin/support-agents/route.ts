@@ -38,7 +38,7 @@ export async function PUT(request: Request) {
         enabled,
         can_view_auth_status: enabled,
         can_resend_login_email: enabled && canResend,
-        can_repair_profile: false,
+        can_repair_profile: enabled,
         created_by: access.userId,
         updated_at: new Date().toISOString(),
       },
@@ -52,7 +52,7 @@ export async function PUT(request: Request) {
       target_email: email,
       action: enabled ? "grant_support_access" : "revoke_support_access",
       result: "success",
-      detail: enabled ? `resend=${canResend}` : null,
+      detail: enabled ? `resend=${canResend}, change_email=true` : null,
     });
 
     return NextResponse.json({ message: enabled ? "事務担当アクセスを付与しました。" : "事務担当アクセスを停止しました。" });

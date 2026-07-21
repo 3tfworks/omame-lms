@@ -36,7 +36,7 @@ export async function getSupportAccess(): Promise<SupportAccess | null> {
       isAdmin: true,
       canView: true,
       canResend: true,
-      canRepair: profile.role === "owner",
+      canRepair: true,
       canManageAgents: profile.role === "owner",
     };
   }
