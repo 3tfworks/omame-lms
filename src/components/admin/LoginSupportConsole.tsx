@@ -493,6 +493,37 @@ export function LoginSupportConsole() {
               </ul>
             </div>
           </div>
+          <details className="group/email-change mt-4 rounded-xl border border-sky-200 bg-sky-50">
+            <summary className="flex cursor-pointer list-none items-center gap-3 p-4 font-bold text-sky-950 hover:bg-sky-100">
+              <AtSign className="h-5 w-5 shrink-0 text-sky-700" />
+              <span className="flex-1">別のメールアドレスへ変更する場合</span>
+              <span
+                aria-hidden="true"
+                className="text-lg text-sky-500 transition-transform group-open/email-change:rotate-45"
+              >
+                ＋
+              </span>
+            </summary>
+            <div className="border-t border-sky-200 p-4">
+              <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-sky-950">
+                <li>「顧客向け案内文をコピー」して、お客様へ通常の返信メールとして送ります。</li>
+                <li>お客様から、登録メールアドレスを変更したいという返信を受け取ります。</li>
+                <li>お名前・現在の登録メールアドレス・購入日・購入金額・変更先メールアドレスを確認します。</li>
+                <li>「登録メールアドレスを変更」を開き、新しいアドレスへ変更します。</li>
+                <li>変更後のメールアドレスで顧客情報を検索し直します。</li>
+                <li>「ログインメールを再送」を押します。</li>
+                <li>今後は新しいメールアドレスでログインしていただくよう案内します。</li>
+              </ol>
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
+                <p className="font-bold">操作前に確認してください</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>「ログインメールを再送」は、現在登録されているメールアドレスへ自動送信されます。文章や送信先だけを変更することはできません。</li>
+                  <li>別のアドレスへ通常の案内メールを送るだけでは、サイトの登録メールアドレスは変更されません。</li>
+                  <li>お客様から変更希望の返信が届くまでは、登録メールアドレスを変更しないでください。</li>
+                </ul>
+              </div>
+            </div>
+          </details>
         </div>
       </details>
 
