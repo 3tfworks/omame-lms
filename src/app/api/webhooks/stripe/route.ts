@@ -7,6 +7,11 @@ import { findAuthUserByEmail } from "@/lib/authUsers";
 import { getPurchaseRole } from "@/lib/purchaseRole";
 import { getValidReferrer } from "@/lib/invite";
 import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
+import { buildPurchaseConfirmationEmail } from "@/lib/purchaseConfirmationEmail";
+import {
+  sendPurchaseEmailFailureAlert,
+  sendTransactionalEmail,
+} from "@/lib/resendTransactionalEmail";
 import crypto from "crypto";
 
 // Stripe Webhook 受信エンドポイント。
@@ -52,11 +57,17 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        // 単発購入(payment)のみ処理。サブスク初回も completed が来るが、ここでは payment に限定。
-        if (session.mode === "payment") {
+        const priceType = session.metadata?.price_type;
+        // このStripeアカウントにある他商品の決済は、受講登録・領収書・メールの対象にしない。
+        if (
+          session.mode === "payment" &&
+          (priceType === "general" || priceType === "salon")
+        ) {
           await handleCheckoutCompleted(session, event.id);
         } else {
-          console.log(`[Stripe Webhook] Skipping checkout.session.completed (mode: ${session.mode})`);
+          console.log(
+            `[Stripe Webhook] Skipping unmanaged checkout.session.completed (mode: ${session.mode}, price_type: ${priceType || "none"})`,
+          );
         }
         break;
       }
@@ -239,28 +250,34 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   const paymentIntentId = getStripeId(session.payment_intent);
   const chargeId = await getChargeId(paymentIntentId);
   const product = getProductDetails(session.metadata?.price_type);
-  const { error: purchaseError } = await supabaseAdmin.from("purchase_records").upsert(
-    {
-      user_id: userId,
-      provider: "stripe",
-      product_key: product.key,
-      product_name: product.name,
-      amount_total: paymentAmount,
-      currency: session.currency || "jpy",
-      status: "paid",
-      purchased_email: email.trim().toLowerCase(),
-      stripe_checkout_session_id: session.id,
-      stripe_payment_intent_id: paymentIntentId,
-      stripe_charge_id: chargeId,
-      purchased_at: new Date(session.created * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "stripe_checkout_session_id" },
-  );
+  const { data: purchaseRecord, error: purchaseError } = await supabaseAdmin
+    .from("purchase_records")
+    .upsert(
+      {
+        user_id: userId,
+        provider: "stripe",
+        product_key: product.key,
+        product_name: product.name,
+        amount_total: paymentAmount,
+        currency: session.currency || "jpy",
+        status: "paid",
+        purchased_email: email.trim().toLowerCase(),
+        stripe_checkout_session_id: session.id,
+        stripe_payment_intent_id: paymentIntentId,
+        stripe_charge_id: chargeId,
+        purchased_at: new Date(session.created * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "stripe_checkout_session_id" },
+    )
+    .select(
+      "id, confirmation_email_status, confirmation_email_attempted_at",
+    )
+    .single();
 
-  if (purchaseError) {
+  if (purchaseError || !purchaseRecord) {
     console.error("[Stripe Webhook] Error recording purchase:", purchaseError);
-    throw purchaseError;
+    throw purchaseError ?? new Error("Purchase record was not returned");
   }
 
   // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）
@@ -361,27 +378,115 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
     console.error("[Stripe Webhook] Affiliate reward step failed:", affiliateErr);
   }
 
-  // 既存ユーザーには Magic Link を再送しない（新規のみ案内）
-  if (existing) {
-    console.log(`[Stripe Webhook] Processed purchase for existing user: ${email} (ID: ${userId})`);
+  // 5. 購入案内とログインリンクを1通にまとめ、購入単位で一度だけ送信する。
+  if (purchaseRecord.confirmation_email_status === "sent") {
+    console.log(`[Stripe Webhook] Purchase email already sent: session=${session.id}`);
     return;
   }
 
-  // 5. Magic Link（ログイン案内メール）を送信
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://omamepiano.com";
-  const redirectUrl = `${siteUrl}/api/auth/callback?next=/ja/lms`;
-
-  const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: redirectUrl },
-  });
-
-  if (otpError) {
-    console.error("[Stripe Webhook] Error sending magic link:", otpError);
-    // メール送信失敗でもユーザー作成自体は成功しているので処理は継続
+  const attemptedAt = purchaseRecord.confirmation_email_attempted_at
+    ? new Date(purchaseRecord.confirmation_email_attempted_at).getTime()
+    : 0;
+  const sendingIsFresh =
+    purchaseRecord.confirmation_email_status === "sending" &&
+    Date.now() - attemptedAt < 10 * 60 * 1000;
+  if (sendingIsFresh) {
+    console.log(`[Stripe Webhook] Purchase email is already being sent: session=${session.id}`);
+    return;
   }
 
-  if (!otpError) {
-    console.log(`[Stripe Webhook] Successfully created user and requested Magic Link: ${email} (ID: ${userId})`);
+  const claimTime = new Date().toISOString();
+  let claimQuery = supabaseAdmin
+    .from("purchase_records")
+    .update({
+      confirmation_email_status: "sending",
+      confirmation_email_attempted_at: claimTime,
+      confirmation_email_error: null,
+      updated_at: claimTime,
+    })
+    .eq("id", purchaseRecord.id)
+    .eq("confirmation_email_status", purchaseRecord.confirmation_email_status);
+  if (purchaseRecord.confirmation_email_attempted_at) {
+    claimQuery = claimQuery.eq(
+      "confirmation_email_attempted_at",
+      purchaseRecord.confirmation_email_attempted_at,
+    );
+  } else {
+    claimQuery = claimQuery.is("confirmation_email_attempted_at", null);
+  }
+  const { data: claimed, error: claimError } = await claimQuery.select("id").maybeSingle();
+  if (claimError) throw claimError;
+  if (!claimed) {
+    console.log(`[Stripe Webhook] Purchase email claimed by another request: session=${session.id}`);
+    return;
+  }
+
+  try {
+    const { data: linkData, error: linkError } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+      });
+    if (linkError || !linkData.properties.hashed_token) {
+      throw linkError ?? new Error("Magic link token was not returned");
+    }
+
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.omamepiano.com")
+      .replace(/\/+$/, "");
+    const loginUrl = new URL("/api/auth/verify", siteUrl);
+    loginUrl.searchParams.set("token_hash", linkData.properties.hashed_token);
+    loginUrl.searchParams.set("next", "/ja/lms");
+    const purchasesUrl = `${siteUrl}/ja/lms/purchases`;
+    const emailContent = buildPurchaseConfirmationEmail({
+      customerName: name,
+      productName: product.name,
+      amount: paymentAmount,
+      currency: session.currency || "jpy",
+      purchasedAt: new Date(session.created * 1000),
+      loginUrl: loginUrl.toString(),
+      purchasesUrl,
+    });
+    const providerId = await sendTransactionalEmail({
+      to: email,
+      ...emailContent,
+      idempotencyKey: `purchase-confirmation/${session.id}`,
+      category: "purchase_confirmation",
+    });
+
+    const sentAt = new Date().toISOString();
+    const { error: sentStateError } = await supabaseAdmin
+      .from("purchase_records")
+      .update({
+        confirmation_email_status: "sent",
+        confirmation_email_provider_id: providerId,
+        confirmation_email_sent_at: sentAt,
+        confirmation_email_error: null,
+        updated_at: sentAt,
+      })
+      .eq("id", purchaseRecord.id)
+      .eq("confirmation_email_status", "sending");
+    if (sentStateError) {
+      // Resend側では送信済みなので、ここではWebhookを再試行させて二重送信しない。
+      console.error("[Stripe Webhook] Could not record sent purchase email:", sentStateError);
+    }
+    console.log(`[Stripe Webhook] Purchase email sent: session=${session.id}`);
+  } catch (emailError) {
+    const message =
+      emailError instanceof Error ? emailError.message.slice(0, 1000) : "unknown_error";
+    const failedAt = new Date().toISOString();
+    await supabaseAdmin
+      .from("purchase_records")
+      .update({
+        confirmation_email_status: "failed",
+        confirmation_email_error: message,
+        updated_at: failedAt,
+      })
+      .eq("id", purchaseRecord.id);
+    await sendPurchaseEmailFailureAlert({
+      checkoutSessionId: session.id,
+      customerEmail: email,
+      errorMessage: message,
+    });
+    throw emailError;
   }
 }
