@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         if (paymentIntentId) {
           await cancelAffiliateReward(paymentIntentId, "購入者への返金のため");
         }
+        await updatePurchaseStatusFromCharge(charge);
         break;
       }
       case "charge.dispute.created": {
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
           if (paymentIntentId) {
             await cancelAffiliateReward(paymentIntentId, "カード会社による支払いの取消のため");
           }
+          await updatePurchaseStatusFromCharge(charge, "disputed");
         }
         break;
       }
@@ -111,6 +113,44 @@ async function cancelAffiliateReward(paymentIntentId: string, reason: string) {
   console.log(
     `[Stripe Webhook] Affiliate reward cancelled: payment_intent=${paymentIntentId}, reason=${reason}`,
   );
+}
+
+async function updatePurchaseStatusFromCharge(
+  charge: Stripe.Charge,
+  forcedStatus?: "disputed",
+) {
+  const status =
+    forcedStatus ??
+    (charge.refunded
+      ? "refunded"
+      : charge.amount_refunded > 0
+        ? "partially_refunded"
+        : "paid");
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("purchase_records")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("stripe_charge_id", charge.id);
+  if (error) throw error;
+}
+
+async function getChargeId(paymentIntentId: string | null) {
+  if (!paymentIntentId) return null;
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  return getStripeId(paymentIntent.latest_charge);
+}
+
+function getProductDetails(priceType: string | undefined) {
+  if (priceType === "salon") {
+    return {
+      key: "omame_basic_salon",
+      name: "おうちで学べるお豆奏法基礎講座（サロン価格）",
+    };
+  }
+  return {
+    key: "omame_basic",
+    name: "おうちで学べるお豆奏法基礎講座",
+  };
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string) {
@@ -194,6 +234,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       console.error("[Stripe Webhook] Error upgrading salon member role:", upgradeError);
       throw upgradeError;
     }
+  }
+
+  const paymentIntentId = getStripeId(session.payment_intent);
+  const chargeId = await getChargeId(paymentIntentId);
+  const product = getProductDetails(session.metadata?.price_type);
+  const { error: purchaseError } = await supabaseAdmin.from("purchase_records").upsert(
+    {
+      user_id: userId,
+      provider: "stripe",
+      product_key: product.key,
+      product_name: product.name,
+      amount_total: paymentAmount,
+      currency: session.currency || "jpy",
+      status: "paid",
+      purchased_email: email.trim().toLowerCase(),
+      stripe_checkout_session_id: session.id,
+      stripe_payment_intent_id: paymentIntentId,
+      stripe_charge_id: chargeId,
+      purchased_at: new Date(session.created * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "stripe_checkout_session_id" },
+  );
+
+  if (purchaseError) {
+    console.error("[Stripe Webhook] Error recording purchase:", purchaseError);
+    throw purchaseError;
   }
 
   // 4. アフィリエイト報酬の記録（失敗してもユーザー作成は成功扱い）

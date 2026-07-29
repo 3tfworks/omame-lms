@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Handshake, IdCard, Loader2, Save, UserRound } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, CheckCircle2, Handshake, IdCard, Loader2, ReceiptText, Save, UserRound } from "lucide-react";
 import { DISPLAY_NAME_MAX, LEGAL_NAME_MAX } from "@/lib/displayName";
 
 type Profile = {
@@ -183,6 +184,24 @@ export default function MyPage() {
           登録情報と、受講ページで使うお名前を確認・変更できます。本名は購入者管理のためだけに使用し、画面上の表示にはニックネームを使います。
         </p>
       </header>
+
+      <Link
+        href="/ja/lms/purchases"
+        className="flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition-colors hover:bg-amber-100/70 md:p-6"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-800">
+            <ReceiptText className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-stone-800">購入履歴・領収書</h2>
+            <p className="mt-1 text-sm leading-relaxed text-stone-600">
+              ご購入内容の確認、領収書の表示・再送はこちらから行えます。
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-lg font-bold text-amber-800" aria-hidden="true">›</span>
+      </Link>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm md:p-6">
         <div className="flex items-start gap-3">
