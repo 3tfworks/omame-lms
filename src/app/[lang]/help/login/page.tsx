@@ -10,6 +10,7 @@
 // v6: Step 5 のメールスクショを緑ボタン式の新デザイン（login-email-v2.png・縦長）に差し替え。
 //   本文を「緑の『ログインする』ボタンを押す」＋ LINE/メールアプリ内ブラウザ注意に更新。
 //   縦長画像は max-w-xs ラッパーで囲み、他の SP スクショと揃えつつタップ拡大は維持。
+// v7: ブラウザ非依存ログインに合わせ、メールボタン → 確認画面の順に案内を更新。
 // 注意: 連携実装（login のアコーディオン / ?error= バナー / メール追記 / LINE 自動応答）は
 //   本ページ本番反映後の別ラウンド。ここでは扱わない。
 
@@ -66,8 +67,8 @@ const STEPS = [
     img: "/images/help/omame-login-step5-sp.png",
     w: 1501,
     h: 602,
-    alt: "メール本文の中にある青色の「ログインする」リンク",
-    title: "⑤ メールの中の「ログインする」リンクを押します",
+    alt: "メール本文の中にあるログイン画面を開くボタン",
+    title: "⑤ メールの中の「ログイン画面を開く」ボタンを押します",
   },
   {
     n: 6,
@@ -75,7 +76,7 @@ const STEPS = [
     w: 585,
     h: 1266,
     alt: "ログイン後の受講ページ（LMS）のトップ画面",
-    title: "⑥ 受講ページが開きます",
+    title: "⑥ 確認画面で「ログインを続ける」を押します",
   },
 ];
 
@@ -320,9 +321,12 @@ export default async function HelpLoginPage({
                 {step.n === 5 && (
                   <div className="space-y-3 text-base leading-relaxed md:text-lg">
                     <p>
-                      メールを開くと、「以下のリンクをクリックして、『おうちで学べるお豆奏法基礎講座』へログインしてください。」というご案内の下に、
-                      <strong>青い文字の「ログインする」というリンク</strong>
+                      メールを開くと、
+                      <strong>「ログイン画面を開く」というボタン</strong>
                       があります。これを押してください。
+                    </p>
+                    <p>
+                      LINE内の画面で開いた場合は、右上の「↗」などからSafariまたはChromeで開き直せます。ブラウザを切り替えても、同じリンクをお使いいただけます。
                     </p>
                     <p className="rounded-2xl bg-omame-accent px-4 py-3 text-sm text-omame-text/80 md:text-base">
                       ※このリンクは<strong>一度だけ有効</strong>
@@ -332,7 +336,10 @@ export default async function HelpLoginPage({
                 )}
                 {step.n === 6 && (
                   <div className="space-y-3 text-base leading-relaxed md:text-lg">
-                    <p>自動的にブラウザが開き、お豆奏法の受講ページに入れます。これでログイン完了です。</p>
+                    <p>
+                      「ログインの確認」画面が開いたら、<strong>「ログインを続ける」</strong>
+                      ボタンを押してください。そのブラウザでログインが完了し、お豆奏法の受講ページが開きます。
+                    </p>
                     <p className="text-sm text-omame-text/70 md:text-base">
                       ※スマートフォンの方は、画面の左上にあるメニュー（三本線）から、レッスン動画や教材にアクセスできます。
                     </p>

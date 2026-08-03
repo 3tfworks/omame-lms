@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import Image from "next/image";
 import { LineLogo } from "@/components/ui/LineLogo";
 
 // 失効・使用済みのログインリンクで戻ってきた人向けのエラー案内。
@@ -76,31 +75,22 @@ export default function LoginPage() {
     setStatus("loading");
     setErrorMessage("");
 
-    const supabase = createClient();
-    
-    // 現在のホストURLを取得（window.location.originを使うことで一番確実にする）
-    const getUrl = () => {
-      let url = "http://localhost:3000";
-      if (typeof window !== "undefined") {
-        url = window.location.origin;
+    try {
+      const response = await fetch("/api/auth/request-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Login request failed: ${response.status}`);
       }
-      return `${url}/api/auth/callback?next=/ja/lms`;
-    };
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: getUrl(),
-        shouldCreateUser: false,
-      },
-    });
-
-    if (error) {
+      setStatus("success");
+    } catch (error) {
       console.error("Login error:", error);
       setStatus("error");
-      setErrorMessage("ログイン用リンクの送信に失敗しました。メールアドレスをご確認ください。");
-    } else {
-      setStatus("success");
+      setErrorMessage("ログイン用メールの送信に失敗しました。時間をおいてお試しください。");
     }
   };
 
@@ -140,8 +130,8 @@ export default function LoginPage() {
                 メールを送信しました！
               </h3>
               <p className="text-sm text-omame-primary/70 mb-6">
-                <strong>{email}</strong> 宛にログイン用のメールをお送りしました。
-                メールを開いて、中のボタンをクリックしてください。
+                <strong>{email}</strong> がご登録済みの場合、ログイン用のメールが届きます。
+                メールを開き、中のボタンを押してください。
               </p>
               <div className="bg-omame-gold/10 rounded-lg p-3 mb-6 text-xs text-omame-primary/80 text-left">
                 <p className="font-semibold mb-1">※メールが見当たらない場合：</p>
@@ -208,7 +198,7 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 text-center text-xs text-omame-primary/50 space-y-2">
-                <p>パスワードは不要です。入力したメールアドレス宛にログイン用のリンクが届きます。</p>
+                <p>パスワードは不要です。ご登録済みのメールアドレスへログイン用のリンクが届きます。</p>
               </div>
 
               <div className="mt-6 text-center">

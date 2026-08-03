@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { findAuthUserByEmail, normalizeEmail } from "@/lib/authUsers";
+import { sendBrowserIndependentMagicLink } from "@/lib/browserIndependentMagicLink";
 import { getSupportAccess } from "@/lib/supportAuth";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -42,24 +43,36 @@ export async function POST(request: Request) {
       );
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
-    const redirectUrl = `${siteUrl.replace(/\/$/, "")}/api/auth/callback?next=/ja/lms`;
-    const { error } = await admin.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectUrl, shouldCreateUser: false },
-    });
+    let sendError: unknown = null;
+    try {
+      await sendBrowserIndependentMagicLink({
+        admin,
+        email,
+        requestUrl: request.url,
+        next: "/ja/lms",
+        idempotencyScope: "support-login",
+      });
+    } catch (error) {
+      sendError = error;
+    }
+
+    const detail = sendError instanceof Error
+      ? sendError.message.slice(0, 500)
+      : sendError
+        ? "unknown_error"
+        : null;
 
     await admin.from("support_action_logs").insert({
       actor_user_id: access.userId,
       target_user_id: authUser.id,
       target_email: email,
       action: "resend_login_email",
-      result: error ? "failure" : "success",
-      detail: error ? `${error.code || "auth_error"}: ${error.message}`.slice(0, 500) : null,
+      result: sendError ? "failure" : "success",
+      detail,
     });
 
-    if (error) {
-      console.error("[Support Resend API] Failed:", error);
+    if (sendError) {
+      console.error("[Support Resend API] Failed:", sendError);
       return NextResponse.json({ error: "ログインメールの再送に失敗しました。" }, { status: 502 });
     }
 
