@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { LineLogo } from "@/components/ui/LineLogo";
 
 // 失効・使用済みのログインリンクで戻ってきた人向けのエラー案内。
@@ -18,9 +19,9 @@ function LoginErrorBanner() {
       <p className="text-sm mt-1 text-rose-500/80">
         有効期限が切れているか、すでに使用済みの可能性があります。もう一度メールアドレスを入力してください。
       </p>
-      <a href="/ja/help/login#trouble" className="text-sm underline mt-2 inline-block text-omame-gold">
+      <Link href="/ja/help/login#trouble" className="text-sm underline mt-2 inline-block text-omame-gold">
         詳しい対処法を見る →
-      </a>
+      </Link>
     </div>
   );
 }
@@ -202,12 +203,12 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-6 text-center">
-                <a
+                <Link
                   href="/ja/help/login"
                   className="inline-flex items-center gap-2 text-omame-gold underline text-base md:text-lg"
                 >
                   📖 ログイン方法の詳しいご案内はこちら →
-                </a>
+                </Link>
               </div>
 
               <LoginSupportCta />
