@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import crypto from "crypto";
+import { resolveReferralTrackingId } from "@/lib/affiliateAttribution";
 
 const locales = ["ja", "en", "fr"];
 const defaultLocale = "ja";
@@ -136,7 +137,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // --- アフィリエイト（紹介リンク）トラッキング ---
-  const ref = searchParams.get("ref");
+  // `?ref=` だけでなく、専用紹介ページを開いた時点でも紹介者を記録する。
+  // Checkout直前に getValidReferrer() で再検証するため、ここではDBアクセスを行わない。
+  const ref = resolveReferralTrackingId(pathname, searchParams.get("ref"));
   
   // --- 認証セッション管理 ---
   // Supabaseクライアントを作成してセッションをリフレッシュ
