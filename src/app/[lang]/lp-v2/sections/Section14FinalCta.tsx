@@ -17,6 +17,7 @@ export function Section14FinalCta({
   showCampaign,
   showReferralDiscount,
   priceType = "general",
+  referrerId,
 }: {
   lang: string;
   regularPrice: number;
@@ -26,6 +27,7 @@ export function Section14FinalCta({
   showCampaign: boolean;
   showReferralDiscount: boolean;
   priceType?: "general" | "salon";
+  referrerId?: string | null;
 }) {
   return (
     <SectionShell>
@@ -98,6 +100,7 @@ export function Section14FinalCta({
           <CtaButton
             size="lg"
             priceType={priceType}
+            referrerId={referrerId}
             className="h-14 w-[85%] max-w-[320px] md:h-auto md:w-auto md:max-w-none"
           >
             {showReferralDiscount ? "10%OFFで受講する" : "今すぐ受講する"}

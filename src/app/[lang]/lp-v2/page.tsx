@@ -73,6 +73,7 @@ export default async function LpV2Page({
         campaignLabel={pricing.campaignLabel}
         showCampaign={pricing.showCampaign}
         showReferralDiscount={showReferralDiscount}
+        referrerId={validReferrer?.id}
       />
       <Section12Faq />
       <Section13Message />
@@ -85,6 +86,7 @@ export default async function LpV2Page({
         campaignLabel={pricing.campaignLabel}
         showCampaign={pricing.showCampaign}
         showReferralDiscount={showReferralDiscount}
+        referrerId={validReferrer?.id}
       />
     </main>
   );

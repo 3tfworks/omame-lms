@@ -25,6 +25,7 @@ export function Section11Price({
   showCampaign,
   showReferralDiscount,
   priceType = "general",
+  referrerId,
 }: {
   regularPrice: number;
   salePrice: number;
@@ -33,6 +34,7 @@ export function Section11Price({
   showCampaign: boolean;
   showReferralDiscount: boolean;
   priceType?: "general" | "salon";
+  referrerId?: string | null;
 }) {
   return (
     <SectionShell id="price-section" className="bg-white">
@@ -169,7 +171,7 @@ export function Section11Price({
         </div>
 
         <div className="mt-10">
-          <CtaButton priceType={priceType}>
+          <CtaButton priceType={priceType} referrerId={referrerId}>
             {showReferralDiscount ? "10%OFFで受講する" : "今すぐ受講する"}
           </CtaButton>
         </div>

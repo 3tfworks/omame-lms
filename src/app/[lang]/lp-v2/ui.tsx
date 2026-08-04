@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { buildStripeCheckoutRequest } from "@/lib/stripeCheckoutRequest";
 
 // LP v2 共通プリミティブ。
 // 既存 LP（/lp）の世界観トークンを踏襲しつつ、v2 用に再構築したもの。
@@ -87,13 +88,14 @@ export function Heading({ children }: { children: ReactNode }) {
 
 // ── CTA ボタン ───────────────────────────────────────
 // 受講申込導線。Stripe Checkout を直接呼び出して同タブで遷移する（offer-demo を経由しない）。
-// 紹介者(referrer_id)は body では渡さず、サーバ側(/api/checkout/stripe)が
-// proxy.ts 発行の httpOnly cookie `referrer_id` を解決する（?ref=xxx 経路）。
+// 紹介販売ページではサーバ側で検証済みの紹介者IDをbodyへ明示する。
+// CookieもCheckout API側のフォールバックとして維持する。
 export function CtaButton({
   children,
   size = "md",
   className = "",
   priceType = "general",
+  referrerId,
 }: {
   children: ReactNode;
   size?: "md" | "lg";
@@ -101,6 +103,8 @@ export function CtaButton({
   className?: string;
   // 価格種別（フェーズ2）。Checkout に渡して general/salon の Price を切り替える。
   priceType?: "general" | "salon";
+  // LPサーバーで資格と規約同意を検証済みの紹介者ID。
+  referrerId?: string | null;
 }) {
   const pad = size === "lg" ? "px-12 py-5 text-lg" : "px-10 py-4 text-base";
   // fetch 中の二度押しで Checkout セッションが2つ作られる事故を防ぐ。
@@ -113,7 +117,7 @@ export function CtaButton({
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceType: priceType ?? "general" }),
+        body: JSON.stringify(buildStripeCheckoutRequest({ priceType, referrerId })),
       });
       const data = await res.json().catch(() => ({}));
       if (data.url) {

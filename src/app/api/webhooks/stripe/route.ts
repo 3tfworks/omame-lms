@@ -7,6 +7,7 @@ import { findAuthUserByEmail } from "@/lib/authUsers";
 import { getPurchaseRole } from "@/lib/purchaseRole";
 import { getValidReferrer } from "@/lib/invite";
 import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
+import { calculateAffiliateRewardAfterRefund } from "@/lib/affiliateRefund";
 import { buildPurchaseConfirmationEmail } from "@/lib/purchaseConfirmationEmail";
 import {
   sendPurchaseEmailFailureAlert,
@@ -73,10 +74,7 @@ export async function POST(request: Request) {
       }
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
-        const paymentIntentId = getStripeId(charge.payment_intent);
-        if (paymentIntentId) {
-          await cancelAffiliateReward(paymentIntentId, "購入者への返金のため");
-        }
+        await reconcileAffiliateRewardAfterRefund(charge);
         await updatePurchaseStatusFromCharge(charge);
         break;
       }
@@ -124,6 +122,58 @@ async function cancelAffiliateReward(paymentIntentId: string, reason: string) {
   console.log(
     `[Stripe Webhook] Affiliate reward cancelled: payment_intent=${paymentIntentId}, reason=${reason}`,
   );
+}
+
+async function reconcileAffiliateRewardAfterRefund(charge: Stripe.Charge) {
+  const paymentIntentId = getStripeId(charge.payment_intent);
+  if (!paymentIntentId) return;
+
+  if (charge.refunded || charge.amount_refunded >= charge.amount) {
+    await cancelAffiliateReward(paymentIntentId, "購入者への全額返金のため");
+    return;
+  }
+
+  if (charge.amount_refunded <= 0) return;
+
+  const supabaseAdmin = createAdminClient();
+  const { data: rewards, error: rewardsError } = await supabaseAdmin
+    .from("affiliate_rewards")
+    .select("id, amount, reward_rate, status")
+    .eq("stripe_payment_intent_id", paymentIntentId);
+  if (rewardsError) throw rewardsError;
+
+  for (const reward of rewards ?? []) {
+    if (reward.status === "paid") {
+      console.error(
+        `[Stripe Webhook] Paid affiliate reward requires manual refund adjustment: reward=${reward.id}, payment_intent=${paymentIntentId}, amount_refunded=${charge.amount_refunded}`,
+      );
+      continue;
+    }
+    if (reward.status !== "pending") continue;
+
+    const adjustedAmount = calculateAffiliateRewardAfterRefund({
+      chargeAmount: charge.amount,
+      amountRefunded: charge.amount_refunded,
+      rewardRate: reward.reward_rate,
+    });
+
+    if (adjustedAmount <= 0) {
+      await cancelAffiliateReward(paymentIntentId, "購入者への返金により報酬対象額が0円となったため");
+      return;
+    }
+    if (adjustedAmount === reward.amount) continue;
+
+    const { error: updateError } = await supabaseAdmin
+      .from("affiliate_rewards")
+      .update({ amount: adjustedAmount })
+      .eq("id", reward.id)
+      .eq("status", "pending");
+    if (updateError) throw updateError;
+
+    console.log(
+      `[Stripe Webhook] Affiliate reward adjusted after partial refund: reward=${reward.id}, previous=${reward.amount}, adjusted=${adjustedAmount}, amount_refunded=${charge.amount_refunded}`,
+    );
+  }
 }
 
 async function updatePurchaseStatusFromCharge(
