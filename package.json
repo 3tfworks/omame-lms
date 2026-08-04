@@ -12,7 +12,7 @@
     "lint": "eslint",
     "test:bookmarks": "node --experimental-strip-types --test src/lib/bookmarks.test.ts",
     "test:youtube-research": "node --experimental-strip-types --test src/lib/youtubeResearch.test.ts src/lib/youtubeDataApi.test.ts",
-    "test:affiliate-program": "node --experimental-strip-types --test src/lib/affiliateProgram.test.ts src/lib/affiliateAttribution.test.ts src/lib/affiliateRefund.test.ts src/lib/stripeCheckoutRequest.test.ts",
+    "test:affiliate-program": "node --experimental-strip-types --test src/lib/affiliateProgram.test.ts src/lib/affiliateAttribution.test.ts src/lib/affiliateAttributionAudit.test.ts src/lib/affiliateRefund.test.ts src/lib/stripeCheckoutRequest.test.ts",
     "test:support": "node --experimental-strip-types --test src/lib/stripeSupportStatus.test.ts src/lib/purchaseSupport.test.ts",
     "test:purchase-email": "node --experimental-strip-types --test src/lib/purchaseConfirmationEmail.test.ts",
     "test:auth-login": "node --experimental-strip-types --test src/lib/loginMagicLinkEmail.test.ts"

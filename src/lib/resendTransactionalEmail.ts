@@ -88,3 +88,42 @@ Stripe Checkout Session：${input.checkoutSessionId}
     console.error("[Purchase Email] Could not send admin alert:", alertError);
   }
 }
+
+export async function sendAffiliateEmailFallbackAlert(input: {
+  checkoutSessionId: string;
+  customerEmail: string;
+  referrerId: string;
+  leadId: string;
+  paymentAmount: number;
+}) {
+  const alertEmail = process.env.ADMIN_ALERT_EMAIL?.trim();
+  if (!alertEmail) {
+    console.warn("[Affiliate Attribution] ADMIN_ALERT_EMAIL is not configured");
+    return;
+  }
+
+  const subject = "【要確認】紹介購入をメール照合で復元しました";
+  const amount = `￥${input.paymentAmount.toLocaleString("ja-JP")}`;
+  const text = `紹介情報がStripe Checkoutに無かったため、購入者メールと招待記録の照合で紹介関係を復元しました。
+
+購入者メール：${input.customerEmail}
+紹介者ID：${input.referrerId}
+招待記録ID：${input.leadId}
+決済額：${amount}
+Stripe Checkout Session：${input.checkoutSessionId}
+
+紹介割引が適用されていない可能性があります。Stripeの決済額と管理画面の報酬を確認してください。`;
+
+  try {
+    await sendTransactionalEmail({
+      to: alertEmail,
+      subject,
+      text,
+      html: `<p>紹介情報がStripe Checkoutに無かったため、購入者メールと招待記録の照合で紹介関係を復元しました。</p><ul><li>購入者メール：${escapeHtml(input.customerEmail)}</li><li>紹介者ID：${escapeHtml(input.referrerId)}</li><li>招待記録ID：${escapeHtml(input.leadId)}</li><li>決済額：${escapeHtml(amount)}</li><li>Stripe Checkout Session：${escapeHtml(input.checkoutSessionId)}</li></ul><p><strong>紹介割引が適用されていない可能性があります。</strong> Stripeの決済額と管理画面の報酬を確認してください。</p>`,
+      idempotencyKey: `affiliate-email-fallback/${input.checkoutSessionId}`,
+      category: "affiliate_email_fallback",
+    });
+  } catch (alertError) {
+    console.error("[Affiliate Attribution] Could not send admin alert:", alertError);
+  }
+}

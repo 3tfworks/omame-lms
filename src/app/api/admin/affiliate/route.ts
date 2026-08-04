@@ -28,6 +28,7 @@ export async function GET() {
       .from("affiliate_rewards")
       .select(`
         id, amount, reward_rate, status, created_at, eligible_for_payout_at, paid_at, cancelled_at, cancellation_reason,
+        attribution_source, checkout_discount_percent, review_required, review_reason, reviewed_at,
         referrer:referrer_id (id, email, display_name, bank_info),
         buyer:buyer_id (email, display_name)
       `)
@@ -148,10 +149,26 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { rewardId, newStatus, cancellationReason } = body;
+    const { rewardId, newStatus, cancellationReason, action } = body;
 
-    if (!rewardId || !newStatus) {
-      return NextResponse.json({ error: "rewardId and newStatus are required" }, { status: 400 });
+    if (!rewardId) {
+      return NextResponse.json({ error: "rewardId is required" }, { status: 400 });
+    }
+
+    if (action === "mark_reviewed") {
+      const { error } = await supabaseAdmin
+        .from("affiliate_rewards")
+        .update({ review_required: false, reviewed_at: new Date().toISOString() })
+        .eq("id", rewardId);
+      if (error) {
+        console.error("[Admin Affiliate API] Review update error:", error);
+        return NextResponse.json({ error: "Failed to update review status" }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (!newStatus) {
+      return NextResponse.json({ error: "newStatus is required" }, { status: 400 });
     }
 
     if (!["pending", "paid", "cancelled"].includes(newStatus)) {

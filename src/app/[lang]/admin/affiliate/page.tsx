@@ -13,6 +13,11 @@ type AffiliateReward = {
   paid_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  attribution_source: "checkout_metadata" | "email_fallback" | "legacy";
+  checkout_discount_percent: number | null;
+  review_required: boolean;
+  review_reason: string | null;
+  reviewed_at: string | null;
   referrer: {
     id: string;
     email: string;
@@ -127,6 +132,25 @@ export default function AdminAffiliatePage() {
       } else {
         const data = await res.json().catch(() => null);
         alert(data?.error || "ステータスの更新に失敗しました");
+      }
+    } catch {
+      alert("通信エラーが発生しました");
+    }
+    setUpdatingId(null);
+  };
+
+  const handleMarkReviewed = async (rewardId: string) => {
+    setUpdatingId(rewardId);
+    try {
+      const res = await fetch("/api/admin/affiliate", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rewardId, action: "mark_reviewed" }),
+      });
+      if (res.ok) {
+        await fetchRewards();
+      } else {
+        alert("確認状態の更新に失敗しました");
       }
     } catch {
       alert("通信エラーが発生しました");
@@ -302,12 +326,13 @@ export default function AdminAffiliatePage() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-omame-gold/20 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-[1180px]">
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
                 <th className="text-left px-6 py-4 text-sm font-bold text-stone-600">発生日</th>
                 <th className="text-left px-6 py-4 text-sm font-bold text-stone-600">紹介者 (支払先)</th>
                 <th className="text-left px-6 py-4 text-sm font-bold text-stone-600">購入者</th>
+                <th className="text-left px-6 py-4 text-sm font-bold text-stone-600">紹介経路・割引</th>
                 <th className="text-left px-6 py-4 text-sm font-bold text-stone-600">報酬額</th>
                 <th className="text-left px-6 py-4 text-sm font-bold text-stone-600 w-[150px]">ステータス</th>
               </tr>
@@ -341,6 +366,36 @@ export default function AdminAffiliatePage() {
                       {reward.buyer.display_name || "未設定"}
                     </div>
                     <div className="text-xs text-stone-500">{reward.buyer.email}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-bold text-stone-700">
+                      {reward.attribution_source === "checkout_metadata"
+                        ? "紹介リンク"
+                        : reward.attribution_source === "email_fallback"
+                          ? "メール照合"
+                          : "過去データ"}
+                    </div>
+                    <div className="mt-1 text-xs text-stone-500">
+                      {reward.checkout_discount_percent === null
+                        ? "割引：未確認"
+                        : `割引：${reward.checkout_discount_percent}%`}
+                    </div>
+                    {reward.review_required ? (
+                      <div className="mt-2 max-w-[240px] rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs leading-5 text-rose-700">
+                        <div className="font-bold">要確認</div>
+                        <p>{reward.review_reason || "紹介経路と割引状況を確認してください。"}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkReviewed(reward.id)}
+                          disabled={updatingId === reward.id}
+                          className="mt-1 font-bold underline disabled:opacity-50"
+                        >
+                          確認済みにする
+                        </button>
+                      </div>
+                    ) : reward.reviewed_at ? (
+                      <div className="mt-2 text-xs font-bold text-emerald-700">確認済み</div>
+                    ) : null}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-bold text-omame-deep">¥{reward.amount.toLocaleString()}</div>

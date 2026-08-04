@@ -7,9 +7,11 @@ import { findAuthUserByEmail } from "@/lib/authUsers";
 import { getPurchaseRole } from "@/lib/purchaseRole";
 import { getValidReferrer } from "@/lib/invite";
 import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
+import { getAffiliateAttributionAudit } from "@/lib/affiliateAttributionAudit";
 import { calculateAffiliateRewardAfterRefund } from "@/lib/affiliateRefund";
 import { buildPurchaseConfirmationEmail } from "@/lib/purchaseConfirmationEmail";
 import {
+  sendAffiliateEmailFallbackAlert,
   sendPurchaseEmailFailureAlert,
   sendTransactionalEmail,
 } from "@/lib/resendTransactionalEmail";
@@ -341,6 +343,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
   } else try {
     let referrerId = referrerIdFromMeta;
     let leadId: string | null = null;
+    let matchedByEmail = false;
 
     // metadata に referrer_id が無ければ、決済開始前30日以内に登録された
     // invite_leads だけを email でフォールバック検索する。
@@ -361,6 +364,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       if (lead) {
         referrerId = lead.referrer_id;
         leadId = lead.id;
+        matchedByEmail = true;
       }
     } else {
       // metadata 経由でも、対応する未コンバートのリードがあれば converted 更新対象にする
@@ -391,6 +395,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
         await supabaseAdmin.from("invite_leads").update({ converted: true }).eq("id", leadId);
       }
     } else if (referrerId && paymentAmount > 0) {
+      const attributionAudit = getAffiliateAttributionAudit({
+        metadataReferrerId: referrerIdFromMeta,
+        metadataDiscountPercent: session.metadata?.referral_discount_percent,
+        matchedByEmail,
+      });
       // 報酬率は決済成立日時（Checkout Session の作成時刻＝unix秒）を基準に判定する。
       const { rate: rewardRate } = await getAffiliateRewardRate(
         new Date(session.created * 1000),
@@ -409,6 +418,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
           amount: rewardAmount,
           reward_rate: rewardRate,
           status: "pending",
+          attribution_source: attributionAudit.source,
+          checkout_discount_percent: attributionAudit.discountPercent,
+          review_required: attributionAudit.reviewRequired,
+          review_reason: attributionAudit.reviewReason,
         },
         { onConflict: "stripe_event_id", ignoreDuplicates: true },
       );
@@ -422,6 +435,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
         console.log(
           `[Stripe Webhook] Affiliate reward recorded: referrer=${referrerId}, amount=${rewardAmount}, rate=${rewardRate}%`,
         );
+        if (matchedByEmail && leadId) {
+          console.warn(
+            `[Stripe Webhook] Affiliate attribution restored by email and requires review: session=${session.id}, lead=${leadId}`,
+          );
+          await sendAffiliateEmailFallbackAlert({
+            checkoutSessionId: session.id,
+            customerEmail: email,
+            referrerId,
+            leadId,
+            paymentAmount,
+          });
+        }
       }
     }
   } catch (affiliateErr) {
