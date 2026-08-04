@@ -8,6 +8,7 @@ import { getPurchaseRole } from "@/lib/purchaseRole";
 import { getValidReferrer } from "@/lib/invite";
 import { getAffiliateAttributionCutoff } from "@/lib/affiliateAttribution";
 import { buildPurchaseConfirmationEmail } from "@/lib/purchaseConfirmationEmail";
+import { buildBrowserIndependentLoginUrl } from "@/lib/loginMagicLinkEmail";
 import {
   sendPurchaseEmailFailureAlert,
   sendTransactionalEmail,
@@ -433,9 +434,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
 
     const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.omamepiano.com")
       .replace(/\/+$/, "");
-    const loginUrl = new URL("/api/auth/verify", siteUrl);
-    loginUrl.searchParams.set("token_hash", linkData.properties.hashed_token);
-    loginUrl.searchParams.set("next", "/ja/lms");
+    const loginUrl = buildBrowserIndependentLoginUrl({
+      siteUrl,
+      tokenHash: linkData.properties.hashed_token,
+      next: "/ja/lms",
+    });
     const purchasesUrl = `${siteUrl}/ja/lms/purchases`;
     const emailContent = buildPurchaseConfirmationEmail({
       customerName: name,
@@ -443,7 +446,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId
       amount: paymentAmount,
       currency: session.currency || "jpy",
       purchasedAt: new Date(session.created * 1000),
-      loginUrl: loginUrl.toString(),
+      loginUrl,
       purchasesUrl,
     });
     const providerId = await sendTransactionalEmail({

@@ -9,14 +9,18 @@ test("purchase email includes login and receipt guidance", () => {
     amount: 29800,
     currency: "jpy",
     purchasedAt: new Date("2026-07-29T00:00:00.000Z"),
-    loginUrl: "https://www.omamepiano.com/api/auth/verify?token_hash=secret",
+    loginUrl:
+      "https://www.omamepiano.com/ja/login/confirm?token_hash=secret&next=%2Fja%2Flms",
     purchasesUrl: "https://www.omamepiano.com/ja/lms/purchases",
   });
 
   assert.match(email.subject, /ご購入ありがとうございます/);
   assert.match(email.text, /￥29,800/);
   assert.match(email.text, /Stripeから別のメール/);
-  assert.match(email.html, /講座へログインする/);
+  assert.match(email.text, /確認画面で「ログインを続ける」/);
+  assert.match(email.html, /ログイン画面を開く/);
+  assert.match(email.html, /「ログインを続ける」/);
+  assert.doesNotMatch(email.html, /講座へログインする/);
   assert.match(email.html, /購入履歴・領収書を確認する/);
 });
 

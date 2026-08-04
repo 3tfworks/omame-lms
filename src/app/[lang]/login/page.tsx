@@ -119,8 +119,9 @@ export default function LoginPage() {
         <div className="mb-6 rounded-2xl bg-amber-50 p-4 border-l-4 border-amber-400" role="note">
           <p className="text-sm md:text-base text-amber-900 leading-relaxed">
             <strong>⚠️ LINE のトーク内から開かれた方へ:</strong>{" "}
-            画面右上の「↗」ボタンから <strong>Safari/Chrome で開き直してください</strong>。
-            LINE 内ブラウザではログインがうまく進まないことがあります。
+            普段お使いのブラウザにログイン状態を残すため、画面右上の「↗」ボタンから
+            <strong> Safari/Chrome で開き直すことをおすすめします</strong>。
+            LINE 内でログインすると、Safari/Chrome にはログイン状態が引き継がれません。
           </p>
         </div>
         <div className="bg-white/80 backdrop-blur-md py-8 px-4 shadow-xl shadow-omame-primary/5 sm:rounded-2xl sm:px-10 border border-omame-gold/20">

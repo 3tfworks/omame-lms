@@ -52,11 +52,12 @@ export function buildPurchaseConfirmationEmail(input: PurchaseConfirmationEmailI
 ・ご購入日：${purchasedAt}
 ・お支払い金額：${amount}
 
-以下のログイン用リンクから講座をご覧いただけます。
+以下のリンクを開き、表示された確認画面で「ログインを続ける」を押してください。
 ${input.loginUrl}
 
-※ログイン用リンクには有効期限があります。
-※LINE内の画面ではなく、SafariまたはChromeで開いてください。
+※ログイン用リンクには有効期限があり、一度だけ使用できます。
+※普段お使いのSafariまたはChromeで開くと、そのブラウザにログイン状態が保存されます。
+※LINE内で開いた場合は、右上の「↗」などからSafariまたはChromeで開き直せます。
 
 購入履歴・領収書
 ${input.purchasesUrl}
@@ -90,11 +91,11 @@ ${input.purchasesUrl}
               お支払い金額：${amount}
             </div>
 
-            <p style="margin:0 0 16px;font-size:15px;line-height:1.8;">下のボタンから講座へログインしていただけます。</p>
+            <p style="margin:0 0 16px;font-size:15px;line-height:1.8;">下のボタンを押してログイン画面を開き、次の画面で「ログインを続ける」を押してください。</p>
             <p style="margin:0 0 14px;text-align:center;">
-              <a href="${safeLoginUrl}" style="display:inline-block;background:#8b6b3e;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">講座へログインする</a>
+              <a href="${safeLoginUrl}" style="display:inline-block;background:#8b6b3e;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">ログイン画面を開く</a>
             </p>
-            <p style="margin:0 0 28px;color:#74695d;font-size:12px;line-height:1.8;text-align:center;">ログイン用リンクには有効期限があります。<br>LINE内の画面ではなく、SafariまたはChromeで開いてください。</p>
+            <p style="margin:0 0 28px;color:#74695d;font-size:12px;line-height:1.8;text-align:center;">ログイン用リンクには有効期限があり、一度だけ使用できます。<br>普段お使いのSafariまたはChromeで開くと、そのブラウザにログイン状態が保存されます。<br>LINE内で開いた場合は、右上の「↗」などからSafariまたはChromeで開き直せます。</p>
 
             <div style="border-top:1px solid #eadfce;padding-top:24px;">
               <p style="margin:0 0 12px;font-size:15px;font-weight:700;">購入履歴・領収書</p>

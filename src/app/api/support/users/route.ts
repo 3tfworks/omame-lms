@@ -135,7 +135,7 @@ function buildDiagnosis(args: {
         code: "login_succeeded",
         level: "ok",
         title: "ログイン成功履歴があります",
-        detail: "認証自体は成功しています。現在の端末・ブラウザ・LINE内ブラウザの利用状況を確認してください。",
+        detail: "認証自体は成功しています。現在利用している端末と、ログイン状態を残したいブラウザを確認してください。",
         nextAction: "ブラウザと操作手順を案内",
       };
     }
@@ -146,8 +146,8 @@ function buildDiagnosis(args: {
       code: "clicked_not_signed_in",
       level: "office",
       title: "リンククリック後にログインが完了していません",
-      detail: "リンククリックは検知されていますが、その後のログイン成功履歴がありません。リンク期限切れやブラウザ切り替えが疑われます。",
-      nextAction: "Safari/Chromeを案内し、ログインメールを再送",
+      detail: "リンククリックは検知されていますが、その後のログイン成功履歴がありません。確認画面の「ログインを続ける」が押されていないか、リンクが期限切れの可能性があります。",
+      nextAction: "確認ボタンの操作を案内し、必要ならログインメールを再送",
     };
   }
 
