@@ -3,6 +3,30 @@ import { findAuthUserByEmail, normalizeEmail } from "@/lib/authUsers";
 import { getSupportAccess } from "@/lib/supportAuth";
 import { createAdminClient } from "@/utils/supabase/admin";
 
+export async function GET() {
+  const access = await getSupportAccess();
+  if (!access?.canManageAgents) {
+    return NextResponse.json({ error: "Only owner can manage support access" }, { status: access ? 403 : 401 });
+  }
+
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("support_agents")
+      .select(`
+        user_id, enabled, can_view_auth_status, can_resend_login_email, can_repair_profile, created_at, updated_at,
+        user:user_id (email, display_name, role)
+      `)
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+
+    return NextResponse.json({ agents: data ?? [] });
+  } catch (error) {
+    console.error("[Admin Support Agents API] List failed:", error);
+    return NextResponse.json({ error: "事務担当者一覧の取得に失敗しました。" }, { status: 500 });
+  }
+}
+
 export async function PUT(request: Request) {
   const access = await getSupportAccess();
   if (!access?.canManageAgents) {

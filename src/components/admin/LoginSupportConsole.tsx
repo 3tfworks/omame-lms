@@ -16,9 +16,7 @@ import {
   RefreshCw,
   Search,
   Send,
-  ShieldCheck,
   UserCheck,
-  UserX,
 } from "lucide-react";
 
 type DiagnosisLevel = "ok" | "customer" | "office" | "system";
@@ -73,12 +71,6 @@ type SupportData = {
       created_at: string;
       actor_user_id: string | null;
     }>;
-    supportAgent: null | {
-      enabled: boolean;
-      can_view_auth_status: boolean;
-      can_resend_login_email: boolean;
-      can_repair_profile: boolean;
-    };
   };
   diagnosis: {
     code: string;
@@ -324,30 +316,6 @@ export function LoginSupportConsole() {
     }
   };
 
-  const updateSupportAccess = async (enabled: boolean) => {
-    if (!data) return;
-    const verb = enabled ? "付与" : "停止";
-    if (!window.confirm(`${data.customer.email} の事務担当アクセスを${verb}します。よろしいですか？`)) return;
-    setActionLoading("agent");
-    setError("");
-    setNotice("");
-    try {
-      const response = await fetch("/api/admin/support-agents", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.customer.email, enabled, canResend: true }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.error || `アクセスの${verb}に失敗しました。`);
-      await search(data.customer.email);
-      setNotice(result.message);
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : `アクセスの${verb}に失敗しました。`);
-    } finally {
-      setActionLoading("");
-    }
-  };
-
   const changeCustomerEmail = async () => {
     if (!data || !newEmail.trim() || !customerConfirmed) return;
     const normalized = newEmail.trim().toLowerCase();
@@ -407,9 +375,6 @@ export function LoginSupportConsole() {
     await navigator.clipboard.writeText(reply);
     setNotice(copiedMessage);
   };
-
-  const profileRole = data?.customer.profile?.role;
-  const canToggleAgent = data?.requester.canManageAgents && data.customer.auth && profileRole !== "owner" && profileRole !== "admin";
 
   return (
     <div className="space-y-6 pb-12">
@@ -896,23 +861,6 @@ export function LoginSupportConsole() {
                 <Clipboard className="h-4 w-4" />
                 顧客向け案内文をコピー
               </button>
-              {canToggleAgent && (
-                <button
-                  type="button"
-                  onClick={() => void updateSupportAccess(!data.customer.supportAgent?.enabled)}
-                  disabled={Boolean(actionLoading)}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-bold text-indigo-700 hover:bg-indigo-100 disabled:opacity-40"
-                >
-                  {actionLoading === "agent" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : data.customer.supportAgent?.enabled ? (
-                    <UserX className="h-4 w-4" />
-                  ) : (
-                    <ShieldCheck className="h-4 w-4" />
-                  )}
-                  事務担当アクセスを{data.customer.supportAgent?.enabled ? "停止" : "付与"}
-                </button>
-              )}
             </div>
             {showEmailChange && (
               <div className="mt-4 rounded-xl border-2 border-sky-200 bg-sky-50 p-4">

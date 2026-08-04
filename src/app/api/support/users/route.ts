@@ -247,18 +247,9 @@ export async function GET(request: Request) {
       ? actionsQuery.eq("target_user_id", targetUserId)
       : actionsQuery.eq("target_email", email);
     const actionsPromise = actionsQuery;
-    const agentPromise = targetUserId && access.canManageAgents
-      ? admin
-          .from("support_agents")
-          .select("enabled, can_view_auth_status, can_resend_login_email, can_repair_profile")
-          .eq("user_id", targetUserId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null });
-
-    const [callbacksResult, actionsResult, agentResult, stripeLookup] = await Promise.all([
+    const [callbacksResult, actionsResult, stripeLookup] = await Promise.all([
       callbackPromise,
       actionsPromise,
-      agentPromise,
       stripeLookupPromise,
     ]);
 
@@ -299,7 +290,6 @@ export async function GET(request: Request) {
         emailEvents: events,
         callbackEvents: callbacksResult.data || [],
         supportActions: actionsResult.data || [],
-        supportAgent: agentResult.data || null,
       },
       diagnosis,
       trackingConfigured,
