@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import crypto from "crypto";
 import { resolveReferralTrackingId } from "@/lib/affiliateAttribution";
+import { getCanonicalHostRedirectUrl } from "@/lib/canonicalHost";
 
 const locales = ["ja", "en", "fr"];
 const defaultLocale = "ja";
@@ -84,6 +85,11 @@ function getLocale(request: NextRequest): string {
 }
 
 export async function proxy(request: NextRequest) {
+  const canonicalRedirectUrl = getCanonicalHostRedirectUrl(request.url);
+  if (canonicalRedirectUrl) {
+    return NextResponse.redirect(canonicalRedirectUrl, 308);
+  }
+
   const { pathname, searchParams } = request.nextUrl;
 
   // --- 管理画面の Basic 認証（/admin ページ と /api/admin の両方が対象） ---
