@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, Bell, CheckCircle2, Edit3, Plus, Save, Trash2, X } from "lucide-react";
-import { announcementAudienceLabels, type Announcement, type AnnouncementAudience } from "@/lib/announcements";
+import {
+  announcementAudienceLabels,
+  infoBarVariantLabels,
+  type Announcement,
+  type AnnouncementAudience,
+  type InfoBarVariant,
+} from "@/lib/announcements";
 
 type FormState = {
   title: string;
@@ -11,6 +17,10 @@ type FormState = {
   publishedAt: string;
   isImportant: boolean;
   isPublished: boolean;
+  showInInfoBar: boolean;
+  infoBarVariant: InfoBarVariant;
+  infoBarEndsAt: string;
+  infoBarDismissible: boolean;
 };
 
 function toLocalDateTime(value = new Date().toISOString()) {
@@ -26,9 +36,13 @@ const emptyForm = (): FormState => ({
   publishedAt: toLocalDateTime(),
   isImportant: false,
   isPublished: false,
+  showInInfoBar: false,
+  infoBarVariant: "info",
+  infoBarEndsAt: "",
+  infoBarDismissible: true,
 });
 
-export default function AdminAnnouncementsPage() {
+export function AnnouncementManager({ apiBase = "/api/admin/announcements" }: { apiBase?: string }) {
   const [items, setItems] = useState<Announcement[]>([]);
   const [form, setForm] = useState<FormState>(() => emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,7 +51,7 @@ export default function AdminAnnouncementsPage() {
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const loadItems = async () => {
-    const response = await fetch("/api/admin/announcements");
+    const response = await fetch(apiBase);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || "お知らせを取得できませんでした");
     setItems(data.announcements ?? []);
@@ -46,7 +60,7 @@ export default function AdminAnnouncementsPage() {
   useEffect(() => {
     const loadInitialItems = async () => {
       try {
-        const response = await fetch("/api/admin/announcements");
+        const response = await fetch(apiBase);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || "お知らせを取得できませんでした");
         setItems(data.announcements ?? []);
@@ -57,7 +71,7 @@ export default function AdminAnnouncementsPage() {
       }
     };
     void loadInitialItems();
-  }, []);
+  }, [apiBase]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -74,6 +88,10 @@ export default function AdminAnnouncementsPage() {
       publishedAt: toLocalDateTime(item.published_at),
       isImportant: item.is_important,
       isPublished: item.is_published,
+      showInInfoBar: item.show_in_info_bar,
+      infoBarVariant: item.info_bar_variant,
+      infoBarEndsAt: item.info_bar_ends_at ? toLocalDateTime(item.info_bar_ends_at) : "",
+      infoBarDismissible: item.info_bar_dismissible,
     });
     setMessage(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -84,10 +102,14 @@ export default function AdminAnnouncementsPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const response = await fetch(editingId ? `/api/admin/announcements/${editingId}` : "/api/admin/announcements", {
+      const response = await fetch(editingId ? `${apiBase}/${editingId}` : apiBase, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, publishedAt: new Date(form.publishedAt).toISOString() }),
+        body: JSON.stringify({
+          ...form,
+          publishedAt: new Date(form.publishedAt).toISOString(),
+          infoBarEndsAt: form.infoBarEndsAt ? new Date(form.infoBarEndsAt).toISOString() : "",
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "保存できませんでした");
@@ -104,7 +126,7 @@ export default function AdminAnnouncementsPage() {
 
   const remove = async (id: string) => {
     if (!window.confirm("このお知らせを削除しますか？既読記録も削除されます。")) return;
-    const response = await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+    const response = await fetch(`${apiBase}/${id}`, { method: "DELETE" });
     if (response.ok) {
       await loadItems();
       if (editingId === id) resetForm();
@@ -149,6 +171,32 @@ export default function AdminAnnouncementsPage() {
           <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-stone-700"><input type="checkbox" checked={form.isPublished} onChange={(event) => setForm((current) => ({ ...current, isPublished: event.target.checked }))} className="h-4 w-4" />公開する</label>
           <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-stone-700"><input type="checkbox" checked={form.isImportant} onChange={(event) => setForm((current) => ({ ...current, isImportant: event.target.checked }))} className="h-4 w-4" />重要なお知らせ</label>
         </div>
+        <fieldset className="space-y-4 rounded-2xl border border-sky-200 bg-sky-50/60 p-5">
+          <legend className="px-2 text-sm font-bold text-sky-950">LMS上部のインフォバー</legend>
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-stone-700">
+            <input type="checkbox" checked={form.showInInfoBar} onChange={(event) => setForm((current) => ({ ...current, showInInfoBar: event.target.checked }))} className="h-4 w-4" />
+            このお知らせをインフォバーにも表示する
+          </label>
+          {form.showInInfoBar ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="info-bar-variant" className="mb-2 block text-sm font-bold text-stone-700">表示種別</label>
+                <select id="info-bar-variant" value={form.infoBarVariant} onChange={(event) => setForm((current) => ({ ...current, infoBarVariant: event.target.value as InfoBarVariant }))} className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3">
+                  {Object.entries(infoBarVariantLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="info-bar-ends-at" className="mb-2 block text-sm font-bold text-stone-700">表示終了日時（任意）</label>
+                <input id="info-bar-ends-at" type="datetime-local" value={form.infoBarEndsAt} min={form.publishedAt} onChange={(event) => setForm((current) => ({ ...current, infoBarEndsAt: event.target.value }))} className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3" />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-stone-700 md:col-span-2">
+                <input type="checkbox" checked={form.infoBarDismissible} onChange={(event) => setForm((current) => ({ ...current, infoBarDismissible: event.target.checked }))} className="h-4 w-4" />
+                受講者が「閉じる」を押せるようにする
+              </label>
+              <p className="text-xs leading-relaxed text-stone-500 md:col-span-2">公開中のインフォバーが複数ある場合は、「重要」を優先し、その中で公開日時が新しいものを1件表示します。</p>
+            </div>
+          ) : null}
+        </fieldset>
         {message ? <div role="status" className={`flex items-center gap-2 rounded-xl border p-4 text-sm font-bold ${message.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>{message.type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}{message.text}</div> : null}
         <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-stone-800 px-6 py-3 font-bold text-white hover:bg-stone-700 disabled:opacity-50">{editingId ? <Save size={18} /> : <Plus size={18} />}{saving ? "保存中…" : editingId ? "変更を保存" : "お知らせを作成"}</button>
       </form>
@@ -159,7 +207,7 @@ export default function AdminAnnouncementsPage() {
           <article key={item.id} className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <div className="flex flex-wrap gap-2 text-xs"><span className={`rounded-full px-2 py-1 font-bold ${item.is_published ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>{item.is_published ? "公開" : "下書き"}</span>{item.is_important ? <span className="rounded-full bg-amber-100 px-2 py-1 font-bold text-amber-800">重要</span> : null}<span className="px-2 py-1 text-stone-400">{announcementAudienceLabels[item.audience]}</span></div>
+                <div className="flex flex-wrap gap-2 text-xs"><span className={`rounded-full px-2 py-1 font-bold ${item.is_published ? "bg-emerald-50 text-emerald-700" : "bg-stone-100 text-stone-500"}`}>{item.is_published ? "公開" : "下書き"}</span>{item.is_important ? <span className="rounded-full bg-amber-100 px-2 py-1 font-bold text-amber-800">重要</span> : null}{item.show_in_info_bar ? <span className="rounded-full bg-sky-100 px-2 py-1 font-bold text-sky-800">インフォバー：{infoBarVariantLabels[item.info_bar_variant]}</span> : null}<span className="px-2 py-1 text-stone-400">{announcementAudienceLabels[item.audience]}</span></div>
                 <h4 className="mt-2 font-bold text-stone-800">{item.title}</h4>
                 <p className="mt-2 text-xs text-stone-400">公開日時：{new Date(item.published_at).toLocaleString("ja-JP")}</p>
               </div>
@@ -170,4 +218,8 @@ export default function AdminAnnouncementsPage() {
       </section>
     </div>
   );
+}
+
+export default function AdminAnnouncementsPage() {
+  return <AnnouncementManager />;
 }

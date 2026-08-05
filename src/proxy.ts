@@ -182,6 +182,8 @@ export async function proxy(request: NextRequest) {
 
   // 保護されたルートへのアクセス制限
   const isSupportRoute = /^\/[a-z]{2}\/support(?:\/|$)/.test(pathname);
+  const isSupportHomeRoute = /^\/[a-z]{2}\/support\/?$/.test(pathname);
+  const isSupportAnnouncementsRoute = /^\/[a-z]{2}\/support\/announcements(?:\/|$)/.test(pathname);
   const isProtectedRoute = pathname.includes("/lms") || pathname.includes("/admin") || pathname.includes("/setup-name") || isSupportRoute;
   const isAdminRoute = pathname.includes("/admin");
   const lang = pathname.split('/')[1] || 'ja';
@@ -217,11 +219,16 @@ export async function proxy(request: NextRequest) {
     if (!isAdmin) {
       const { data: supportAgent } = await supabase
         .from("support_agents")
-        .select("enabled, can_view_auth_status")
+        .select("enabled, can_view_auth_status, can_manage_announcements")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!supportAgent?.enabled || !supportAgent.can_view_auth_status) {
+      const hasRouteAccess = supportAgent?.enabled && (
+        (isSupportHomeRoute && (supportAgent.can_view_auth_status || supportAgent.can_manage_announcements)) ||
+        (isSupportAnnouncementsRoute && supportAgent.can_manage_announcements) ||
+        (!isSupportHomeRoute && !isSupportAnnouncementsRoute && supportAgent.can_view_auth_status)
+      );
+      if (!hasRouteAccess) {
         return NextResponse.redirect(new URL(`/${lang}/lms`, request.url));
       }
     }

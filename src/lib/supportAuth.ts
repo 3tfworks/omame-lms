@@ -8,6 +8,7 @@ export type SupportAccess = {
   canView: boolean;
   canResend: boolean;
   canRepair: boolean;
+  canManageAnnouncements: boolean;
   canManageAgents: boolean;
 };
 
@@ -37,25 +38,27 @@ export async function getSupportAccess(): Promise<SupportAccess | null> {
       canView: true,
       canResend: true,
       canRepair: true,
+      canManageAnnouncements: true,
       canManageAgents: profile.role === "owner",
     };
   }
 
   const { data: agent, error: agentError } = await admin
     .from("support_agents")
-    .select("enabled, can_view_auth_status, can_resend_login_email, can_repair_profile")
+    .select("enabled, can_view_auth_status, can_resend_login_email, can_repair_profile, can_manage_announcements")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (agentError || !agent?.enabled || !agent.can_view_auth_status) return null;
+  if (agentError || !agent?.enabled || (!agent.can_view_auth_status && !agent.can_manage_announcements)) return null;
 
   return {
     userId: user.id,
     role: profile.role,
     isAdmin: false,
-    canView: true,
+    canView: agent.can_view_auth_status,
     canResend: agent.can_resend_login_email,
     canRepair: agent.can_repair_profile,
+    canManageAnnouncements: agent.can_manage_announcements,
     canManageAgents: false,
   };
 }

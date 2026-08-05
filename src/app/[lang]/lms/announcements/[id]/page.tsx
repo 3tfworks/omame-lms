@@ -10,7 +10,7 @@ export default async function AnnouncementDetailPage({ params }: { params: Promi
   const supabase = await createClient();
   const { data } = await supabase
     .from("announcements")
-    .select("id, title, body, audience, is_important, is_published, published_at, created_at, updated_at")
+    .select("id, title, body, audience, is_important, is_published, published_at, show_in_info_bar, info_bar_variant, info_bar_ends_at, info_bar_dismissible, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();

@@ -14,7 +14,7 @@ export async function GET() {
     const { data, error } = await admin
       .from("support_agents")
       .select(`
-        user_id, enabled, can_view_auth_status, can_resend_login_email, can_repair_profile, created_at, updated_at,
+        user_id, enabled, can_view_auth_status, can_resend_login_email, can_repair_profile, can_manage_announcements, created_at, updated_at,
         user:user_id (email, display_name, role)
       `)
       .order("updated_at", { ascending: false });
@@ -36,7 +36,9 @@ export async function PUT(request: Request) {
   const body = await request.json().catch(() => null);
   const email = normalizeEmail(body?.email || "");
   const enabled = body?.enabled === true;
+  const canViewAuth = body?.canViewAuth !== false;
   const canResend = body?.canResend !== false;
+  const canManageAnnouncements = body?.canManageAnnouncements === true;
   if (!email || !email.includes("@")) {
     return NextResponse.json({ error: "有効なメールアドレスを入力してください。" }, { status: 400 });
   }
@@ -60,9 +62,10 @@ export async function PUT(request: Request) {
       {
         user_id: authUser.id,
         enabled,
-        can_view_auth_status: enabled,
-        can_resend_login_email: enabled && canResend,
-        can_repair_profile: enabled,
+        can_view_auth_status: canViewAuth,
+        can_resend_login_email: canViewAuth && canResend,
+        can_repair_profile: canViewAuth,
+        can_manage_announcements: canManageAnnouncements,
         created_by: access.userId,
         updated_at: new Date().toISOString(),
       },
@@ -76,10 +79,10 @@ export async function PUT(request: Request) {
       target_email: email,
       action: enabled ? "grant_support_access" : "revoke_support_access",
       result: "success",
-      detail: enabled ? `resend=${canResend}, change_email=true` : null,
+      detail: enabled ? `login_support=${canViewAuth}, resend=${canViewAuth && canResend}, announcements=${canManageAnnouncements}` : null,
     });
 
-    return NextResponse.json({ message: enabled ? "事務担当アクセスを付与しました。" : "事務担当アクセスを停止しました。" });
+    return NextResponse.json({ message: enabled ? "事務担当アクセスを更新しました。" : "事務担当アクセスを停止しました。" });
   } catch (error) {
     console.error("[Admin Support Agents API] Failed:", error);
     return NextResponse.json({ error: "サポート権限の更新に失敗しました。" }, { status: 500 });

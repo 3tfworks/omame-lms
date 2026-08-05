@@ -7,6 +7,7 @@ import { AlertCircle, BarChart3, Bell, BookOpen, PlayCircle, Search, Home, Menu,
 import { curriculumData, type ChapterData } from "@/lib/lmsData";
 import ReferralPopup from "@/components/ReferralPopup";
 import { LineLogo } from "@/components/ui/LineLogo";
+import { LmsInfoBar } from "@/components/announcements/LmsInfoBar";
 
 // アコーディオン用のコンポーネント
 function ChapterAccordion({ chapter, defaultOpen = false }: { chapter: ChapterData, defaultOpen?: boolean }) {
@@ -272,6 +273,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
       {/* メインコンテンツエリア */}
       <main className="flex-1 overflow-y-auto lg:pt-0 pt-16">
         <div className="max-w-5xl mx-auto p-4 lg:p-8">
+          <LmsInfoBar />
           {needsLegalName && (
             <div className="mb-6 rounded-2xl border-l-4 border-amber-400 bg-amber-50 p-4 md:p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
