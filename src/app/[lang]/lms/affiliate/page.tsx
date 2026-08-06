@@ -30,6 +30,48 @@ type BankInfo = {
   accountName: string;
 };
 
+const JAPAN_POST_BANK_NAME = "ゆうちょ銀行";
+
+const COMMON_BANK_NAMES = [
+  "楽天銀行",
+  "三菱UFJ銀行",
+  "三井住友銀行",
+  "みずほ銀行",
+  "りそな銀行",
+  "埼玉りそな銀行",
+  "住信SBIネット銀行",
+  "PayPay銀行",
+  "イオン銀行",
+  "ソニー銀行",
+  "セブン銀行",
+  "auじぶん銀行",
+];
+
+const OTHER_BANK_VALUE = "__other__";
+
+function normalizeAccountNumber(value: string) {
+  return value
+    .replace(/[０-９]/g, character => String.fromCharCode(character.charCodeAt(0) - 0xfee0))
+    .replace(/[\sー－―‐‑‒–—−-]/g, "");
+}
+
+function normalizeAccountName(value: string) {
+  return value
+    .replace(/[ぁ-ゖ]/g, character => String.fromCharCode(character.charCodeAt(0) + 0x60))
+    .replace(/[\s　]+/g, " ")
+    .trim();
+}
+
+function normalizeBankInfo(bankInfo: BankInfo): BankInfo {
+  return {
+    ...bankInfo,
+    bankName: bankInfo.bankName.trim(),
+    branchName: bankInfo.branchName.trim(),
+    accountNumber: normalizeAccountNumber(bankInfo.accountNumber),
+    accountName: normalizeAccountName(bankInfo.accountName),
+  };
+}
+
 export default function AffiliatePage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
@@ -47,6 +89,7 @@ export default function AffiliatePage() {
   const [bankInfo, setBankInfo] = useState<BankInfo>({
     bankName: "", branchName: "", accountType: "普通", accountNumber: "", accountName: ""
   });
+  const [bankEntryMode, setBankEntryMode] = useState<"select" | "custom">("select");
   
   const [copied, setCopied] = useState(false);
   const [copiedTemplate, setCopiedTemplate] = useState<number | null>(null);
@@ -73,6 +116,11 @@ export default function AffiliatePage() {
           setReferralDiscountActive(data.referralDiscountActive === true);
           if (data.bankInfo) {
             setBankInfo(data.bankInfo);
+            setBankEntryMode(
+              data.bankInfo.bankName === JAPAN_POST_BANK_NAME || COMMON_BANK_NAMES.includes(data.bankInfo.bankName)
+                ? "select"
+                : "custom",
+            );
           }
           setDisplayName(data.displayName ?? null);
           setReferralName(data.referralDisplayName ?? "");
@@ -109,6 +157,8 @@ export default function AffiliatePage() {
 
   const allTermsConfirmed =
     AFFILIATE_CONFIRMATIONS.every(({ id }) => confirmations[id]) && fullTermsAccepted;
+  const isJapanPostBank = bankInfo.bankName === JAPAN_POST_BANK_NAME;
+
   const handleAcceptTerms = async () => {
     if (!allTermsConfirmed) return;
     setAcceptingTerms(true);
@@ -166,13 +216,15 @@ export default function AffiliatePage() {
 
   const handleSaveBankInfo = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedBankInfo = normalizeBankInfo(bankInfo);
+    setBankInfo(normalizedBankInfo);
     setSaving(true);
     setSaveMessage({ text: "", type: "" });
     try {
       const res = await fetch("/api/user/affiliate", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankInfo }),
+        body: JSON.stringify({ bankInfo: normalizedBankInfo }),
       });
       
       if (res.ok) {
@@ -714,19 +766,84 @@ export default function AffiliatePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-bold text-stone-700 mb-1.5">金融機関名</label>
-                <input 
-                  type="text" required placeholder="例：お豆銀行"
-                  value={bankInfo.bankName} onChange={e => setBankInfo({...bankInfo, bankName: e.target.value})}
-                  className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
-                />
+                <select
+                  required
+                  value={bankEntryMode === "custom" ? OTHER_BANK_VALUE : bankInfo.bankName}
+                  onChange={e => {
+                    if (e.target.value === OTHER_BANK_VALUE) {
+                      setBankEntryMode("custom");
+                      setBankInfo({...bankInfo, bankName: "", branchName: "", accountType: "普通", accountNumber: ""});
+                    } else {
+                      setBankEntryMode("select");
+                      setBankInfo({
+                        ...bankInfo,
+                        bankName: e.target.value,
+                        branchName: "",
+                        accountType: "普通",
+                        accountNumber: "",
+                      });
+                    }
+                  }}
+                  aria-describedby="bank-name-help"
+                  className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all bg-white"
+                >
+                  <option value="" disabled>金融機関を選択してください</option>
+                  <optgroup label="ゆうちょ銀行">
+                    <option value={JAPAN_POST_BANK_NAME}>{JAPAN_POST_BANK_NAME}</option>
+                  </optgroup>
+                  <optgroup label="その他の主な金融機関">
+                    {COMMON_BANK_NAMES.map(bankName => (
+                      <option key={bankName} value={bankName}>{bankName}</option>
+                    ))}
+                  </optgroup>
+                  <option value={OTHER_BANK_VALUE}>その他（直接入力）</option>
+                </select>
+                {bankEntryMode === "custom" && (
+                  <input
+                    type="text" required maxLength={50} placeholder="金融機関の正式名称"
+                    aria-label="その他の金融機関名"
+                    aria-describedby="bank-name-help"
+                    value={bankInfo.bankName}
+                    onChange={e => setBankInfo({...bankInfo, bankName: e.target.value})}
+                    onBlur={e => setBankInfo({...bankInfo, bankName: e.target.value.trim()})}
+                    className="mt-3 w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
+                  />
+                )}
+                <p id="bank-name-help" className="mt-2 text-xs leading-5 text-stone-500">
+                  候補にない場合は「その他」を選び、通帳などに記載された正式名称を入力してください。
+                </p>
+                {isJapanPostBank && (
+                  <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                    <p className="font-bold">ゆうちょ銀行は「記号・番号」をそのまま入力できません。</p>
+                    <p className="mt-1">他金融機関からの振込用の「店名・預金種目・口座番号」を入力してください。</p>
+                    <a
+                      href="https://www.jp-bank.japanpost.jp/kojin/sokin/furikomi/kj_sk_fm_furikomi_cnf.html"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 font-bold underline underline-offset-4"
+                    >
+                      振込用情報を確認する
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-bold text-stone-700 mb-1.5">支店名</label>
+                <label className="block text-sm font-bold text-stone-700 mb-1.5">
+                  {isJapanPostBank ? "店名（振込用）" : "支店名"}
+                </label>
                 <input 
-                  type="text" required placeholder="例：本店営業部"
+                  type="text" required maxLength={50} placeholder={isJapanPostBank ? "例：一九八" : "例：マーチ支店"}
+                  aria-describedby="branch-name-help"
                   value={bankInfo.branchName} onChange={e => setBankInfo({...bankInfo, branchName: e.target.value})}
+                  onBlur={e => setBankInfo({...bankInfo, branchName: e.target.value.trim()})}
                   className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
                 />
+                <p id="branch-name-help" className="mt-2 text-xs leading-5 text-stone-500">
+                  {isJapanPostBank
+                    ? "振込用の3桁の漢数字の店名を入力してください。郵便局名ではありません。"
+                    : "「支店」「店」「営業部」などを省略せず、記載どおりに入力してください。"}
+                </p>
               </div>
             </div>
 
@@ -743,23 +860,57 @@ export default function AffiliatePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-stone-700 mb-1.5">口座番号</label>
+                <label className="block text-sm font-bold text-stone-700 mb-1.5">
+                  {isJapanPostBank ? "口座番号（振込用）" : "口座番号"}
+                </label>
                 <input 
-                  type="text" required pattern="[0-9]+" placeholder="半角数字のみ"
-                  value={bankInfo.accountNumber} onChange={e => setBankInfo({...bankInfo, accountNumber: e.target.value})}
+                  type="text" required pattern="[0-9]{1,10}" inputMode="numeric" maxLength={20} placeholder="例：1234567"
+                  title="口座番号は10桁以内の半角数字で入力してください"
+                  aria-describedby="account-number-help"
+                  value={bankInfo.accountNumber}
+                  onChange={e => setBankInfo({...bankInfo, accountNumber: normalizeAccountNumber(e.target.value)})}
                   className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
                 />
+                <p id="account-number-help" className="mt-2 text-xs leading-5 text-stone-500">
+                  {isJapanPostBank
+                    ? "記号・番号ではなく、振込用の口座番号を入力してください。全角数字やハイフンは自動で整えます。"
+                    : "全角数字やハイフンを入力しても、半角数字だけに自動で整えます。"}
+                </p>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-stone-700 mb-1.5">口座名義（カナ）</label>
               <input 
-                type="text" required placeholder="例：ヤマダ タロウ"
+                type="text" required maxLength={100} placeholder="例：ヤマダ タロウ"
+                aria-describedby="account-name-help"
                 value={bankInfo.accountName} onChange={e => setBankInfo({...bankInfo, accountName: e.target.value})}
+                onBlur={e => setBankInfo({...bankInfo, accountName: normalizeAccountName(e.target.value)})}
                 className="w-full border border-stone-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all"
               />
+              <p id="account-name-help" className="mt-2 text-xs leading-5 text-stone-500">
+                通帳などの表記どおり入力してください。ひらがなはカタカナへ自動変換します。全角・半角どちらでも入力でき、姓と名の間の空白も自動で整えます。
+              </p>
             </div>
+
+            {bankInfo.bankName && bankInfo.branchName && bankInfo.accountNumber && bankInfo.accountName && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5">
+                <p className="text-sm font-bold text-amber-900">保存前に、通帳などの記載と見比べてください</p>
+                <dl className="mt-4 grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 text-sm">
+                  <dt className="text-stone-500">金融機関</dt>
+                  <dd className="break-words font-bold text-stone-800">{bankInfo.bankName}</dd>
+                  <dt className="text-stone-500">{isJapanPostBank ? "店名" : "支店"}</dt>
+                  <dd className="break-words font-bold text-stone-800">{bankInfo.branchName}</dd>
+                  <dt className="text-stone-500">口座</dt>
+                  <dd className="font-bold text-stone-800">{bankInfo.accountType}　{bankInfo.accountNumber}</dd>
+                  <dt className="text-stone-500">口座名義</dt>
+                  <dd className="break-words font-bold text-stone-800">{bankInfo.accountName}</dd>
+                </dl>
+                <p className="mt-4 border-t border-amber-200 pt-3 text-xs leading-5 text-amber-900">
+                  入力内容に誤りがある場合、特典のお振込みが保留または遅延することがあります。
+                </p>
+              </div>
+            )}
 
             {saveMessage.text && (
               <div className={`p-4 rounded-xl text-sm flex items-center gap-2 font-bold ${saveMessage.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
@@ -775,6 +926,13 @@ export default function AffiliatePage() {
               <Save className="w-5 h-5" />
               {saving ? "保存中..." : "口座情報を保存する"}
             </button>
+            <p className="text-xs leading-5 text-stone-500">
+              登録された口座情報は、紹介特典のお振込みおよびその確認に利用します。取り扱いについては
+              <Link href="/ja/privacy" className="ml-1 font-bold underline underline-offset-4">
+                プライバシーポリシー
+              </Link>
+              をご確認ください。
+            </p>
           </form>
         </div>
       </div>
